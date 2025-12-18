@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedCanvas | 小红书爆款封面生成器</title>
+    <meta name="description" content="零成本、高效率生成小红书风格视频封面。支持多重高亮、创意字体、多模板切换。">
+    <meta name="keywords" content="小红书封面, 封面生成器, 视频封面, 社交媒体设计, XHS Cover Generator">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Using high-speed mirrors for Mainland China accessibility -->
+    <link rel="dns-prefetch" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    
+    <!-- Added ZCOOL KuaiLe for childlike handwriting style -->
+    <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700;900&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=ZCOOL+KuaiLe&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" crossorigin="anonymous">
+    
+    <style>
+        :root {
+            --xhs-red: #ff2442;
+        }
+        body {
+            font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background-color: #fcfcfc;
+            color: #1a1a1a;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-mashan { font-family: 'Ma Shan Zheng', cursive; }
+        .font-xiaowei { font-family: 'ZCOOL XiaoWei', serif; }
+        .font-zhimang { font-family: 'Zhi Mang Xing', cursive; }
+        .font-kuaile { font-family: 'ZCOOL KuaiLe', cursive; }
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ddd; }
+
+        .preview-shadow {
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15), 0 20px 40px -15px rgba(0,0,0,0.1);
+        }
+
+        /* Marker Underline Effect */
+        .marker-underline {
+            position: relative;
+            display: inline-block;
+        }
+        .marker-underline::after {
+            content: '';
+            position: absolute;
+            left: -2px;
+            right: -2px;
+            bottom: 4px;
+            height: 12px;
+            background-color: currentColor;
+            opacity: 0.8;
+            z-index: -1;
+            border-radius: 100px 20px 100px 20px;
+            transform: rotate(-1deg);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "framer-motion": "https://esm.sh/framer-motion@^12.23.26",
+    "html-to-image": "https://esm.sh/html-to-image@^1.11.13"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
