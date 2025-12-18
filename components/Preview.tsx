@@ -214,7 +214,7 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
 
   return (
     <div 
-      className="relative w-full max-w-[400px] aspect-[3/4] rounded-[44px] overflow-hidden border-[12px] border-neutral-900 bg-white preview-shadow select-none"
+      className="relative w-full max-w-[400px] aspect-[3/4] rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 bg-white preview-shadow select-none mx-auto"
       style={{ boxSizing: 'border-box' }}
     >
       <div ref={ref} className="w-full h-full overflow-hidden">
@@ -225,4 +225,3 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
     </div>
   );
 });
-

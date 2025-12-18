@@ -242,14 +242,9 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
 
       {/* Footer Actions */}
       <div className="p-6 border-t border-neutral-50 bg-neutral-50/50">
-        <button
-          onClick={onDownload}
-          className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
-        >
-          <Download className="w-5 h-5" />
-          生成高清封面
-        </button>
+        {/* 导出按钮已移除，移到了Preview组件下方 */}
       </div>
     </div>
   );
 };
+

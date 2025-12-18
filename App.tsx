@@ -95,7 +95,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#fcfcfc] overflow-hidden selection:bg-red-100">
+    <div className="lg:h-screen flex flex-col bg-[#fcfcfc]  selection:bg-red-100">
       <nav className="h-16 flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100 px-6 flex items-center justify-between z-50">
         <div className="flex items-center gap-3">
           <div className="bg-red-500 p-1.5 rounded-lg shadow-lg shadow-red-200">
@@ -118,7 +118,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row ">
         <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
           <div className="max-w-md mx-auto space-y-6">
             <header className="mb-4 hidden lg:block">
@@ -126,7 +126,7 @@ const App: React.FC = () => {
               <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase tracking-widest">Aesthetic Content Studio</p>
             </header>
             
-            <Editor state={state} setState={setState} onDownload={exportImage} />
+            <Editor state={state} setState={setState} onDownload={() => {}} />
             
             <div className="bg-white p-4 rounded-2xl border border-neutral-100 flex items-start gap-3">
                <Info className="w-4 h-4 text-blue-500 mt-0.5" />
@@ -137,7 +137,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full overflow-hidden">
+        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50" />
           
@@ -153,6 +153,16 @@ const App: React.FC = () => {
                <div>High Res Output</div>
                <div className="w-1 h-1 bg-neutral-200 rounded-full" />
                <div>Strict 3:4 Aspect</div>
+            </div>
+            {/* 导出按钮放在预览下方 */}
+            <div className="mt-8 w-full max-w-[320px]">
+              <button
+                onClick={exportImage}
+                className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
+              >
+                <Download className="w-5 h-5" />
+                生成高清封面
+              </button>
             </div>
           </motion.div>
         </div>
@@ -188,3 +198,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
