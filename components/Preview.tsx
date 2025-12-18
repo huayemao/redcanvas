@@ -62,8 +62,8 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
 
     if (isLandscape) {
       return (
-        <div className="w-full h-full flex items-center justify-center p-4">
-          <div className="relative w-full aspect-video bg-neutral-800 rounded-[1.2rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border-[8px] border-neutral-700 flex flex-col overflow-hidden">
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-full h-full flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
             {/* Browser Header Bar */}
             <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
                <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
@@ -72,7 +72,7 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
                <div className="ml-4 flex-1 h-3 bg-white/60 rounded-full border border-neutral-300/50" />
             </div>
             {/* Content Area */}
-            <div className="flex-1 overflow-hidden bg-white">
+            <div className="flex-1 overflow-hidden rounded">
               <img src={imageUrl} crossOrigin="anonymous" className="w-full h-full object-cover" alt="cover" />
             </div>
             {/* Glossy Overlay */}
@@ -82,18 +82,21 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
       );
     } else {
       return (
-        <div className="w-full h-full flex items-center justify-center p-2">
-          <div className="relative w-[75%] aspect-[9/19] bg-[#0c0c0c] p-[4%] rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] ring-[10px] ring-neutral-800 border-[2px] border-neutral-700 flex flex-col overflow-hidden">
-            {/* Smartphone Speaker/Sensor */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[35%] h-5 bg-[#0c0c0c] rounded-full z-30 shadow-inner flex items-center justify-center">
-               <div className="w-10 h-1 bg-neutral-800 rounded-full" />
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-[75%] aspect-[9/19] flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
+            {/* Browser Header Bar */}
+            <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
+               <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
+               <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
+               <div className="w-2 h-2 rounded-full bg-[#27c93f]" />
+               <div className="ml-4 flex-1 h-3 bg-white/60 rounded-full border border-neutral-300/50" />
             </div>
-            {/* Screen Area */}
-            <div className="flex-1 rounded-[2.2rem] overflow-hidden bg-white shadow-inner">
+            {/* Content Area */}
+            <div className="flex-1 overflow-hidden">
               <img src={imageUrl} crossOrigin="anonymous" className="w-full h-full object-cover" alt="cover" />
             </div>
-            {/* Reflection */}
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/[0.03] to-transparent pointer-events-none" />
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
           </div>
         </div>
       );
@@ -110,18 +113,30 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
           {renderTitle("text-4xl")}
         </div>
         <div className="flex-1 flex items-center justify-center pb-16">
-          <div className="w-full aspect-square rounded-[32px] shadow-2xl overflow-hidden ring-[10px] ring-neutral-50 -rotate-1 transform-gpu">
-             <ImageWithFrame />
-          </div>
+          {showDeviceFrame ? (
+            <div className="w-full h-full">
+              <ImageWithFrame />
+            </div>
+          ) : (
+            <div className="w-full aspect-square rounded-[32px] shadow-2xl overflow-hidden ring-[10px] ring-neutral-50 -rotate-1 transform-gpu">
+               <ImageWithFrame />
+            </div>
+          )}
         </div>
       </div>
     ),
     magazine: (
       <div className="relative w-full h-full bg-neutral-50 flex flex-col p-6 overflow-hidden">
-        <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
-          <ImageWithFrame />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
-        </div>
+        {showDeviceFrame ? (
+          <div className="flex-1 w-full">
+            <ImageWithFrame />
+          </div>
+        ) : (
+          <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
+            <ImageWithFrame />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
+          </div>
+        )}
         <div className="absolute top-14 left-0 w-full px-10 z-20 text-white drop-shadow-2xl">
           <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">{seriesNumber}</div>
           {renderTitle("text-5xl")}
@@ -144,17 +159,30 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
         <div className="mb-12">
           {renderTitle("text-3xl")}
         </div>
-        <div className="w-48 aspect-square rounded-full overflow-hidden border-4 border-white shadow-xl bg-neutral-50">
-           <ImageWithFrame />
-        </div>
+        {showDeviceFrame ? (
+          <div className="w-full h-full">
+            <ImageWithFrame />
+          </div>
+        ) : (
+          <div className="w-48 aspect-square rounded-full overflow-hidden border-4 border-white shadow-xl bg-neutral-50">
+             <ImageWithFrame />
+          </div>
+        )}
       </div>
     ),
     bold: (
       <div className="relative w-full h-full bg-neutral-950 flex flex-col overflow-hidden p-8">
-        <div className="absolute inset-0 opacity-40">
-           <ImageWithFrame />
-           <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-        </div>
+        {showDeviceFrame ? (
+          <div className="absolute inset-0 opacity-40">
+             <ImageWithFrame />
+             <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 opacity-40">
+             <ImageWithFrame />
+             <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+          </div>
+        )}
         <div className="mt-auto z-10 text-white">
           <div className="w-12 h-1 bg-white mb-6" />
           {renderTitle("text-6xl")}
@@ -171,9 +199,15 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
           </div>
           {renderTitle("text-4xl")}
         </div>
-        <div className="relative aspect-[3/4] rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
-           <ImageWithFrame />
-        </div>
+        {showDeviceFrame ? (
+          <div className="w-full h-full">
+            <ImageWithFrame />
+          </div>
+        ) : (
+          <div className="relative aspect-[3/4] rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
+             <ImageWithFrame />
+          </div>
+        )}
       </div>
     )
   };
@@ -191,3 +225,4 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
     </div>
   );
 });
+
