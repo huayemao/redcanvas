@@ -5,6 +5,7 @@ export interface Highlight {
   id: string;
   text: string;
   color: string;
+  style: 'underline' | 'text';
 }
 
 export type DeviceType = 'none' | 'browser' | 'macbook';

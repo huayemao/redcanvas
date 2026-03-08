@@ -25,16 +25,26 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
     const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
 
     const renderTitle = (sizeClass = "text-4xl") => {
-      let content: React.ReactNode[] = [title];
+    let content: React.ReactNode[] = [title];
 
-      highlights.forEach((h) => {
-        if (!h.text) return;
-        const newContent: React.ReactNode[] = [];
-        content.forEach((segment) => {
-          if (typeof segment === "string") {
-            const parts = segment.split(new RegExp(`(${h.text})`, "gi"));
-            parts.forEach((part, i) => {
-              if (part.toLowerCase() === h.text.toLowerCase()) {
+    highlights.forEach((h) => {
+      if (!h.text) return;
+      const newContent: React.ReactNode[] = [];
+      content.forEach((segment) => {
+        if (typeof segment === "string") {
+          const parts = segment.split(new RegExp(`(${h.text})`, "gi"));
+          parts.forEach((part, i) => {
+            if (part.toLowerCase() === h.text.toLowerCase()) {
+              if (h.style === 'text') {
+                newContent.push(
+                  <span
+                    key={`${h.id}-${i}`}
+                    style={{ color: h.color }}
+                  >
+                    {part}
+                  </span>
+                );
+              } else {
                 newContent.push(
                   <span
                     key={`${h.id}-${i}`}
@@ -48,25 +58,26 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
                     />
                   </span>
                 );
-              } else {
-                newContent.push(part);
               }
-            });
-          } else {
-            newContent.push(segment);
-          }
-        });
-        content = newContent;
+            } else {
+              newContent.push(part);
+            }
+          });
+        } else {
+          newContent.push(segment);
+        }
       });
+      content = newContent;
+    });
 
-      return (
-        <h1
-          className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontConfig.className}`}
-        >
-          {content}
-        </h1>
-      );
-    };
+    return (
+      <h1
+        className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontConfig.className}`}
+      >
+        {content}
+      </h1>
+    );
+  };
 
     const ImageWithFrame = () => {
       if (!imageUrl)

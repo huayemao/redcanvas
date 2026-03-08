@@ -42,6 +42,7 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
       id: Math.random().toString(36).substr(2, 9),
       text: '',
       color: state.accentColor,
+      style: 'underline',
     };
     setState(prev => ({ ...prev, highlights: [...prev.highlights, newHighlight] }));
   };
@@ -126,7 +127,7 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                        placeholder="高亮词组"
                      />
                      <div className="flex gap-1">
-                        {PRESET_COLORS.slice(0, 4).map(c => (
+                        {PRESET_COLORS.map(c => (
                           <button 
                             key={c}
                             onClick={() => updateHighlight(h.id, { color: c })}
@@ -134,6 +135,26 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                             style={{ backgroundColor: c }}
                           />
                         ))}
+                        <input
+                          type="color"
+                          value={h.color}
+                          onChange={(e) => updateHighlight(h.id, { color: e.target.value })}
+                          className="w-4 h-4 rounded border border-neutral-200 cursor-pointer"
+                        />
+                     </div>
+                     <div className="flex gap-1 border-l border-neutral-200 pl-2">
+                        <button
+                          onClick={() => updateHighlight(h.id, { style: 'underline' })}
+                          className={`px-2 py-1 rounded text-xs font-bold ${h.style === 'underline' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'}`}
+                        >
+                          下划线
+                        </button>
+                        <button
+                          onClick={() => updateHighlight(h.id, { style: 'text' })}
+                          className={`px-2 py-1 rounded text-xs font-bold ${h.style === 'text' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'}`}
+                        >
+                          文本色
+                        </button>
                      </div>
                      <button onClick={() => removeHighlight(h.id)} className="text-neutral-300 hover:text-red-500 p-1">
                         <X className="w-3 h-3" />

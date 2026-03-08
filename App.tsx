@@ -10,9 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 const INITIAL_STATE: EditorState = {
   title: "一天一个\n强大的网站\n互联网时光机",
   highlights: [
-    { id: '1', text: '强大', color: '#ff2442' },
-    { id: '2', text: '网站', color: '#ff2442' },
-    { id: '3', text: '时光机', color: '#6bcbff' }
+    { id: '1', text: '强大', color: '#ff2442', style: 'underline' },
+    { id: '2', text: '网站', color: '#ff2442', style: 'text' },
+    { id: '3', text: '时光机', color: '#6bcbff', style: 'underline' }
   ],
   seriesNumber: "#01",
   imageUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop",
