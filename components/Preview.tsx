@@ -18,6 +18,8 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
       showDeviceFrame,
       deviceType,
       imageAspectRatio,
+      orientation,
+      exportSize,
     } = state;
 
     const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
@@ -165,8 +167,37 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
       }
     };
 
+    const isLandscape =
+      orientation === "landscape" ||
+      exportSize === "bilibili" ||
+      exportSize === "youtube";
+
     const templates = {
-      classic: (
+      classic: isLandscape ? (
+        <div className="relative w-full h-full bg-white flex flex-row px-4 py-4 overflow-hidden">
+          <div className="flex-1 flex flex-col justify-center pr-2">
+            {seriesNumber && (
+              <div className="text-xl font-playfair italic text-neutral-200 mb-4">
+                {seriesNumber}
+              </div>
+            )}
+            <div className="z-10 text-neutral-900">
+              {renderTitle("text-2xl")}
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            {showDeviceFrame ? (
+              <div className="w-full h-full">
+                <ImageWithFrame />
+              </div>
+            ) : (
+              <div className="w-full aspect-video rounded shadow-2xl overflow-hidden ring-[10px] ring-neutral-50 -rotate-1 transform-gpu">
+                <ImageWithFrame />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
         <div className="relative w-full h-full bg-white flex flex-col pt-16 px-10 overflow-hidden">
           {seriesNumber && (
             <div className="absolute top-6 left-10 text-3xl font-playfair italic text-neutral-200">
@@ -189,7 +220,28 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
           </div>
         </div>
       ),
-      magazine: (
+      magazine: isLandscape ? (
+        <div className="relative w-full h-full bg-neutral-50 flex flex-col p-2 overflow-hidden">
+          {showDeviceFrame ? (
+            <div className="flex-1 w-full">
+              <ImageWithFrame />
+            </div>
+          ) : (
+            <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
+              <ImageWithFrame />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
+            </div>
+          )}
+          <div className="absolute inset-0 flex justify-center items-center px-6 z-20 text-white drop-shadow-2xl">
+            {seriesNumber && (
+              <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">
+                {seriesNumber}
+              </div>
+            )}
+            {renderTitle("text-3xl")}
+          </div>
+        </div>
+      ) : (
         <div className="relative w-full h-full bg-neutral-50 flex flex-col p-6 overflow-hidden">
           {showDeviceFrame ? (
             <div className="flex-1 w-full">
@@ -209,19 +261,31 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
             )}
             {renderTitle("text-5xl")}
           </div>
-          <div className="h-20 flex items-center justify-between px-2">
-            <div className="text-[9px] font-black text-neutral-400 tracking-tighter uppercase leading-none">
-              REDCANVAS
-              <br />
-              MAGAZINE 2024
-            </div>
-            <div className="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-white font-bold text-[9px]">
-              XHS
-            </div>
-          </div>
         </div>
       ),
-      minimal: (
+      minimal: isLandscape ? (
+        <div className="relative w-full h-full bg-[#fdfdfd] flex flex-row items-center justify-center px-3">
+          <div className="flex-1 text-center pr-2">
+            {seriesNumber && (
+              <div className="mb-4 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
+                {seriesNumber}
+              </div>
+            )}
+            {renderTitle("text-xl")}
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            {showDeviceFrame ? (
+              <div className="w-full h-full">
+                <ImageWithFrame />
+              </div>
+            ) : (
+              <div className="w-40 aspect-video rounded-full overflow-hidden border-4 border-white shadow-xl bg-neutral-50">
+                <ImageWithFrame />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
         <div className="relative w-full h-full bg-[#fdfdfd] flex flex-col items-center justify-center px-12 text-center">
           {seriesNumber && (
             <div className="mb-6 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
@@ -240,22 +304,38 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
           )}
         </div>
       ),
-      bold: (
+      bold: isLandscape ? (
+        <div className="relative w-full h-full bg-neutral-950 flex flex-row overflow-hidden p-10">
+          <div className="flex-1">
+            {showDeviceFrame ? (
+              <div className="w-full h-full opacity-40">
+                <ImageWithFrame />
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+              </div>
+            ) : (
+              <div className="w-full h-full opacity-40">
+                <ImageWithFrame />
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 flex flex-col justify-center pl-8 z-10 text-white">
+            {renderTitle("text-4xl")}
+            {seriesNumber && (
+              <div className="mt-6 font-playfair italic text-lg opacity-50">
+                {seriesNumber}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
         <div className="relative w-full h-full bg-neutral-950 flex flex-col overflow-hidden p-8">
-          {showDeviceFrame ? (
-            <div className="absolute inset-0 opacity-40">
-              <ImageWithFrame />
-              <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-            </div>
-          ) : (
-            <div className="absolute inset-0 opacity-40">
-              <ImageWithFrame />
-              <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-            </div>
-          )}
+          <div className="absolute inset-0 ">
+            <ImageWithFrame />
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+          </div>
           <div className="mt-auto z-10 text-white">
-            <div className="w-12 h-1 bg-white mb-6" />
-            {renderTitle("text-6xl")}
+            {renderTitle("text-5xl")}
             {seriesNumber && (
               <div className="mt-8 font-playfair italic text-2xl opacity-50">
                 {seriesNumber}
@@ -264,13 +344,36 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
           </div>
         </div>
       ),
-      floating: (
+      floating: isLandscape ? (
+        <div className="relative w-full h-full bg-[#f2f2f2] flex flex-row p-5 overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex-1 flex flex-col justify-center pr-2 z-20 items-start">
+            {seriesNumber && (
+              <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
+                {seriesNumber}
+              </div>
+            )}
+            {renderTitle("text-2xl")}
+          </div>
+          <div className="flex-1 flex items-center justify-center self-end">
+            {showDeviceFrame ? (
+              <div className="w-full h-full">
+                <ImageWithFrame />
+              </div>
+            ) : (
+              <div className="relative aspect-video rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
+                <ImageWithFrame />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
         <div className="relative w-full h-full bg-[#f2f2f2] p-8 overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-20 mb-8">
             {seriesNumber && (
               <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
-                {seriesNumber} EDITION
+                {seriesNumber}
               </div>
             )}
             {renderTitle("text-4xl")}
@@ -288,9 +391,34 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
       ),
     };
 
+    const getAspectRatio = () => {
+      switch (exportSize) {
+        case "xiaohongshu":
+          return "3/4";
+        case "bilibili":
+        case "youtube":
+          return "3/2";
+        case "custom":
+          return orientation === "portrait" ? "3/4" : "3/2";
+        default:
+          return "3/4";
+      }
+    };
+
+    const getMaxWidth = () => {
+      if (
+        exportSize === "xiaohongshu" ||
+        (exportSize === "custom" && orientation === "portrait")
+      ) {
+        return "max-w-[400px]";
+      } else {
+        return "max-w-[600px]";
+      }
+    };
+
     return (
       <div
-        className="relative w-full max-w-[400px] aspect-[3/4] rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 bg-white preview-shadow select-none mx-auto"
+        className={`relative w-full ${getMaxWidth()} aspect-[${getAspectRatio()}] rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 bg-white preview-shadow select-none mx-auto`}
         style={{ boxSizing: "border-box" }}
       >
         <div ref={ref} className="w-full h-full overflow-hidden">

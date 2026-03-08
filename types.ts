@@ -9,6 +9,9 @@ export interface Highlight {
 
 export type DeviceType = 'none' | 'browser' | 'macbook';
 
+export type Orientation = 'portrait' | 'landscape';
+export type ExportSize = 'xiaohongshu' | 'bilibili' | 'youtube' | 'custom';
+
 export interface EditorState {
   title: string;
   highlights: Highlight[];
@@ -20,6 +23,8 @@ export interface EditorState {
   templateId: TemplateId;
   fontFamily: string;
   accentColor: string; // Global accent
+  orientation: Orientation;
+  exportSize: ExportSize;
 }
 
 export interface TemplateConfig {

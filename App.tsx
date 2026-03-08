@@ -22,6 +22,8 @@ const INITIAL_STATE: EditorState = {
   templateId: 'classic',
   fontFamily: 'kuaile', // Switched to childlike font as default
   accentColor: '#ff2442',
+  orientation: 'portrait',
+  exportSize: 'xiaohongshu',
 };
 
 const App: React.FC = () => {
@@ -140,7 +142,7 @@ const App: React.FC = () => {
 
         <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50" />
+          {/* <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50" /> */}
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -155,8 +157,28 @@ const App: React.FC = () => {
                <div className="w-1 h-1 bg-neutral-200 rounded-full" />
                <div>Strict 3:4 Aspect</div>
             </div>
+            {/* 导出尺寸选择 */}
+            <div className="mt-6 w-full max-w-[320px]">
+              <div className="flex items-center justify-between mb-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
+                <span>导出尺寸</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: 'xiaohongshu' }))}
+                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'portrait' && state.exportSize === 'xiaohongshu' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                >
+                  竖版 (3:4)
+                </button>
+                <button
+                  onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: 'bilibili' }))}
+                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'landscape' && state.exportSize === 'bilibili' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                >
+                  横版 (3:2)
+                </button>
+              </div>
+            </div>
             {/* 导出按钮放在预览下方 */}
-            <div className="mt-8 w-full max-w-[320px]">
+            <div className="mt-6 w-full max-w-[320px]">
               <button
                 onClick={exportImage}
                 className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
