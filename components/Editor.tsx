@@ -141,6 +141,18 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                   </div>
                 ))}
               </div>
+
+              <div>
+                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">系列号标记（可选）</label>
+                <input
+                  type="text"
+                  name="seriesNumber"
+                  value={state.seriesNumber}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-neutral-50 rounded-xl font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
+                  placeholder="#01"
+                />
+              </div>
             </motion.div>
           )}
 
@@ -222,18 +234,6 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                   <span className="text-[10px] font-black text-neutral-400">点击/拖拽/粘贴图片素材</span>
                   <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </label>
-              </div>
-              
-              <div>
-                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">系列号标记</label>
-                <input
-                  type="text"
-                  name="seriesNumber"
-                  value={state.seriesNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-50 rounded-xl font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
-                  placeholder="#01"
-                />
               </div>
             </motion.div>
           )}

@@ -105,10 +105,12 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
 
   const templates = {
     classic: (
-      <div className="relative w-full h-full bg-white flex flex-col pt-24 px-10 overflow-hidden">
-        <div className="absolute top-10 left-10 text-3xl font-playfair italic text-neutral-200">
-          {seriesNumber}
-        </div>
+      <div className="relative w-full h-full bg-white flex flex-col pt-16 px-10 overflow-hidden">
+        {seriesNumber && (
+          <div className="absolute top-10 left-10 text-3xl font-playfair italic text-neutral-200">
+            {seriesNumber}
+          </div>
+        )}
         <div className="z-10 mb-8 text-neutral-900">
           {renderTitle("text-4xl")}
         </div>
@@ -138,7 +140,9 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
           </div>
         )}
         <div className="absolute top-14 left-0 w-full px-10 z-20 text-white drop-shadow-2xl">
-          <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">{seriesNumber}</div>
+          {seriesNumber && (
+            <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">{seriesNumber}</div>
+          )}
           {renderTitle("text-5xl")}
         </div>
         <div className="h-20 flex items-center justify-between px-2">
@@ -153,9 +157,11 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
     ),
     minimal: (
       <div className="relative w-full h-full bg-[#fdfdfd] flex flex-col items-center justify-center px-12 text-center">
-        <div className="mb-6 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
-          {seriesNumber || 'EDITORIAL'}
-        </div>
+        {seriesNumber && (
+          <div className="mb-6 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
+            {seriesNumber}
+          </div>
+        )}
         <div className="mb-12">
           {renderTitle("text-3xl")}
         </div>
@@ -186,7 +192,9 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
         <div className="mt-auto z-10 text-white">
           <div className="w-12 h-1 bg-white mb-6" />
           {renderTitle("text-6xl")}
-          <div className="mt-8 font-playfair italic text-2xl opacity-50">{seriesNumber}</div>
+          {seriesNumber && (
+            <div className="mt-8 font-playfair italic text-2xl opacity-50">{seriesNumber}</div>
+          )}
         </div>
       </div>
     ),
@@ -194,9 +202,11 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ state }, ref)
       <div className="relative w-full h-full bg-[#f2f2f2] p-8 overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-20 mb-8">
-          <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
-            {seriesNumber} EDITION
-          </div>
+          {seriesNumber && (
+            <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
+              {seriesNumber} EDITION
+            </div>
+          )}
           {renderTitle("text-4xl")}
         </div>
         {showDeviceFrame ? (
