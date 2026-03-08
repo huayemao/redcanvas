@@ -7,6 +7,8 @@ export interface Highlight {
   color: string;
 }
 
+export type DeviceType = 'none' | 'browser' | 'macbook';
+
 export interface EditorState {
   title: string;
   highlights: Highlight[];
@@ -14,6 +16,7 @@ export interface EditorState {
   imageUrl: string | null;
   imageAspectRatio: number; // Width / Height
   showDeviceFrame: boolean;
+  deviceType: DeviceType;
   templateId: TemplateId;
   fontFamily: string;
   accentColor: string; // Global accent

@@ -1,8 +1,8 @@
 
 import React, { useState, useCallback } from 'react';
-import { EditorState, TemplateId, Highlight } from '../types';
+import { EditorState, TemplateId, Highlight, DeviceType } from '../types';
 import { TEMPLATES, PRESET_COLORS, FONTS } from '../constants';
-import { Upload, Type, Palette, Layout, Plus, X, Download, Monitor, Smartphone, Image as ImageIcon } from 'lucide-react';
+import { Upload, Type, Palette, Layout, Plus, X, Download, Monitor, Smartphone, Image as ImageIcon, Laptop } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EditorProps {
@@ -229,6 +229,30 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                      网站/App 壳子: {state.showDeviceFrame ? '开启' : '关闭'}
                    </button>
                 </div>
+                {state.showDeviceFrame && (
+                  <div className="mb-4">
+                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">设备类型</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { type: 'browser' as DeviceType, label: '浏览器', icon: Monitor },
+                        { type: 'macbook' as DeviceType, label: 'MacBook', icon: Laptop },
+                      ].map((device) => (
+                        <button
+                          key={device.type}
+                          onClick={() => setState(prev => ({ ...prev, deviceType: device.type }))}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                            state.deviceType === device.type 
+                              ? 'border-neutral-900 bg-neutral-900 text-white' 
+                              : 'border-neutral-100 hover:border-neutral-200 bg-white'
+                          }`}
+                        >
+                          <device.icon className="w-4 h-4" />
+                          <span className="text-[9px] font-black">{device.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-neutral-100 rounded-3xl cursor-pointer hover:bg-neutral-50 transition-all group">
                   <Upload className="w-6 h-6 text-neutral-300 mb-2 group-hover:text-red-500" />
                   <span className="text-[10px] font-black text-neutral-400">点击/拖拽/粘贴图片素材</span>

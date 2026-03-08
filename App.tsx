@@ -18,6 +18,7 @@ const INITIAL_STATE: EditorState = {
   imageUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop",
   imageAspectRatio: 1.5,
   showDeviceFrame: true,
+  deviceType: 'browser',
   templateId: 'classic',
   fontFamily: 'kuaile', // Switched to childlike font as default
   accentColor: '#ff2442',
