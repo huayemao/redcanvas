@@ -1,6 +1,13 @@
 import React, { forwardRef } from "react";
 import { EditorState } from "../types";
 import { FONTS } from "../constants";
+import {
+  ClassicTemplate,
+  MagazineTemplate,
+  MinimalTemplate,
+  BoldTemplate,
+  FloatingTemplate,
+} from "./preview/Templates";
 
 interface PreviewProps {
   state: EditorState;
@@ -24,381 +31,76 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
 
     const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
 
-    const renderTitle = (sizeClass = "text-4xl") => {
-    let content: React.ReactNode[] = [title];
-
-    highlights.forEach((h) => {
-      if (!h.text) return;
-      const newContent: React.ReactNode[] = [];
-      content.forEach((segment) => {
-        if (typeof segment === "string") {
-          const parts = segment.split(new RegExp(`(${h.text})`, "gi"));
-          parts.forEach((part, i) => {
-            if (part.toLowerCase() === h.text.toLowerCase()) {
-              if (h.style === 'text') {
-                newContent.push(
-                  <span
-                    key={`${h.id}-${i}`}
-                    style={{ color: h.color }}
-                  >
-                    {part}
-                  </span>
-                );
-              } else {
-                newContent.push(
-                  <span
-                    key={`${h.id}-${i}`}
-                    className="relative inline-block mx-0.5"
-                  >
-                    <span className="relative z-10">{part}</span>
-                    {/* Thick Marker Underline - as requested in the image */}
-                    <span
-                      className="absolute -bottom-1 left-0 w-full h-[14px] -rotate-[1.5deg] z-0 opacity-100 rounded-[10px_2px_12px_3px]"
-                      style={{ backgroundColor: h.color }}
-                    />
-                  </span>
-                );
-              }
-            } else {
-              newContent.push(part);
-            }
-          });
-        } else {
-          newContent.push(segment);
-        }
-      });
-      content = newContent;
-    });
-
-    return (
-      <h1
-        className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontConfig.className}`}
-      >
-        {content}
-      </h1>
-    );
-  };
-
-    const ImageWithFrame = () => {
-      if (!imageUrl)
-        return (
-          <div className="w-full h-full bg-neutral-100 flex items-center justify-center text-neutral-300 font-bold">
-            待上传图片
-          </div>
-        );
-
-      if (!showDeviceFrame) {
-        return (
-          <img
-            src={imageUrl}
-            crossOrigin="anonymous"
-            className="w-full h-full object-cover"
-            alt="cover"
-          />
-        );
-      }
-
-      if (deviceType === "macbook") {
-        return (
-          <div className="relative w-[145%] left-[-10%] top-[-4%] aspect-[16/10]">
-            {/* MacBook Mockup */}
-            <div className="relative">
-              {/* MacBook Image */}
-              <img
-                src="/macbook-mockup.png"
-                alt="MacBook mockup"
-                className="w-full h-full object-contain"
-              />
-              {/* Screen Content */}
-              <div className="absolute inset-0  w-[78%]  top-[5%] left-[11%]">
-                <img
-                  src={imageUrl}
-                  crossOrigin="anonymous"
-                  className="object-cover aspect-[16/10]"
-                  alt="cover"
-                />
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      const isLandscape = imageAspectRatio >= 1;
-
-      if (isLandscape) {
-        return (
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="relative w-full h-full flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
-              {/* Browser Header Bar */}
-              <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
-                <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
-                <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
-                <div className="w-2 h-2 rounded-full bg-[#27c93f]" />
-                <div className="ml-4 flex-1 h-3 bg-white/60 rounded-full border border-neutral-300/50" />
-              </div>
-              {/* Content Area */}
-              <div className="flex-1 overflow-hidden rounded">
-                <img
-                  src={imageUrl}
-                  crossOrigin="anonymous"
-                  className="w-full h-full object-cover"
-                  alt="cover"
-                />
-              </div>
-              {/* Glossy Overlay */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
-            </div>
-          </div>
-        );
-      } else {
-        return (
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="relative w-[75%] aspect-[9/19] flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
-              {/* Browser Header Bar */}
-              <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
-                <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
-                <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
-                <div className="w-2 h-2 rounded-full bg-[#27c93f]" />
-                <div className="ml-4 flex-1 h-3 bg-white/60 rounded-full border border-neutral-300/50" />
-              </div>
-              {/* Content Area */}
-              <div className="flex-1 overflow-hidden">
-                <img
-                  src={imageUrl}
-                  crossOrigin="anonymous"
-                  className="w-full h-full object-cover"
-                  alt="cover"
-                />
-              </div>
-              {/* Glossy Overlay */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
-            </div>
-          </div>
-        );
-      }
-    };
-
     const isLandscape =
       orientation === "landscape" ||
       exportSize === "bilibili" ||
       exportSize === "youtube";
 
     const templates = {
-      classic: isLandscape ? (
-        <div className="relative w-full h-full bg-white flex flex-row px-4 py-4 overflow-hidden">
-          <div className="flex-1 flex flex-col justify-center pr-2">
-            {seriesNumber && (
-              <div className="text-xl font-playfair italic text-neutral-200 mb-4">
-                {seriesNumber}
-              </div>
-            )}
-            <div className="z-10 text-neutral-900">
-              {renderTitle("text-2xl")}
-            </div>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            {showDeviceFrame ? (
-              <div className="w-full h-full">
-                <ImageWithFrame />
-              </div>
-            ) : (
-              <div className="w-full aspect-video rounded shadow-2xl overflow-hidden ring-[10px] ring-neutral-50 -rotate-1 transform-gpu">
-                <ImageWithFrame />
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="relative w-full h-full bg-white flex flex-col pt-16 px-10 overflow-hidden">
-          {seriesNumber && (
-            <div className="absolute top-6 left-10 text-3xl font-playfair italic text-neutral-200">
-              {seriesNumber}
-            </div>
-          )}
-          <div className="z-10 mb-8 text-neutral-900">
-            {renderTitle("text-4xl")}
-          </div>
-          <div className="flex-1 flex items-center justify-center pb-16">
-            {showDeviceFrame ? (
-              <div className="w-full h-full">
-                <ImageWithFrame />
-              </div>
-            ) : (
-              <div className="w-full aspect-square rounded-[32px] shadow-2xl overflow-hidden ring-[10px] ring-neutral-50 -rotate-1 transform-gpu">
-                <ImageWithFrame />
-              </div>
-            )}
-          </div>
-        </div>
+      classic: (
+        <ClassicTemplate
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          showDeviceFrame={showDeviceFrame}
+          deviceType={deviceType}
+          imageAspectRatio={imageAspectRatio}
+          fontClassName={fontConfig.className}
+          isLandscape={isLandscape}
+        />
       ),
-      magazine: isLandscape ? (
-        <div className="relative w-full h-full bg-neutral-50 flex flex-col p-2 overflow-hidden">
-          {showDeviceFrame ? (
-            <div className="flex-1 w-full">
-              <ImageWithFrame />
-            </div>
-          ) : (
-            <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
-              <ImageWithFrame />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
-            </div>
-          )}
-          <div className="absolute inset-0 flex justify-center items-center px-6 z-20 text-white drop-shadow-2xl">
-            {seriesNumber && (
-              <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">
-                {seriesNumber}
-              </div>
-            )}
-            {renderTitle("text-3xl")}
-          </div>
-        </div>
-      ) : (
-        <div className="relative w-full h-full bg-neutral-50 flex flex-col p-6 overflow-hidden">
-          {showDeviceFrame ? (
-            <div className="flex-1 w-full">
-              <ImageWithFrame />
-            </div>
-          ) : (
-            <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
-              <ImageWithFrame />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
-            </div>
-          )}
-          <div className="absolute top-14 left-0 w-full px-10 z-20 text-white drop-shadow-2xl">
-            {seriesNumber && (
-              <div className="text-[10px] font-black tracking-[0.5em] mb-3 opacity-90 uppercase">
-                {seriesNumber}
-              </div>
-            )}
-            {renderTitle("text-5xl")}
-          </div>
-        </div>
+      magazine: (
+        <MagazineTemplate
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          showDeviceFrame={showDeviceFrame}
+          deviceType={deviceType}
+          imageAspectRatio={imageAspectRatio}
+          fontClassName={fontConfig.className}
+          isLandscape={isLandscape}
+        />
       ),
-      minimal: isLandscape ? (
-        <div className="relative w-full h-full bg-[#fdfdfd] flex flex-row items-center justify-center px-3">
-          <div className="flex-1 text-center pr-2">
-            {seriesNumber && (
-              <div className="mb-4 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
-                {seriesNumber}
-              </div>
-            )}
-            {renderTitle("text-xl")}
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            {showDeviceFrame ? (
-              <div className="w-full h-full">
-                <ImageWithFrame />
-              </div>
-            ) : (
-              <div className="w-40 aspect-video rounded-full overflow-hidden border-4 border-white shadow-xl bg-neutral-50">
-                <ImageWithFrame />
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="relative w-full h-full bg-[#fdfdfd] flex flex-col items-center justify-center px-12 text-center">
-          {seriesNumber && (
-            <div className="mb-6 text-[10px] font-black tracking-[0.5em] text-neutral-300 uppercase">
-              {seriesNumber}
-            </div>
-          )}
-          <div className="mb-12">{renderTitle("text-3xl")}</div>
-          {showDeviceFrame ? (
-            <div className="w-full h-full">
-              <ImageWithFrame />
-            </div>
-          ) : (
-            <div className="w-48 aspect-square rounded-full overflow-hidden border-4 border-white shadow-xl bg-neutral-50">
-              <ImageWithFrame />
-            </div>
-          )}
-        </div>
+      minimal: (
+        <MinimalTemplate
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          showDeviceFrame={showDeviceFrame}
+          deviceType={deviceType}
+          imageAspectRatio={imageAspectRatio}
+          fontClassName={fontConfig.className}
+          isLandscape={isLandscape}
+        />
       ),
-      bold: isLandscape ? (
-        <div className="relative w-full h-full bg-neutral-950 flex flex-row overflow-hidden p-10">
-          <div className="flex-1">
-            {showDeviceFrame ? (
-              <div className="w-full h-full opacity-40">
-                <ImageWithFrame />
-                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-              </div>
-            ) : (
-              <div className="w-full h-full opacity-40">
-                <ImageWithFrame />
-                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 flex flex-col justify-center pl-8 z-10 text-white">
-            {renderTitle("text-4xl")}
-            {seriesNumber && (
-              <div className="mt-6 font-playfair italic text-lg opacity-50">
-                {seriesNumber}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="relative w-full h-full bg-neutral-950 flex flex-col overflow-hidden p-8">
-          <div className="absolute inset-0 ">
-            <ImageWithFrame />
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-          </div>
-          <div className="mt-auto z-10 text-white">
-            {renderTitle("text-5xl")}
-            {seriesNumber && (
-              <div className="mt-8 font-playfair italic text-2xl opacity-50">
-                {seriesNumber}
-              </div>
-            )}
-          </div>
-        </div>
+      bold: (
+        <BoldTemplate
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          showDeviceFrame={showDeviceFrame}
+          deviceType={deviceType}
+          imageAspectRatio={imageAspectRatio}
+          fontClassName={fontConfig.className}
+          isLandscape={isLandscape}
+        />
       ),
-      floating: isLandscape ? (
-        <div className="relative w-full h-full bg-[#f2f2f2] flex flex-row p-5 overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex-1 flex flex-col justify-center pr-2 z-20 items-start">
-            {seriesNumber && (
-              <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
-                {seriesNumber}
-              </div>
-            )}
-            {renderTitle("text-2xl")}
-          </div>
-          <div className="flex-1 flex items-center justify-center self-end">
-            {showDeviceFrame ? (
-              <div className="w-full h-full">
-                <ImageWithFrame />
-              </div>
-            ) : (
-              <div className="relative aspect-video rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
-                <ImageWithFrame />
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="relative w-full h-full bg-[#f2f2f2] p-8 overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-20 mb-8">
-            {seriesNumber && (
-              <div className="bg-neutral-900 text-white px-3 py-1 inline-block rounded-lg font-bold text-[10px] mb-4 tracking-widest">
-                {seriesNumber}
-              </div>
-            )}
-            {renderTitle("text-4xl")}
-          </div>
-          {showDeviceFrame ? (
-            <div className="w-full h-full">
-              <ImageWithFrame />
-            </div>
-          ) : (
-            <div className="relative aspect-[3/4] rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
-              <ImageWithFrame />
-            </div>
-          )}
-        </div>
+      floating: (
+        <FloatingTemplate
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          showDeviceFrame={showDeviceFrame}
+          deviceType={deviceType}
+          imageAspectRatio={imageAspectRatio}
+          fontClassName={fontConfig.className}
+          isLandscape={isLandscape}
+        />
       ),
     };
 
@@ -435,7 +137,6 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
         <div ref={ref} className="w-full h-full overflow-hidden">
           {templates[templateId]}
         </div>
-        {/* Glossy Bezel Effect */}
         <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/10 rounded-[32px]" />
       </div>
     );
