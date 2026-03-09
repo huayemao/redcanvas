@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+:root {
+  --xhs-red: #ff2442;
+}
+
+body {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background-color: #fcfcfc;
+  color: #1a1a1a;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-playfair { font-family: 'Playfair Display', serif; }
+.font-mashan { font-family: 'Ma Shan Zheng', cursive; }
+.font-xiaowei { font-family: 'ZCOOL XiaoWei', serif; }
+.font-zhimang { font-family: 'Zhi Mang Xing', cursive; }
+.font-kuaile { font-family: 'ZCOOL KuaiLe', cursive; }
+.font-serif-sc { font-family: 'Noto Serif SC', serif; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #ddd; }
+
+.preview-shadow {
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15), 0 20px 40px -15px rgba(0,0,0,0.1);
+}
+
+.marker-underline {
+  position: relative;
+  display: inline-block;
+}
+.marker-underline::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 4px;
+  height: 12px;
+  background-color: currentColor;
+  opacity: 0.8;
+  z-index: -1;
+  border-radius: 100px 20px 100px 20px;
+  transform: rotate(-1deg);
+}

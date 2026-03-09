@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import { EditorState, TemplateId, Highlight, DeviceType } from '../types';
 import { TEMPLATES, PRESET_COLORS, FONTS } from '../constants';

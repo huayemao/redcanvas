@@ -1,3 +1,5 @@
+'use client';
+
 import React from "react";
 import { TitleRenderer } from "./TitleRenderer";
 import { ImageWithFrame } from "./ImageWithFrame";

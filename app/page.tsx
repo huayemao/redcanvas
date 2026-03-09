@@ -1,8 +1,9 @@
+'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Editor } from './components/Editor';
-import { Preview } from './components/Preview';
-import { EditorState } from './types';
+import { Editor } from '../components/Editor';
+import { Preview } from '../components/Preview';
+import { EditorState } from '../types';
 import * as htmlToImage from 'html-to-image';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,18 +22,17 @@ const INITIAL_STATE: EditorState = {
   showDeviceFrame: true,
   deviceType: 'browser',
   templateId: 'classic',
-  fontFamily: 'kuaile', // Switched to childlike font as default
+  fontFamily: 'kuaile',
   accentColor: '#ff2442',
   orientation: 'portrait',
   exportSize: 'xiaohongshu',
 };
 
-const App: React.FC = () => {
+const Home: React.FC = () => {
   const [state, setState] = useState<EditorState>(INITIAL_STATE);
   const [isExporting, setIsExporting] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard and Paste Listeners
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
@@ -71,7 +71,7 @@ const App: React.FC = () => {
       await new Promise(r => setTimeout(r, 600));
 
       const options = {
-        pixelRatio: 2.5, // Slightly higher for crispness
+        pixelRatio: 2.5,
         cacheBust: false,
         backgroundColor: '#ffffff',
         style: {
@@ -145,7 +145,6 @@ const App: React.FC = () => {
 
           <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full">
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
-            {/* <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50" /> */}
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -160,7 +159,6 @@ const App: React.FC = () => {
                 <div className="w-1 h-1 bg-neutral-200 rounded-full" />
                 <div>Strict 3:4 Aspect</div>
               </div>
-              {/* 导出尺寸选择 */}
               <div className="mt-6 w-full max-w-[320px]">
                 <div className="flex items-center justify-between mb-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
                   <span>导出尺寸</span>
@@ -180,7 +178,6 @@ const App: React.FC = () => {
                   </button>
                 </div>
               </div>
-              {/* 导出按钮放在预览下方 */}
               <div className="mt-6 w-full max-w-[320px]">
                 <button
                   onClick={exportImage}
@@ -224,5 +221,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
-
+export default Home;

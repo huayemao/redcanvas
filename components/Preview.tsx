@@ -1,3 +1,5 @@
+'use client';
+
 import React, { forwardRef } from "react";
 import { EditorState } from "../types";
 import { FONTS } from "../constants";
