@@ -122,7 +122,7 @@ export const MagazineTemplate = ({
 }: TemplateProps) => {
   if (isLandscape) {
     return (
-      <div className="relative w-full h-full bg-neutral-50 flex flex-col p-2 overflow-hidden">
+      <div className="relative w-full h-full bg-neutral-50 flex flex-col overflow-hidden">
         {showDeviceFrame ? (
           <div className="flex-1 w-full">
             <ImageWithFrame
@@ -133,7 +133,7 @@ export const MagazineTemplate = ({
             />
           </div>
         ) : (
-          <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
+          <div className="flex-1 overflow-hidden relative shadow-inner bg-neutral-200">
             <ImageWithFrame
               imageUrl={imageUrl}
               showDeviceFrame={showDeviceFrame}
@@ -161,7 +161,7 @@ export const MagazineTemplate = ({
   }
 
   return (
-    <div className="relative w-full h-full bg-neutral-50 flex flex-col p-6 overflow-hidden">
+    <div className="relative w-full h-full bg-neutral-50 flex flex-col overflow-hidden">
       {showDeviceFrame ? (
         <div className="flex-1 w-full">
           <ImageWithFrame
@@ -172,7 +172,7 @@ export const MagazineTemplate = ({
           />
         </div>
       ) : (
-        <div className="flex-1 rounded-[24px] overflow-hidden relative shadow-inner bg-neutral-200">
+        <div className="flex-1  overflow-hidden relative shadow-inner bg-neutral-200">
           <ImageWithFrame
             imageUrl={imageUrl}
             showDeviceFrame={showDeviceFrame}
