@@ -55,7 +55,7 @@ export default function RootLayout({
       </head>
       <body>
         <nav className="h-16 flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100 px-6 flex items-center justify-between z-50">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
             <div className="bg-red-500 p-1.5 rounded-lg shadow-lg shadow-red-200">
               <Sparkles className="text-white w-4 h-4" />
             </div>
@@ -63,7 +63,7 @@ export default function RootLayout({
               <span className="text-sm font-black text-neutral-900 tracking-tight leading-none">RedCanvas</span>
               <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mt-0.5">XHS Creative Suite</span>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-6">
             <Link 
