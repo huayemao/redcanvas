@@ -1,3 +1,6 @@
+import createMDX from '@next/mdx';
+
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -16,6 +19,27 @@ const nextConfig = {
       },
     ],
   },
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+  async rewrites() {
+    return [
+      {
+        source: '/about',
+        destination: '/blog/about',
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [
+      // Without options
+      'remark-gfm',
+    ],
+    rehypePlugins: [
+
+    ],
+  },
+});
+
+export default withMDX(nextConfig);
