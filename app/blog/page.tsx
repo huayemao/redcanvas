@@ -1,5 +1,19 @@
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
+import { APP_CONFIG } from '@/app/config';
+
+export function generateMetadata() {
+  return {
+    title: '博客 - RedCanvas',
+    description: 'RedCanvas 博客，分享小红书风格设计技巧、内容创作经验和产品更新动态。',
+    openGraph: {
+      title: 'RedCanvas 博客',
+      description: '分享小红书风格设计技巧、内容创作经验和产品更新动态。',
+      url: `${APP_CONFIG.baseUrl}/blog`,
+      type: 'website',
+    },
+  };
+}
 
 export default async function BlogPage() {
   const posts = await getAllPosts();

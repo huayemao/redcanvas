@@ -1,198 +1,50 @@
-'use client';
-
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Editor } from '../components/Editor';
-import { Preview } from '../components/Preview';
-import { EditorState } from '../types';
-import * as htmlToImage from 'html-to-image';
-import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react"
+import { APP_CONFIG } from './config';
+import HomeClient from './HomeClient';
 
-const INITIAL_STATE: EditorState = {
-  title: "一天一个\n强大的网站\n互联网时光机",
-  highlights: [
-    { id: '1', text: '强大', color: '#ff2442', style: 'underline' },
-    { id: '2', text: '网站', color: '#ff2442', style: 'text' },
-    { id: '3', text: '时光机', color: '#6bcbff', style: 'underline' }
-  ],
-  seriesNumber: "#01",
-  imageUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop",
-  imageAspectRatio: 1.5,
-  showDeviceFrame: true,
-  deviceType: 'browser',
-  templateId: 'classic',
-  fontFamily: 'kuaile',
-  accentColor: '#ff2442',
-  orientation: 'portrait',
-  exportSize: 'xiaohongshu',
+export const metadata = {
+  title: '爆款封面工厂 - 小红书风格封面生成器',
+  description: '一键生成小红书风格的高质量封面图片，支持多种模板和自定义样式，打造爆款内容必备工具。',
+  openGraph: {
+    title: '爆款封面工厂 - 小红书风格封面生成器',
+    description: APP_CONFIG.appDescription,
+    url: APP_CONFIG.baseUrl,
+    type: 'website',
+  },
 };
 
-const Home: React.FC = () => {
-  const [state, setState] = useState<EditorState>(INITIAL_STATE);
-  const [isExporting, setIsExporting] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      const items = event.clipboardData?.items;
-      if (!items) return;
-      for (const item of Array.from(items)) {
-        if (item.type.indexOf('image') !== -1) {
-          const blob = item.getAsFile();
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            img.onload = () => {
-              setState(prev => ({
-                ...prev,
-                imageUrl: url,
-                imageAspectRatio: img.naturalWidth / img.naturalHeight
-              }));
-            };
-            img.src = url;
-          }
-        }
-      }
-    };
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, []);
-
-  const exportImage = useCallback(async () => {
-    if (!previewRef.current) return;
-    setIsExporting(true);
-
-    try {
-      if ('fonts' in document) {
-        await document.fonts.ready;
-      }
-
-      await new Promise(r => setTimeout(r, 600));
-
-      const options = {
-        pixelRatio: 2.5,
-        cacheBust: false,
-        backgroundColor: '#ffffff',
-        style: {
-          transform: 'scale(1)',
-        },
-      };
-
-      const blob = await htmlToImage.toBlob(previewRef.current, options);
-
-      if (!blob) throw new Error("Canvas generation failed");
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `redcanvas-${Date.now()}.png`;
-      link.href = url;
-      link.click();
-
-      setTimeout(() => URL.revokeObjectURL(url), 500);
-    } catch (err) {
-      console.error('Export error:', err);
-      alert('导出由于浏览器安全限制或资源加载失败。请确保网络顺畅，并建议使用 Chrome 或 Safari 浏览器。');
-    } finally {
-      setIsExporting(false);
-    }
-  }, []);
-
+const Home = () => {
   return (
     <>
       <Analytics />
-      <main className="flex-1 flex flex-col lg:flex-row ">
-        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
-          <div className="max-w-md mx-auto space-y-6">
-            <header className="mb-4 hidden lg:block">
-              <h2 className="text-2xl font-black text-neutral-900 leading-tight">爆款封面工厂</h2>
-              <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase tracking-widest">Aesthetic Content Studio</p>
-            </header>
 
-            <Editor state={state} setState={setState} onDownload={() => { }} />
-
-            <div className="bg-white p-4 rounded-2xl border border-neutral-100 flex items-start gap-3">
-              <Info className="w-4 h-4 text-blue-500 mt-0.5" />
-              <p className="text-[10px] text-neutral-400 leading-relaxed font-medium">
-                推荐：开启<b>壳子模式</b>适配网站/APP 演示；使用<b>快乐体</b>提升亲和力。
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full flex flex-col items-center justify-center max-h-full"
-          >
-            <div className="w-full max-w-[380px] xl:max-w-[420px]">
-              <Preview state={state} ref={previewRef} />
-            </div>
-            <div className="mt-6 flex items-center justify-center gap-4 text-[9px] font-black text-neutral-300 uppercase tracking-[0.2em]">
-              <div>High Res Output</div>
-              <div className="w-1 h-1 bg-neutral-200 rounded-full" />
-              <div>Strict 3:4 Aspect</div>
-            </div>
-            <div className="mt-6 w-full max-w-[320px]">
-              <div className="flex items-center justify-between mb-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
-                <span>导出尺寸</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: 'xiaohongshu' }))}
-                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'portrait' && state.exportSize === 'xiaohongshu' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                >
-                  竖版 (3:4)
-                </button>
-                <button
-                  onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: 'bilibili' }))}
-                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'landscape' && state.exportSize === 'bilibili' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                >
-                  横版 (3:2)
-                </button>
-              </div>
-            </div>
-            <div className="mt-6 w-full max-w-[320px]">
-              <button
-                onClick={exportImage}
-                className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
-              >
-                <Download className="w-5 h-5" />
-                生成高清封面
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-
-      <AnimatePresence>
-        {isExporting && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-neutral-900/60 backdrop-blur-xl z-[100] flex items-center justify-center p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 max-w-xs w-full"
-            >
-              <div className="relative">
-                <div className="w-12 h-12 border-4 border-neutral-100 rounded-full" />
-                <Loader2 className="w-12 h-12 text-red-500 animate-spin absolute inset-0" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-black text-neutral-900">正在渲染高清封面</h3>
-                <p className="text-neutral-400 text-[9px] leading-relaxed mt-2 uppercase tracking-widest">Processing High Precision Layers</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: APP_CONFIG.appName,
+            description: APP_CONFIG.appDescription,
+            url: APP_CONFIG.baseUrl,
+            applicationCategory: 'ProductivityApplication',
+            operatingSystem: 'All',
+            offers: {
+              '@type': 'Offer',
+              price: '0',
+              priceCurrency: 'CNY',
+              availability: 'https://schema.org/InStock'
+            },
+            featuredImage: {
+              '@type': 'ImageObject',
+              url: `${APP_CONFIG.baseUrl}/og-image.png`,
+              width: 1200,
+              height: 630
+            }
+          })
+        }}
+      />
+      <HomeClient />
     </>
   );
 };

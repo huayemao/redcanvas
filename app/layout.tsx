@@ -2,11 +2,35 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import './globals.css';
+import { APP_CONFIG, SEO_CONFIG } from './config';
 
-export const metadata: Metadata = {
-  title: 'RedCanvas - 小红书风格封面生成器',
-  description: '一键生成小红书风格的高质量封面图片，支持多种模板和自定义样式。',
-};
+export function generateMetadata(): Metadata {
+  return {
+    title: {
+      default: APP_CONFIG.appName,
+      template: `%s - ${APP_CONFIG.appName}`,
+    },
+    description: APP_CONFIG.appDescription,
+    keywords: APP_CONFIG.keywords,
+    authors: [{ name: APP_CONFIG.author }],
+    creator: APP_CONFIG.author,
+    publisher: APP_CONFIG.publisher,
+    openGraph: SEO_CONFIG.openGraph,
+    twitter: SEO_CONFIG.twitter,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    viewport: 'width=device-width, initial-scale=1',
+  };
+}
 
 export default function RootLayout({
   children,
@@ -16,10 +40,18 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
+        <link rel="canonical" href={APP_CONFIG.baseUrl} />
         <link rel="dns-prefetch" href="https://fonts.loli.net" />
         <link rel="preconnect" href="https://fonts.loli.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://gstatic.loli.net" crossOrigin="anonymous" />
         <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700;900&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=ZCOOL+KuaiLe&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" crossOrigin="anonymous" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content={APP_CONFIG.themeColor} />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
         <nav className="h-16 flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100 px-6 flex items-center justify-between z-50">

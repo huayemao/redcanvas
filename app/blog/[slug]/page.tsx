@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
+import { APP_CONFIG } from '@/app/config';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -20,13 +21,20 @@ export async function generateMetadata({ params }: Props) {
 
   if (!post) {
     return {
-      title: '文章未找到',
+      title: '文章未找到 - RedCanvas',
+      description: 'RedCanvas 博客，分享小红书风格设计技巧、内容创作经验和产品更新动态。',
     };
   }
 
   return {
     title: `${post.title} - RedCanvas Blog`,
     description: post.description,
+    openGraph: {
+      title: `${post.title} - RedCanvas Blog`,
+      description: post.description,
+      url: `${APP_CONFIG.baseUrl}/blog/${slug}`,
+      type: 'article',
+    },
   };
 }
 
