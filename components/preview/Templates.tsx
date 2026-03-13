@@ -17,6 +17,16 @@ interface TemplateProps {
   isLandscape: boolean;
 }
 
+interface TemplatePropsSimple {
+  title: string;
+  highlights: Highlight[];
+  seriesNumber: string;
+  imageUrl: string | null;
+  imageAspectRatio: number;
+  fontClassName: string;
+  isLandscape?: boolean;
+}
+
 export const ClassicTemplate = ({
   title,
   highlights,
@@ -461,6 +471,58 @@ export const FloatingTemplate = ({
           />
         </div>
       )}
+    </div>
+  );
+};
+
+export const MockupTemplate = ({
+  title,
+  highlights,
+  seriesNumber,
+  imageUrl,
+  fontClassName,
+}: TemplatePropsSimple) => {
+  return (
+    <div className="relative w-full h-full">
+      {/* Background mockup image */}
+      <div className="absolute inset-0">
+        <img
+          src="/mockup_scene.webp"
+          alt="Mockup scene"
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Text content */}
+      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20  w-full px-8">
+        {seriesNumber && (
+          <span className="text-[12px] font-black tracking-[0.3em] mb-4 text-neutral-700 uppercase">
+            {seriesNumber}
+          </span>
+        )}
+        <TitleRenderer
+          title={title}
+          highlights={highlights}
+          sizeClass="text-white inline text-xl sm:text-2xl"
+          fontClassName={fontClassName}
+        />
+      </div>  
+      <div className="perspective-[1200px] w-[80.5%] mx-auto relative rounded-top rounded-lg top-[14.3%] left-[4.5%]">
+        <div className="w-full bg-white shadow-xl    overflow-hidden  rounded-t rounded-t-[5px]
+              transform 
+              aspect-[16/10.5]
+              -rotate-x-14
+              rotate-y-10
+              rotate-[0.89deg]
+              origin-center"
+              >
+          <img
+            src={imageUrl || '/mockup_screen.webp'}
+            alt="MacBook Screen"
+            className="w-full h-auto object-cover aspect-square"
+          />
+        </div>
+      </div>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import {
   MinimalTemplate,
   BoldTemplate,
   FloatingTemplate,
+  MockupTemplate,
 } from "./preview/Templates";
 
 interface PreviewProps {
@@ -102,6 +103,17 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
           imageAspectRatio={imageAspectRatio}
           fontClassName={fontConfig.className}
           isLandscape={isLandscape}
+        />
+      ),
+      mockup: (
+        <MockupTemplate
+          imageAspectRatio={imageAspectRatio}
+          isLandscape={isLandscape}
+          title={title}
+          highlights={highlights}
+          seriesNumber={seriesNumber}
+          imageUrl={imageUrl}
+          fontClassName={fontConfig.className}
         />
       ),
     };

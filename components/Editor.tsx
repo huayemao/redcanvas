@@ -207,7 +207,30 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
               <div>
                 <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">视觉模板</label>
                 <div className="grid grid-cols-1 gap-2">
-                  {TEMPLATES.map((tpl) => (
+                  {TEMPLATES.filter(tpl => tpl.id !== 'mockup').map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => setState(prev => ({ ...prev, templateId: tpl.id }))}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                        state.templateId === tpl.id 
+                          ? 'border-neutral-900 bg-neutral-900 text-white shadow-md' 
+                          : 'border-neutral-100 hover:border-neutral-200 bg-white'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: tpl.previewColor }} />
+                      <div className="text-left">
+                        <div className="text-xs font-black">{tpl.name}</div>
+                        <div className="text-[9px] opacity-60 font-medium">{tpl.description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="mt-8">
+                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">Realistic Scenes</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {TEMPLATES.filter(tpl => tpl.id === 'mockup').map((tpl) => (
                     <button
                       key={tpl.id}
                       onClick={() => setState(prev => ({ ...prev, templateId: tpl.id }))}

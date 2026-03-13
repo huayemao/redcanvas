@@ -31,6 +31,12 @@ export const TEMPLATES: TemplateConfig[] = [
     name: '现代重叠',
     description: '层级感分明，拒绝单调',
     previewColor: '#8b5cf6'
+  },
+  {
+    id: 'mockup',
+    name: '电脑场景',
+    description: '真实电脑场景，增强代入感',
+    previewColor: '#6b7280'
   }
 ];
 
