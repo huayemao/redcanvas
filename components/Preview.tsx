@@ -118,34 +118,9 @@ export const Preview = forwardRef<HTMLDivElement, PreviewProps>(
       ),
     };
 
-    const getAspectRatio = () => {
-      switch (exportSize) {
-        case "xiaohongshu":
-          return "3/4";
-        case "bilibili":
-        case "youtube":
-          return "3/2";
-        case "custom":
-          return orientation === "portrait" ? "3/4" : "3/2";
-        default:
-          return "3/4";
-      }
-    };
-
-    const getMaxWidth = () => {
-      if (
-        exportSize === "xiaohongshu" ||
-        (exportSize === "custom" && orientation === "portrait")
-      ) {
-        return "max-w-[400px]";
-      } else {
-        return "max-w-[600px]";
-      }
-    };
-
     return (
       <div
-        className={`relative w-full ${getMaxWidth()} aspect-[${getAspectRatio()}] rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 bg-white preview-shadow select-none mx-auto`}
+        className={`relative w-full ${exportSize === "xiaohongshu" || (exportSize === "custom" && orientation === "portrait") ? "max-w-[400px]" : "max-w-[600px]"} ${(exportSize === "bilibili" || exportSize === "youtube" || (exportSize === "custom" && orientation === "landscape")) ? "aspect-[3/2]" : "aspect-[3/4]"} rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 bg-white preview-shadow select-none mx-auto`}
         style={{ boxSizing: "border-box" }}
       >
         <div ref={ref} className="w-full h-full overflow-hidden">
