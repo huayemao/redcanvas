@@ -120,7 +120,7 @@ const HomeClient: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full">
+        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full min-h-[800px]">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
 
           <motion.div
