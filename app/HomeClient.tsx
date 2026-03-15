@@ -126,67 +126,64 @@ const HomeClient: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full flex flex-col items-center justify-center max-h-full"
+            className="w-full flex flex-col items-center justify-center xl:flex-row gap-8 xl:gap-16 xl:items-center max-h-full"
           >
-            <div className="w-full max-w-[380px] xl:max-w-[420px]">
+            <div className="w-full max-w-[380px] xl:max-w-[420px] xl:flex-1 xl:max-w-[380px]">
               <Preview state={state} ref={previewRef} />
             </div>
-            <div className="mt-6 flex items-center justify-center gap-4 text-[9px] font-black text-neutral-300 uppercase tracking-[0.2em]">
-              <div>High Res Output</div>
-              <div className="w-1 h-1 bg-neutral-200 rounded-full" />
-              <div>Strict 3:4 Aspect</div>
-            </div>
-            <div className="mt-6 w-full max-w-[320px]">
-              <div className="flex items-center justify-between mb-2 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
-                <span>导出尺寸</span>
+            <div className="xl:flex-1 flex flex-col items-center gap-8 max-w-md">
+              <div className="w-full max-w-[320px]">
+                <div className="flex items-center justify-between mb-3 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
+                  <span>导出尺寸</span>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: 'xiaohongshu' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.orientation === 'portrait' && state.exportSize === 'xiaohongshu' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择竖版小红书尺寸"
+                  >
+                    竖版 (3:4)
+                  </button>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: 'bilibili' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.orientation === 'landscape' && state.exportSize === 'bilibili' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择横版哔哩哔哩尺寸"
+                  >
+                    横版 (3:2)
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="w-full max-w-[320px]">
                 <button
-                  onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: 'xiaohongshu' }))}
-                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'portrait' && state.exportSize === 'xiaohongshu' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                  aria-label="选择竖版小红书尺寸"
+                  onClick={exportImage}
+                  className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
+                  aria-label="生成并下载高清封面"
                 >
-                  竖版 (3:4)
-                </button>
-                <button
-                  onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: 'bilibili' }))}
-                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${state.orientation === 'landscape' && state.exportSize === 'bilibili' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                  aria-label="选择横版哔哩哔哩尺寸"
-                >
-                  横版 (3:2)
+                  <Download className="w-5 h-5" />
+                  生成高清封面
                 </button>
               </div>
-            </div>
-            <div className="mt-6 w-full max-w-[320px]">
-              <button
-                onClick={exportImage}
-                className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
-                aria-label="生成并下载高清封面"
-              >
-                <Download className="w-5 h-5" />
-                生成高清封面
-              </button>
-            </div>
-            <div className="mt-8 w-full max-w-[320px] text-center">
-              <h2 className="text-xl font-black text-neutral-900 mb-2">为什么选择 RedCanvas？</h2>
-              <ul className="text-sm text-neutral-600 space-y-2">
-                <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-red-500" />
-                  <span>专业小红书风格模板</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-red-500" />
-                  <span>高清无水印导出</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-red-500" />
-                  <span>支持多种社交平台尺寸</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-red-500" />
-                  <span>免费使用，无广告</span>
-                </li>
-              </ul>
+              <div className="w-full max-w-[320px] text-center">
+                <h2 className="text-xl font-black text-neutral-900 mb-4">为什么选择 RedCanvas？</h2>
+                <ul className="text-sm text-neutral-600 space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>专业小红书风格模板</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>高清无水印导出</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>支持多种社交平台尺寸</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>免费使用，无广告</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </motion.div>
         </div>
