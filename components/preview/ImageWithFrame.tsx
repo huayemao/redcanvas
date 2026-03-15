@@ -61,7 +61,7 @@ export const ImageWithFrame = ({
   if (isLandscape) {
     return (
       <div className="relative w-full h-full flex items-center justify-center">
-        <div className="relative w-full h-full flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
+        <div className="relative w-full h-full flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded  rotate-1">
           <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
             <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
             <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
@@ -83,7 +83,7 @@ export const ImageWithFrame = ({
   } else {
     return (
       <div className="relative w-full h-full flex items-center justify-center">
-        <div className="relative w-[75%] aspect-[9/19] flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded border rotate-1">
+        <div className="relative w-[75%] aspect-[9/19] flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] rounded  rotate-1">
           <div className="h-6 flex items-center gap-1.5 px-3 bg-[#e5e7eb] border-b border-neutral-300">
             <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
             <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />

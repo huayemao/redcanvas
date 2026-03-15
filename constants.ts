@@ -44,7 +44,7 @@ export const PRESET_COLORS = [
   '#ff2442', // XHS Red
   '#ffd93d', // Yellow
   '#6bcbff', // Light Blue
-  '#b4ff9f', // Light Green
+  '#ff601a', // Light Green
   '#ff87b2', // Pink
   '#ffffff', // White
   '#000000', // Black

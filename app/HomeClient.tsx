@@ -11,14 +11,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from './config';
 
 const INITIAL_STATE: EditorState = {
-  title: "一天一个\n强大的网站\n互联网时光机",
+  title: "我，花野猫\n喜欢写代码\n想开发小工具找我",
   highlights: [
-    { id: '1', text: '强大', color: '#ff2442', style: 'underline' },
-    { id: '2', text: '网站', color: '#ff2442', style: 'text' },
-    { id: '3', text: '时光机', color: '#6bcbff', style: 'underline' }
+    { id: '1', text: '花野猫', color: '#ff2442', style: 'underline' },
+    { id: '2', text: '写代码', color: '#ff601a', style: 'text' },
+    { id: '3', text: '开发小工具', color: '#6bcbff', style: 'underline' }
   ],
   seriesNumber: "#01",
-  imageUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop",
+  imageUrl: "/screenshot.png",
   imageAspectRatio: 1.5,
   showDeviceFrame: true,
   deviceType: 'browser',
@@ -102,8 +102,8 @@ const HomeClient: React.FC = () => {
   return (
     <>
       <main className="flex-1 flex flex-col lg:flex-row ">
-        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
-          <div className="max-w-md mx-auto space-y-6">
+        <div className="w-full lg:w-[440px] xl:w-[520px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
+          <div className="max-w-md lg:max-w-lg xl:max-w-xl mx-auto space-y-6">
             <header className="mb-4 hidden lg:block">
               <h1 className="text-2xl font-black text-neutral-900 leading-tight">爆款封面工厂</h1>
               <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase tracking-widest">Aesthetic Content Studio</p>
