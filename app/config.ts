@@ -16,7 +16,7 @@ export const SEO_CONFIG = {
     type: 'website',
     images: [
       {
-        url: `${APP_CONFIG.baseUrl}/og-image.png`,
+        url: `${APP_CONFIG.baseUrl}/screenshot.png`,
         width: 1200,
         height: 630,
         alt: 'RedCanvas - 小红书风格封面生成器',
@@ -27,6 +27,6 @@ export const SEO_CONFIG = {
     card: 'summary_large_image',
     title: 'RedCanvas - 小红书风格封面生成器',
     description: APP_CONFIG.appDescription,
-    images: [`${APP_CONFIG.baseUrl}/og-image.png`],
+    images: [`${APP_CONFIG.baseUrl}/screenshot.png`],
   },
 };
