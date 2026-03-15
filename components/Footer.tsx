@@ -46,13 +46,13 @@ const Footer: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             {/* 品牌信息 */}
-            <div className="col-span-2 md:col-span-1 border-neutral-100">
+            <div className="col-span-2 md:col-span-1 border-neutral-100 md:mr-8">
               <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
                 <div className="flex flex-col items-center gap-2">
                   <img
                     src="/wx_reward_qrcode.png"
                     alt="微信赞赏码"
-                    className="w-32 h-32 rounded-xl shadow-lg border border-neutral-100 hover:shadow-xl transition-shadow"
+                    className="w-64 h-64 rounded-xl shadow-lg border border-neutral-100 hover:shadow-xl transition-shadow"
                   />
                   <span className="text-xs text-neutral-400">
                     微信扫一扫，支持创作者
