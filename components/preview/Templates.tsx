@@ -494,7 +494,7 @@ export const MockupTemplate = ({
       </div>
 
       {/* Text content */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20  w-full px-8">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20  w-full px-8">
         {seriesNumber && (
           <span className="text-[12px] font-black tracking-[0.3em] mb-4 text-neutral-700 uppercase">
             {seriesNumber}
@@ -503,7 +503,7 @@ export const MockupTemplate = ({
         <TitleRenderer
           title={title}
           highlights={highlights}
-          sizeClass="text-white inline text-xl sm:text-2xl"
+          sizeClass="text-white inline text-2xl sm:text-3xl lg:text-4xl"
           fontClassName={fontClassName}
         />
       </div>  
