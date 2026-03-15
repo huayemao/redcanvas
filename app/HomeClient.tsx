@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Editor } from '../components/Editor';
 import { Preview } from '../components/Preview';
+import Footer from '../components/Footer';
 import { EditorState } from '../types';
 import * as htmlToImage from 'html-to-image';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
@@ -217,6 +218,8 @@ const HomeClient: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Footer />
     </>
   );
 };
