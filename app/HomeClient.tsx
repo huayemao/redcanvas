@@ -101,7 +101,7 @@ const HomeClient: React.FC = () => {
 
   return (
     <>
-      <main className="flex-1 flex flex-col lg:flex-row ">
+      <main className="flex-1 flex flex-col-reverse lg:flex-row ">
         <div className="w-full lg:w-[440px] xl:w-[520px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
           <div className="max-w-md lg:max-w-lg xl:max-w-xl mx-auto space-y-6">
             <header className="mb-4 hidden lg:block">
@@ -131,7 +131,7 @@ const HomeClient: React.FC = () => {
             <div className="w-full max-w-[380px] xl:max-w-[420px] xl:flex-1 xl:max-w-[380px]">
               <Preview state={state} ref={previewRef} />
             </div>
-            <div className="xl:flex-1 flex flex-col items-center gap-8 max-w-md">
+            <div className="xl:flex-1 flex flex-col items-center gap-8 w-sm max-w-md">
               <div className="w-full max-w-[320px]">
                 <div className="flex items-center justify-between mb-3 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
                   <span>导出尺寸</span>
@@ -163,31 +163,33 @@ const HomeClient: React.FC = () => {
                   生成高清封面
                 </button>
               </div>
-              <div className="w-full max-w-[320px] text-center">
-                <h2 className="text-xl font-black text-neutral-900 mb-4">为什么选择 RedCanvas？</h2>
-                <ul className="text-sm text-neutral-600 space-y-3">
-                  <li className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <span>专业小红书风格模板</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <span>高清无水印导出</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <span>支持多种社交平台尺寸</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <span>免费使用，无广告</span>
-                  </li>
-                </ul>
-              </div>
+
             </div>
           </motion.div>
         </div>
+
       </main>
+      <section className="mx-auto max-w-[320px] text-center my-8">
+        <h2 className="text-xl font-black text-neutral-900 mb-4">为什么选择 RedCanvas？</h2>
+        <ul className="text-sm text-neutral-600 space-y-3">
+          <li className="flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>专业小红书风格模板</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>高清无水印导出</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>支持多种社交平台尺寸</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>免费使用，无广告</span>
+          </li>
+        </ul>
+      </section>
 
       <AnimatePresence>
         {isExporting && (

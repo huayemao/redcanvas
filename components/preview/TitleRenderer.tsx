@@ -61,10 +61,10 @@ export const TitleRenderer = ({
   });
 
   return (
-    <h1
+    <h2
       className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontClassName}`}
     >
       {content}
-    </h1>
+    </h2>
   );
 };
