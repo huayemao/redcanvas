@@ -72,6 +72,12 @@ export default function RootLayout({
               主页
             </Link>
             <Link 
+              href="/store" 
+              className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
+            >
+              模板商店
+            </Link>
+            <Link 
               href="/blog" 
               className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
             >

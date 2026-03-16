@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Editor } from '../components/Editor';
 import { Preview } from '../components/Preview';
 import Footer from '../components/Footer';
-import { EditorState } from '../types';
+import { TemplateCarousel } from '../components/TemplateCarousel';
+import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
 import * as htmlToImage from 'html-to-image';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,21 @@ const HomeClient: React.FC = () => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Parse URL parameters to set template state
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateId = urlParams.get('template') as TemplateId;
+    const orientation = urlParams.get('orientation') as Orientation;
+    const exportSize = urlParams.get('exportSize') as ExportSize;
+
+    if (templateId || orientation || exportSize) {
+      setState(prev => ({
+        ...prev,
+        ...(templateId && { templateId }),
+        ...(orientation && { orientation }),
+        ...(exportSize && { exportSize })
+      }));
+    }
+
     const handlePaste = (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
       if (!items) return;
@@ -59,6 +75,15 @@ const HomeClient: React.FC = () => {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, []);
+
+  const handleSelectTemplate = (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => {
+    setState(prev => ({
+      ...prev,
+      templateId,
+      orientation,
+      exportSize
+    }));
+  };
 
   const exportImage = useCallback(async () => {
     if (!previewRef.current) return;
@@ -190,6 +215,7 @@ const HomeClient: React.FC = () => {
           </li>
         </ul>
       </section>
+      <TemplateCarousel onSelectTemplate={handleSelectTemplate} />
 
       <AnimatePresence>
         {isExporting && (
