@@ -1,15 +1,12 @@
 import React, { useCallback } from 'react';
 import { THEMES } from '../constants';
+import { usePrettyScoreStore } from '../store';
 
 interface UseCanvasProps {
   rawCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   processedCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   finalCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   lastProcessedColor: React.RefObject<string | null>;
-  bgType: 'preset' | 'custom' | 'theme';
-  bgPresetUrl: string;
-  bgCustomUrl: string;
-  bgThemeId: string;
   debouncedCustomBgColor: string;
   debouncedScoreColor: string;
   debouncedDecoration: string;
@@ -28,10 +25,6 @@ export default function useCanvas({
   processedCanvasRef, 
   finalCanvasRef, 
   lastProcessedColor, 
-  bgType, 
-  bgPresetUrl, 
-  bgCustomUrl, 
-  bgThemeId, 
   debouncedCustomBgColor, 
   debouncedScoreColor, 
   debouncedDecoration, 
@@ -44,6 +37,7 @@ export default function useCanvas({
   processScoreCanvas,
   hexToRgb
 }: UseCanvasProps) {
+  const { bgType, bgPresetUrl, bgCustomUrl, bgThemeId } = usePrettyScoreStore();
   const drawThemeElements = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, elementsType: string) => {
     const seededRandom = (seed: number) => {
       const x = Math.sin(seed) * 10000;

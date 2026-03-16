@@ -2,54 +2,17 @@ import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, SlidersHorizontal, X, FileAudio } from 'lucide-react';
 import ControlsPanel from './ControlsPanel';
+import { usePrettyScoreStore } from '../store';
+import useDebounce from '../hooks/useDebounce';
 
 interface EditorProps {
   finalCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   numPages: number;
   currentPage: number;
   handlePageChange: (delta: number) => void;
-  isControlsOpen: boolean;
-  setIsControlsOpen: (open: boolean) => void;
-  setAppState: (state: 'idle' | 'editor') => void;
-  // ControlsPanel 所需的所有 props
-  bgType: 'preset' | 'custom' | 'theme';
-  bgPresetUrl: string;
-  setBgPresetUrl: (url: string) => void;
-  bgCustomUrl: string;
-  setBgCustomUrl: (url: string) => void;
-  bgThemeId: string;
-  setBgThemeId: (id: string) => void;
-  customBgColor: string;
-  setCustomBgColor: (color: string) => void;
-  scoreColor: string;
-  setScoreColor: (color: string) => void;
-  decoration: string;
-  setDecoration: (decoration: string) => void;
-  blendMode: string;
-  setBlendMode: (mode: string) => void;
-  vignette: number;
-  setVignette: (value: number) => void;
-  warmth: number;
-  setWarmth: (value: number) => void;
-  overlayOpacity: number;
-  setOverlayOpacity: (value: number) => void;
-  overlayDirection: 'solid' | 'top-bottom' | 'bottom-top' | 'radial';
-  setOverlayDirection: (direction: 'solid' | 'top-bottom' | 'bottom-top' | 'radial') => void;
-  overlayColor: string;
-  setOverlayColor: (color: string) => void;
   exportImage: () => void;
   exportPdf: () => void;
-  debouncedCustomBgColor: string;
-  debouncedScoreColor: string;
-  debouncedDecoration: string;
-  debouncedBlendMode: string;
-  debouncedVignette: number;
-  debouncedWarmth: number;
-  debouncedOverlayOpacity: number;
-  debouncedOverlayDirection: 'solid' | 'top-bottom' | 'bottom-top' | 'radial';
-  debouncedOverlayColor: string;
   handleCustomBgUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  applyTheme: (theme: any) => void;
 }
 
 export default function Editor({ 
@@ -57,49 +20,16 @@ export default function Editor({
   numPages, 
   currentPage, 
   handlePageChange, 
-  isControlsOpen, 
-  setIsControlsOpen, 
-  setAppState,
-  // ControlsPanel 所需的 props
-  bgType,
-  bgPresetUrl,
-  setBgPresetUrl,
-  bgCustomUrl,
-  setBgCustomUrl,
-  bgThemeId,
-  setBgThemeId,
-  customBgColor,
-  setCustomBgColor,
-  scoreColor,
-  setScoreColor,
-  decoration,
-  setDecoration,
-  blendMode,
-  setBlendMode,
-  vignette,
-  setVignette,
-  warmth,
-  setWarmth,
-  overlayOpacity,
-  setOverlayOpacity,
-  overlayDirection,
-  setOverlayDirection,
-  overlayColor,
-  setOverlayColor,
-  exportImage,
-  exportPdf,
-  debouncedCustomBgColor,
-  debouncedScoreColor,
-  debouncedDecoration,
-  debouncedBlendMode,
-  debouncedVignette,
-  debouncedWarmth,
-  debouncedOverlayOpacity,
-  debouncedOverlayDirection,
-  debouncedOverlayColor,
-  handleCustomBgUpload,
-  applyTheme
+  exportImage, 
+  exportPdf, 
+  handleCustomBgUpload
 }: EditorProps) {
+  const {
+    isControlsOpen,
+    setIsControlsOpen,
+  } = usePrettyScoreStore();
+
+
   return (
     <motion.div
       key="editor"
@@ -138,46 +68,9 @@ export default function Editor({
       <AnimatePresence>
         {isControlsOpen && (
           <ControlsPanel
-            bgType={bgType}
-            bgPresetUrl={bgPresetUrl}
-            setBgPresetUrl={setBgPresetUrl}
-            bgCustomUrl={bgCustomUrl}
-            setBgCustomUrl={setBgCustomUrl}
-            bgThemeId={bgThemeId}
-            setBgThemeId={setBgThemeId}
-            customBgColor={customBgColor}
-            setCustomBgColor={setCustomBgColor}
-            scoreColor={scoreColor}
-            setScoreColor={setScoreColor}
-            decoration={decoration}
-            setDecoration={setDecoration}
-            blendMode={blendMode}
-            setBlendMode={setBlendMode}
-            vignette={vignette}
-            setVignette={setVignette}
-            warmth={warmth}
-            setWarmth={setWarmth}
-            overlayOpacity={overlayOpacity}
-            setOverlayOpacity={setOverlayOpacity}
-            overlayDirection={overlayDirection}
-            setOverlayDirection={setOverlayDirection}
-            overlayColor={overlayColor}
-            setOverlayColor={setOverlayColor}
             exportImage={exportImage}
             exportPdf={exportPdf}
-            debouncedCustomBgColor={debouncedCustomBgColor}
-            debouncedScoreColor={debouncedScoreColor}
-            debouncedDecoration={debouncedDecoration}
-            debouncedBlendMode={debouncedBlendMode}
-            debouncedVignette={debouncedVignette}
-            debouncedWarmth={debouncedWarmth}
-            debouncedOverlayOpacity={debouncedOverlayOpacity}
-            debouncedOverlayDirection={debouncedOverlayDirection}
-            debouncedOverlayColor={debouncedOverlayColor}
             handleCustomBgUpload={handleCustomBgUpload}
-            applyTheme={applyTheme}
-            setAppState={setAppState}
-            setIsControlsOpen={setIsControlsOpen}
           />
         )}
       </AnimatePresence>

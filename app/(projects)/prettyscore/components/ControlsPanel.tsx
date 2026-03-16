@@ -2,92 +2,52 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FileAudio, X, Palette, ImageIcon, Layers, Droplet, Sparkles, Sun, ImageIcon as Image, Download } from 'lucide-react';
 import { THEMES, PAPER_PRESETS, PRESET_COLORS, DECORATIONS } from '../constants';
+import { usePrettyScoreStore } from '../store';
+import useDebounce from '../hooks/useDebounce';
 
 interface ControlsPanelProps {
-  bgType: 'preset' | 'custom' | 'theme';
-  bgPresetUrl: string;
-  setBgPresetUrl: (url: string) => void;
-  bgCustomUrl: string;
-  setBgCustomUrl: (url: string) => void;
-  bgThemeId: string;
-  setBgThemeId: (id: string) => void;
-  customBgColor: string;
-  setCustomBgColor: (color: string) => void;
-  scoreColor: string;
-  setScoreColor: (color: string) => void;
-  decoration: string;
-  setDecoration: (decoration: string) => void;
-  blendMode: string;
-  setBlendMode: (mode: string) => void;
-  vignette: number;
-  setVignette: (value: number) => void;
-  warmth: number;
-  setWarmth: (value: number) => void;
-  overlayOpacity: number;
-  setOverlayOpacity: (value: number) => void;
-  overlayDirection: 'solid' | 'top-bottom' | 'bottom-top' | 'radial';
-  setOverlayDirection: (direction: 'solid' | 'top-bottom' | 'bottom-top' | 'radial') => void;
-  overlayColor: string;
-  setOverlayColor: (color: string) => void;
   exportImage: () => void;
   exportPdf: () => void;
-  debouncedCustomBgColor: string;
-  debouncedScoreColor: string;
-  debouncedDecoration: string;
-  debouncedBlendMode: string;
-  debouncedVignette: number;
-  debouncedWarmth: number;
-  debouncedOverlayOpacity: number;
-  debouncedOverlayDirection: 'solid' | 'top-bottom' | 'bottom-top' | 'radial';
-  debouncedOverlayColor: string;
   handleCustomBgUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  applyTheme: (theme: any) => void;
-  setAppState: (state: 'idle' | 'editor') => void;
-  setIsControlsOpen: (open: boolean) => void;
 }
 
 export default function ControlsPanel({ 
-  bgType,
-  bgPresetUrl,
-  setBgPresetUrl,
-  bgCustomUrl,
-  setBgCustomUrl,
-  bgThemeId,
-  setBgThemeId,
-  customBgColor,
-  setCustomBgColor,
-  scoreColor,
-  setScoreColor,
-  decoration,
-  setDecoration,
-  blendMode,
-  setBlendMode,
-  vignette,
-  setVignette,
-  warmth,
-  setWarmth,
-  overlayOpacity,
-  setOverlayOpacity,
-  overlayDirection,
-  setOverlayDirection,
-  overlayColor,
-  setOverlayColor,
-  exportImage,
-  exportPdf,
-  debouncedCustomBgColor,
-  debouncedScoreColor,
-  debouncedDecoration,
-  debouncedBlendMode,
-  debouncedVignette,
-  debouncedWarmth,
-  debouncedOverlayOpacity,
-  debouncedOverlayDirection,
-  debouncedOverlayColor,
-  handleCustomBgUpload,
-  applyTheme,
-  setAppState,
-  setIsControlsOpen
+  exportImage, 
+  exportPdf, 
+  handleCustomBgUpload
 }: ControlsPanelProps) {
+  const {
+    bgType,
+    setBgType,
+    bgPresetUrl,
+    setBgPresetUrl,
+    bgCustomUrl,
+    setBgCustomUrl,
+    bgThemeId,
+    setBgThemeId,
+    customBgColor,
+    setCustomBgColor,
+    scoreColor,
+    setScoreColor,
+    decoration,
+    setDecoration,
+    blendMode,
+    setBlendMode,
+    vignette,
+    setVignette,
+    warmth,
+    setWarmth,
+    overlayOpacity,
+    setOverlayOpacity,
+    overlayDirection,
+    setOverlayDirection,
+    overlayColor,
+    setOverlayColor,
+    applyTheme,
+    setAppState,
+    setIsControlsOpen
+  } = usePrettyScoreStore();
+
   return (
     <motion.aside
       initial={{ opacity: 0, x: 400 }}
@@ -124,7 +84,7 @@ export default function ControlsPanel({
             {THEMES.map((theme) => (
               <button
                 key={theme.id}
-                onClick={() => applyTheme(theme)}
+                onClick={() => applyTheme(theme.id)}
                 className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 ${bgType === 'theme' && bgThemeId === theme.id ? 'border-[var(--color-accent)] shadow-md scale-105' : 'border-transparent hover:border-[var(--color-ink)]/20'}`}
                 style={{ backgroundColor: theme.bgColor }}
               >
@@ -145,7 +105,7 @@ export default function ControlsPanel({
             {PAPER_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                onClick={() => { setBgPresetUrl(preset.url); }} // 注意：bgType 的设置需要在父组件中处理
+                onClick={() => { setBgPresetUrl(preset.url); setBgType('preset'); }}
                 className={`relative aspect-[4/3] overflow-hidden rounded-xl group border-2 transition-all duration-300 ${bgPresetUrl === preset.url && bgType === 'preset' ? 'border-[var(--color-accent)] shadow-md' : 'border-transparent hover:border-[var(--color-ink)]/20'}`}
               >
                 <img src={preset.url} alt={preset.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" crossOrigin="anonymous" />
