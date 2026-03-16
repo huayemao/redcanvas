@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import { APP_CONFIG } from '@/app/config';
 
 interface BlogLayoutProps {
   children: ReactNode;
 }
 
+const blogDescription = 'RedCanvas 博客，分享RedCanvas产品更新动态和小红书封面设计技巧 。';
+
 export function generateMetadata() {
   return {
-    title: '博客 - RedCanvas',
-    description: 'RedCanvas 博客，分享小红书风格设计技巧、内容创作经验和产品更新动态。',
+    title: '小红书爆款封面制作工具 RedCanvas 产品博客',
+    description: blogDescription,
     openGraph: {
       title: 'RedCanvas 博客',
-      description: APP_CONFIG.appDescription,
+      description: blogDescription,
       url: `${APP_CONFIG.baseUrl}/blog`,
       type: 'website',
     },

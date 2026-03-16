@@ -7,14 +7,13 @@ import { APP_CONFIG, SEO_CONFIG } from './config';
 export function generateMetadata(): Metadata {
   return {
     title: {
-      default: APP_CONFIG.appName,
+      default: APP_CONFIG.siteName,
       template: `%s - ${APP_CONFIG.appName}`,
     },
     description: APP_CONFIG.appDescription,
     keywords: APP_CONFIG.keywords,
     authors: [{ name: APP_CONFIG.author }],
     creator: APP_CONFIG.author,
-    publisher: APP_CONFIG.publisher,
     openGraph: SEO_CONFIG.openGraph,
     twitter: SEO_CONFIG.twitter,
     robots: {
