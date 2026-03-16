@@ -23,8 +23,23 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/about',
-        destination: '/blog/about',
+        source: '/',
+        destination: '/redcanvas',
+      },
+      {
+        // 使用 source 和 destination 而不是复杂正则
+        source: '/prettyscore/:path*',
+        destination: '/prettyscore/:path*'
+      },
+      {
+        // 使用 source 和 destination 而不是复杂正则
+        source: '/:path*',
+        destination: '/redcanvas/:path*'
+      },
+
+      {
+        source: '/redcanvas/about',
+        destination: '/redcanvas/blog/about',
       },
     ];
   },

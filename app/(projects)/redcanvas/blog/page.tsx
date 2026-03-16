@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllPosts } from '@/lib/blog';
+import { getAllPosts } from '@/app/(projects)/redcanvas/lib/blog';
 
 
 export default async function BlogPage() {

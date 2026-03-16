@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { APP_CONFIG } from '@/app/config';
+import { APP_CONFIG } from '@/app/(projects)/redcanvas/config';
 
 interface BlogLayoutProps {
   children: ReactNode;

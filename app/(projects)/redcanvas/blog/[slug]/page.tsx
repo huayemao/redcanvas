@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAllPosts } from '@/lib/blog';
-import { APP_CONFIG } from '@/app/config';
+import { getAllPosts } from '@/app/(projects)/redcanvas/lib/blog';
+import { APP_CONFIG } from '@/app/(projects)/redcanvas/config';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -43,7 +43,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   let PostComponent;
   try {
-    PostComponent = await import(`@/content/blog/${slug}.mdx`);
+    PostComponent = await import(`../../content/blog/${slug}.mdx`);
     console.log(PostComponent)
   } catch (error) {
     notFound();

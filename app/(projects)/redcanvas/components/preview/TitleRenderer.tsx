@@ -1,7 +1,7 @@
 'use client';
 
 import React from "react";
-import { Highlight } from "@/types";
+import { Highlight } from "@/app/(projects)/redcanvas/types";
 
 interface TitleRendererProps {
   title: string;

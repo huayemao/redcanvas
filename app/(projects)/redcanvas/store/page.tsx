@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TemplateStore } from '../../components/TemplateStore';
-import { EditorState, TemplateId, Orientation, ExportSize } from '../../types';
+import { TemplateStore } from '../components/TemplateStore';
+import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
 import { redirect } from 'next/navigation';
 
 export default function StorePage() {

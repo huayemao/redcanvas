@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Editor } from '../components/Editor';
-import { Preview } from '../components/Preview';
-import Footer from '../components/Footer';
-import { TemplateCarousel } from '../components/TemplateCarousel';
-import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
+import { Editor } from './components/Editor';
+import { Preview } from './components/Preview';
+import Footer from './components/Footer';
+import { TemplateCarousel } from './components/TemplateCarousel';
+import { EditorState, TemplateId, Orientation, ExportSize } from './types';
 import * as htmlToImage from 'html-to-image';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

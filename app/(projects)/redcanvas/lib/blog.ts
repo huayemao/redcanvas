@@ -16,8 +16,9 @@ function formatDate(date: Date | string): string {
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {
-  const blogDirectory = path.join(process.cwd(), 'content/blog');
+  const blogDirectory = path.join(process.cwd(), 'app/(projects)/redcanvas/content/blog');
   const files = glob.sync('*.mdx', { cwd: blogDirectory });
+  console.log(files);
   
   const posts = await Promise.all(
     files.map(async (fileName) => {
