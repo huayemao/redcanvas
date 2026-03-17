@@ -5,7 +5,7 @@ import { TEMPLATES, FONTS } from '../constants';
 import { TemplateId, Orientation, ExportSize, EditorState } from '../types';
 import { motion } from 'framer-motion';
 import { Filter, ChevronDown, ExternalLink, Grid, List } from 'lucide-react';
-import { Preview } from './Preview';
+import { CoverRenderer } from './CoverRenderer';
 
 interface TemplateStoreProps {
     onSelectTemplate: (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => void;
@@ -137,7 +137,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                         >
                             <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-neutral-100 hover:shadow-2xl hover:shadow-red-50/50 transition-all duration-300">
                                 <div className="relative bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden p-4">
-                                    <Preview
+                                    <CoverRenderer
                                         state={{
                                             ...SAMPLE_STATE,
                                             templateId: template.id,

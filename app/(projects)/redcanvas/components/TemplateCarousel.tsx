@@ -5,7 +5,7 @@ import { TEMPLATES } from '../constants';
 import { TemplateId, Orientation, ExportSize, EditorState } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { Preview } from './Preview';
+import { CoverRenderer } from './CoverRenderer';
 
 interface TemplateCarouselProps {
   onSelectTemplate: (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => void;
@@ -74,7 +74,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
             
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
               <div className="flex-1 flex items-center justify-center">
-                <Preview 
+                <CoverRenderer 
                   state={{
                     ...SAMPLE_STATE,
                     templateId: TEMPLATES[currentIndex].id,

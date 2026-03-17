@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Editor } from './components/Editor';
-import { Preview } from './components/Preview';
+import { CoverRenderer } from './components/CoverRenderer';
 import Footer from './components/Footer';
 import { TemplateCarousel } from './components/TemplateCarousel';
 import { EditorState, TemplateId, Orientation, ExportSize } from './types';
@@ -154,7 +154,9 @@ const HomeClient: React.FC = () => {
             className="w-full flex flex-col items-center justify-center xl:flex-row gap-8 xl:gap-16 xl:items-center max-h-full"
           >
             <div className="w-full max-w-[380px] xl:max-w-[420px] xl:flex-1 xl:max-w-[380px]">
-              <Preview state={state} ref={previewRef} />
+              <div className="rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 p-0" style={{ boxSizing: "border-box" }}>
+                <CoverRenderer state={state} ref={previewRef} />
+              </div>
             </div>
             <div className="xl:flex-1 flex flex-col items-center gap-8 w-sm max-w-md">
               <div className="w-full max-w-[320px]">
