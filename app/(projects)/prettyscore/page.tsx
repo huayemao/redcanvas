@@ -13,7 +13,7 @@ import IntroScreen from './components/IntroScreen';
 import Editor from './components/Editor';
 import useCanvas from './components/Canvas';
 import { usePrettyScoreStore } from './store';
-import { PAPER_PRESETS, PRESET_COLORS, THEMES, DECORATIONS } from './constants';
+import { Music } from 'lucide-react';
 
 
 
@@ -21,7 +21,6 @@ export default function App() {
   const {
     appState,
     setAppState,
-    file,
     setFile,
     pdfDoc,
     setPdfDoc,
@@ -29,37 +28,19 @@ export default function App() {
     setNumPages,
     currentPage,
     setCurrentPage,
-    bgType,
     setBgType,
-    bgPresetUrl,
-    setBgPresetUrl,
-    bgCustomUrl,
     setBgCustomUrl,
-    bgThemeId,
-    setBgThemeId,
     customBgColor,
-    setCustomBgColor,
     scoreColor,
-    setScoreColor,
     decoration,
-    setDecoration,
     blendMode,
-    setBlendMode,
     vignette,
-    setVignette,
     warmth,
-    setWarmth,
     overlayOpacity,
-    setOverlayOpacity,
     overlayDirection,
-    setOverlayDirection,
     overlayColor,
-    setOverlayColor,
     isProcessing,
     setIsProcessing,
-    isControlsOpen,
-    setIsControlsOpen,
-    applyTheme
   } = usePrettyScoreStore();
 
   const debouncedCustomBgColor = useDebounce(customBgColor, 150);
@@ -183,7 +164,7 @@ export default function App() {
   const exportImage = () => {
     if (!finalCanvasRef.current) return;
     const link = document.createElement('a');
-    link.download = `symphonia-score-${currentPage}.png`;
+    link.download = `prettyscore-score-${currentPage}.png`;
     link.href = finalCanvasRef.current.toDataURL('image/png');
     link.click();
   };
@@ -198,11 +179,22 @@ export default function App() {
       format: [canvas.width, canvas.height]
     });
     pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-    pdf.save(`symphonia-score-${currentPage}.pdf`);
+    pdf.save(`prettyscore-score-${currentPage}.pdf`);
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col overflow-hidden relative bg-[var(--color-bg)]">
+
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0  px-6 py-4   ">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-ink)] text-[var(--color-paper)] flex items-center justify-center shadow-lg shadow-[var(--color-ink)]/20 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')]"></div>
+            <Music className="w-5 h-5 relative z-10" />
+          </div>
+          <span className="serif text-xl font-medium tracking-tight text-[var(--color-ink)]">prettyscore</span>
+        </div>
+      </nav>
 
       {/* Subtle Noise Overlay for Texture */}
       <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-multiply"

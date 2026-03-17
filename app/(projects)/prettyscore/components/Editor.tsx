@@ -39,12 +39,12 @@ export default function Editor({
       className="flex h-screen w-full relative z-10"
     >
       {/* Canvas Area */}
-      <div className="flex-1 relative flex items-center justify-center p-8 md:p-16">
+      <div className="flex-1 relative flex items-center justify-center p-6 md:p-16">
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-          className="relative shadow-2xl shadow-[var(--color-ink)]/20 rounded-sm"
+          className="relative shadow-2xl md:top-12 shadow-[var(--color-ink)]/20 rounded-sm"
         >
           <canvas ref={finalCanvasRef} className="max-w-full max-h-[85vh] object-contain rounded-sm" />
         </motion.div>
@@ -64,18 +64,29 @@ export default function Editor({
         )}
       </div>
 
-      {/* Floating Controls Panel */}
+      {/* Controls Panel - Desktop: Fixed Right Sidebar, Mobile: Floating */}
+      <div className="hidden md:block">
+        <ControlsPanel
+          exportImage={exportImage}
+          exportPdf={exportPdf}
+          handleCustomBgUpload={handleCustomBgUpload}
+        />
+      </div>
+
+      {/* Mobile Floating Controls Panel */}
       <AnimatePresence>
         {isControlsOpen && (
-          <ControlsPanel
-            exportImage={exportImage}
-            exportPdf={exportPdf}
-            handleCustomBgUpload={handleCustomBgUpload}
-          />
+          <div className="md:hidden">
+            <ControlsPanel
+              exportImage={exportImage}
+              exportPdf={exportPdf}
+              handleCustomBgUpload={handleCustomBgUpload}
+            />
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Toggle Controls Button (when closed) */}
+      {/* Toggle Controls Button (only for mobile) */}
       <AnimatePresence>
         {!isControlsOpen && (
           <motion.button
@@ -83,7 +94,7 @@ export default function Editor({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => setIsControlsOpen(true)}
-            className="absolute right-8 bottom-8 w-14 h-14 bg-[var(--color-ink)] text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-[var(--color-accent)] transition-colors z-20"
+            className="absolute right-8 bottom-8 w-14 h-14 bg-[var(--color-ink)] text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-[var(--color-accent)] transition-colors z-20 md:hidden"
           >
             <SlidersHorizontal className="w-5 h-5" />
           </motion.button>

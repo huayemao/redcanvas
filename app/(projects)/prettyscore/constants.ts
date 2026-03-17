@@ -1,8 +1,8 @@
 export const PAPER_PRESETS = [
-  { id: 'masterpiece', name: 'Masterpiece', url: 'https://sns-img-hw.xhscdn.com/notes_pre_post/1040g3k831k48099c329g5p8vo3lp5gacaj8eh70?imageView2/2/w/0/format/jpg' },
-  { id: 'antique', name: 'Antique', url: 'https://images.unsplash.com/photo-1518481612222-68bbe828ecd1?auto=format&fit=crop&w=1600&q=80' },
-  { id: 'crumpled', name: 'Crumpled', url: 'https://images.unsplash.com/photo-1621799754526-a0d52c49fad5?auto=format&fit=crop&w=1600&q=80' },
-  { id: 'parchment', name: 'Parchment', url: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=1600&q=80' },
+  { id: 'masterpiece', name: 'Masterpiece', url: 'https://sns-img-hw.xhscdn.com/1040g2sg31icupo3tnse05nfa66og86vh2jk66r0?imageView2/2/w/0/format/jpg', bgColor: '#F9F6F0', inkColor: '#2C302E', blendMode: 'normal', vignette: 0, warmth: 0, elements: 'none' },
+  { id: 'antique', name: 'Antique', url: 'https://sns-img-hw.xhscdn.com/1040g2sg31icupo3tnsgg5nfa66og86vhner5s2o?imageView2/2/w/0/format/jpg', bgColor: '#F5F1E9', inkColor: '#3E2A1E', blendMode: 'normal', vignette: 0.05, warmth: 0.02, elements: 'none' },
+  { id: 'crumpled', name: 'Crumpled', url: 'https://sns-img-hw.xhscdn.com/1040g2sg31icupo3tnsf05nfa66og86vhgc8o26g?imageView2/2/w/0/format/jpg', bgColor: '#F0ECE5', inkColor: '#333333', blendMode: 'normal', vignette: 0.05, warmth: 0.03, elements: 'none' },
+  { id: 'parchment', name: 'Parchment', url: 'https://sns-img-hw.xhscdn.com/1040g2sg31icupo3tnsfg5nfa66og86vh0a11el0?imageView2/2/w/0/format/jpg', bgColor: '#FAF5E6', inkColor: '#4A3B2E', blendMode: 'normal', vignette: 0.05, warmth: 0.04, elements: 'none' },
 ];
 
 export const PRESET_COLORS = [
@@ -18,7 +18,7 @@ export const THEMES = [
     name: 'Ivory Sonata',
     bgColor: '#F9F6F0',
     inkColor: '#2C302E',
-    blendMode: 'color-burn',
+    blendMode: 'normal',
     vignette: 0,
     warmth: 0,
     elements: 'none'
@@ -27,8 +27,8 @@ export const THEMES = [
     id: 'sakura',
     name: 'Dusty Rose',
     bgColor: '#EADADA',
-    inkColor: '#4A3B3C',
-    blendMode: 'multiply',
+    inkColor: '#c3657c',
+    blendMode: 'normal',
     vignette: 0,
     warmth: 0,
     elements: 'sakura'
@@ -38,7 +38,7 @@ export const THEMES = [
     name: 'Midnight Velvet',
     bgColor: '#1A1C23',
     inkColor: '#E8E9EB',
-    blendMode: 'screen',
+    blendMode: 'normal',
     vignette: 0.1,
     warmth: 0,
     elements: 'stars'
@@ -46,9 +46,9 @@ export const THEMES = [
   {
     id: 'matcha',
     name: 'Sage Whisper',
-    bgColor: '#E3E7D3',
-    inkColor: '#2D3A33',
-    blendMode: 'multiply',
+    bgColor: '#159978',
+    inkColor: '#d9e3e1',
+    blendMode: 'normal',
     vignette: 0,
     warmth: 0,
     elements: 'leaves'

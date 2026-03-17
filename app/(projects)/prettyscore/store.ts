@@ -90,13 +90,13 @@ export const usePrettyScoreStore = create<PrettyScoreState>((set, get) => ({
   setScoreColor: (scoreColor) => set({ scoreColor }),
   decoration: DECORATIONS[1].id,
   setDecoration: (decoration) => set({ decoration }),
-  blendMode: 'color-burn',
+  blendMode: 'normal',
   setBlendMode: (blendMode) => set({ blendMode }),
-  vignette: 0.6,
+  vignette: THEMES[0].vignette,
   setVignette: (vignette) => set({ vignette }),
-  warmth: 0.2,
+  warmth: THEMES[0].warmth,
   setWarmth: (warmth) => set({ warmth }),
-  overlayOpacity: 0.3,
+  overlayOpacity: 0,
   setOverlayOpacity: (overlayOpacity) => set({ overlayOpacity }),
   overlayDirection: 'solid',
   setOverlayDirection: (overlayDirection) => set({ overlayDirection }),
@@ -112,6 +112,8 @@ export const usePrettyScoreStore = create<PrettyScoreState>((set, get) => ({
   // 动作
   applyTheme: (themeId) => {
     const theme = THEMES.find(t => t.id === themeId);
+    const paperPreset = PAPER_PRESETS.find(p => p.id === themeId);
+    
     if (theme) {
       set({
         bgType: 'theme',
@@ -121,6 +123,17 @@ export const usePrettyScoreStore = create<PrettyScoreState>((set, get) => ({
         blendMode: theme.blendMode,
         vignette: theme.vignette,
         warmth: theme.warmth,
+        decoration: 'classic-border'
+      });
+    } else if (paperPreset) {
+      set({
+        bgType: 'preset',
+        bgPresetUrl: paperPreset.url,
+        scoreColor: paperPreset.inkColor,
+        customBgColor: paperPreset.bgColor,
+        blendMode: paperPreset.blendMode,
+        vignette: paperPreset.vignette,
+        warmth: paperPreset.warmth,
         decoration: 'classic-border'
       });
     }

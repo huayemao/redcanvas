@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileAudio, X, Palette, ImageIcon, Layers, Droplet, Sparkles, Sun, ImageIcon as Image, Download } from 'lucide-react';
+import { FileAudio, X, Palette, ImageIcon, Layers, Droplet, Sparkles, Sun, ImageIcon as Image, Download, Settings } from 'lucide-react';
 import { THEMES, PAPER_PRESETS, PRESET_COLORS, DECORATIONS } from '../constants';
 import { usePrettyScoreStore } from '../store';
 import useDebounce from '../hooks/useDebounce';
@@ -54,19 +54,19 @@ export default function ControlsPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 400 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="absolute right-6 top-6 bottom-6 w-80 bg-white/80 backdrop-blur-2xl border border-[var(--color-ink)]/10 rounded-3xl shadow-2xl shadow-[var(--color-ink)]/10 flex flex-col z-30 overflow-hidden"
+      className="md:w-md inset-8 md:h-screen bg-white/80 backdrop-blur-2xl border border-[var(--color-ink)]/10 rounded-none  shadow-2xl shadow-[var(--color-ink)]/10 md:shadow-none flex flex-col overflow-hidden md:static absolute md:right-0 md:top-0 md:bottom-0 z-30"
     >
       <div className="p-6 border-b border-[var(--color-ink)]/5 flex items-center justify-between bg-white/50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[var(--color-ink)] text-[var(--color-paper)] flex items-center justify-center">
-            <FileAudio className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
           </div>
-          <h2 className="serif text-xl font-medium">Symphonia</h2>
+          <h2 className="serif text-xl font-medium">Configuration</h2>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setAppState('idle')} className="text-[10px] tracking-widest uppercase opacity-50 hover:opacity-100 hover:text-[var(--color-accent)] transition-colors font-medium">New</button>
-          <span className="w-[1px] h-3 bg-[var(--color-ink)]/20" />
-          <button onClick={() => setIsControlsOpen(false)} className="p-1 opacity-50 hover:opacity-100 transition-colors">
+          <span className="w-[1px] h-3 bg-[var(--color-ink)]/20 md:hidden" />
+          <button onClick={() => setIsControlsOpen(false)} className="md:hidden p-1 opacity-50 hover:opacity-100 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -105,7 +105,7 @@ export default function ControlsPanel({
             {PAPER_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                onClick={() => { setBgPresetUrl(preset.url); setBgType('preset'); }}
+                onClick={() => applyTheme(preset.id)}
                 className={`relative aspect-[4/3] overflow-hidden rounded-xl group border-2 transition-all duration-300 ${bgPresetUrl === preset.url && bgType === 'preset' ? 'border-[var(--color-accent)] shadow-md' : 'border-transparent hover:border-[var(--color-ink)]/20'}`}
               >
                 <img src={preset.url} alt={preset.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" crossOrigin="anonymous" />

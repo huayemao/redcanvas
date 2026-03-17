@@ -46,7 +46,7 @@ export default function IntroScreen({ getRootProps, getInputProps, isDragActive 
           transition={{ delay: 0.2, duration: 1, ease: "easeOut" }}
           className="serif text-6xl md:text-8xl font-medium tracking-tight mb-6 text-[var(--color-ink)]"
         >
-          Symphonia
+          prettyscore
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
