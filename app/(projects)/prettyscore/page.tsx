@@ -91,6 +91,40 @@ export default function App() {
     }
   }, []);
 
+  const useSampleFile = useCallback(async (filePath: string, isPdf: boolean) => {
+    setIsProcessing(true);
+    setAppState('editor');
+
+    try {
+      const response = await fetch(filePath);
+      const blob = await response.blob();
+      const file = new File([blob], isPdf ? 'score_sample.pdf' : 'score_sample.svg', { type: isPdf ? 'application/pdf' : 'image/svg+xml' });
+      setFile(file);
+
+      if (isPdf) {
+        const pdf = await loadPdf(file);
+        setPdfDoc(pdf);
+        setNumPages(pdf.numPages);
+        setCurrentPage(1);
+        await renderPage(pdf, 1);
+      } else {
+        setPdfDoc(null);
+        setNumPages(1);
+        setCurrentPage(1);
+        const canvas = await renderSvgToCanvas(file, 3);
+        rawCanvasRef.current = canvas;
+        lastProcessedColor.current = null;
+        processScore();
+      }
+    } catch (error) {
+      console.error('Error loading sample file:', error);
+      alert('Failed to load sample file. Please try again.');
+      setAppState('idle');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -203,7 +237,7 @@ export default function App() {
 
       <AnimatePresence mode="wait">
         {appState === 'idle' && (
-          <IntroScreen getRootProps={getRootProps} getInputProps={getInputProps} isDragActive={isDragActive} />
+          <IntroScreen getRootProps={getRootProps} getInputProps={getInputProps} isDragActive={isDragActive} useSampleFile={useSampleFile} />
         )}
 
         {appState === 'editor' && (

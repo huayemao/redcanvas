@@ -6,9 +6,10 @@ interface IntroScreenProps {
   getRootProps: () => any;
   getInputProps: () => any;
   isDragActive: boolean;
+  useSampleFile: (filePath: string, isPdf: boolean) => void;
 }
 
-export default function IntroScreen({ getRootProps, getInputProps, isDragActive }: IntroScreenProps) {
+export default function IntroScreen({ getRootProps, getInputProps, isDragActive, useSampleFile }: IntroScreenProps) {
   return (
     <motion.div
       key="intro"
@@ -81,6 +82,34 @@ export default function IntroScreen({ getRootProps, getInputProps, isDragActive 
           </div>
           <p className="serif text-3xl mb-4 text-[var(--color-ink)] font-medium">Upload your score</p>
           <p className="text-xs tracking-[0.2em] opacity-50 uppercase font-semibold">Supports PDF & SVG formats</p>
+        </div>
+      </motion.div>
+
+      {/* Sample Files Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 1 }}
+        className="mt-10 w-full max-w-2xl px-6 relative z-10"
+      >
+        <p className="serif text-sm mb-4 text-center text-[var(--color-ink)]/70">Or try with sample files</p>
+        <div className="flex gap-4 justify-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => useSampleFile('/prettyscore/score_sample.pdf', true)}
+            className="px-6 py-3 border border-[var(--color-ink)]/20 rounded-xl bg-white/60 backdrop-blur-sm hover:bg-white/90 hover:border-[var(--color-ink)]/40 transition-all duration-300 shadow-md hover:shadow-lg text-sm font-medium text-[var(--color-ink)]"
+          >
+            Sample PDF
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => useSampleFile('/prettyscore/score_sample.svg', false)}
+            className="px-6 py-3 border border-[var(--color-ink)]/20 rounded-xl bg-white/60 backdrop-blur-sm hover:bg-white/90 hover:border-[var(--color-ink)]/40 transition-all duration-300 shadow-md hover:shadow-lg text-sm font-medium text-[var(--color-ink)]"
+          >
+            Sample SVG
+          </motion.button>
         </div>
       </motion.div>
       
