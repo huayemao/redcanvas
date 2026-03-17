@@ -1,17 +1,30 @@
-import * as pdfjsLib from 'pdfjs-dist';
-// @ts-ignore
-// import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/build/pdf.worker.min.mjs';
+
+let pdfjsLib: any = null;
+// Only initialize pdfjsLib in browser environment
+if (typeof window !== 'undefined') {
+  pdfjsLib = await import('pdfjs-dist');
+  const pdfjsWorker = new Worker(
+  new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url),
+  { type: 'module' }
+);
+  pdfjsLib.GlobalWorkerOptions.workerPort = pdfjsWorker;
+}
 
 export async function loadPdf(file: File) {
+  if (!pdfjsLib) {
+    throw new Error('PDF.js is only available in browser environment');
+  }
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
   return pdf;
 }
 
-export async function renderPdfPageToCanvas(pdf: pdfjsLib.PDFDocumentProxy, pageNumber: number, scale: number = 2) {
+export async function renderPdfPageToCanvas(pdf: any, pageNumber: number, scale: number = 2) {
+  if (!pdfjsLib) {
+    throw new Error('PDF.js is only available in browser environment');
+  }
   const page = await pdf.getPage(pageNumber);
   const viewport = page.getViewport({ scale });
   
@@ -36,6 +49,9 @@ export async function renderPdfPageToCanvas(pdf: pdfjsLib.PDFDocumentProxy, page
 }
 
 export async function renderSvgToCanvas(file: File, scale: number = 2) {
+  if (typeof window === 'undefined') {
+    throw new Error('SVG rendering is only available in browser environment');
+  }
   return new Promise<HTMLCanvasElement>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {

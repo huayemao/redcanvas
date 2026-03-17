@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { loadPdf, renderPdfPageToCanvas, renderSvgToCanvas } from './utils/pdfHelper';
 import { processScoreCanvas, hexToRgb } from './utils/imageHelper';
 import { jsPDF } from 'jspdf';
-import * as pdfjsLib from 'pdfjs-dist';
+// pdfjsLib is imported in pdfHelper.ts and only available in browser environment
 import useDebounce from './hooks/useDebounce';
 import IntroScreen from './components/IntroScreen';
 import Editor from './components/Editor';
@@ -100,7 +100,7 @@ export default function App() {
     maxFiles: 1
   } as any);
 
-  const renderPage = async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
+  const renderPage = async (pdf: any, pageNum: number) => {
     setIsProcessing(true);
     try {
       const canvas = await renderPdfPageToCanvas(pdf, pageNum, 3);
