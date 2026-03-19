@@ -136,7 +136,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                             className="group"
                         >
                             <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-neutral-100 hover:shadow-2xl hover:shadow-red-50/50 transition-all duration-300">
-                                <div className="relative bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden p-4">
+                                <div className="relative bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden">
                                     <CoverRenderer
                                         state={{
                                             ...SAMPLE_STATE,

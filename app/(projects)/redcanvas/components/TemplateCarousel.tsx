@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { TEMPLATES } from '../constants';
 import { TemplateId, Orientation, ExportSize, EditorState } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { CoverRenderer } from './CoverRenderer';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 interface TemplateCarouselProps {
   onSelectTemplate: (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => void;
@@ -32,7 +33,13 @@ const SAMPLE_STATE: EditorState = {
 
 export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemplate }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: true,
+      skipSnaps: false,
+    },
+    [Autoplay({ delay: 5000 })]
+  );
 
   const handleSelectTemplate = (templateId: TemplateId) => {
     // 根据模板类型默认选择合适的方向和导出尺寸
@@ -43,18 +50,29 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
   };
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === TEMPLATES.length - 1 ? 0 : prev + 1));
+    emblaApi?.scrollNext();
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? TEMPLATES.length - 1 : prev - 1));
+    emblaApi?.scrollPrev();
   };
 
-  // 自动轮播
+  const scrollToIndex = (index: number) => {
+    emblaApi?.scrollTo(index);
+  };
+
   useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!emblaApi) return;
+
+    const onSelect = () => {
+      setCurrentIndex(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
 
   return (
     <div className="relative w-full max-w-5xl mx-auto my-12">
@@ -67,45 +85,44 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
       </div>
       
       <div className="relative overflow-hidden rounded-2xl">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5 }}
-            className="relative h-80 sm:h-[600px] flex items-center justify-center p-4"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 to-neutral-800 opacity-70" />
-            
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
-              <div className="flex-1 flex items-center justify-center">
-                <CoverRenderer 
-                  state={{
-                    ...SAMPLE_STATE,
-                    templateId: TEMPLATES[currentIndex].id,
-                    orientation: 'portrait',
-                    exportSize: 'xiaohongshu',
-                    showDeviceFrame: ['mockup','bold','magazine'].includes(TEMPLATES[currentIndex].id) ? false : true,
-                  }}
-                  ref={() => {}}
-                />
+        <div ref={emblaRef} className="overflow-hidden">
+          <div className="flex">
+            {TEMPLATES.map((template, index) => (
+              <div key={template.id} className="min-w-full">
+                <div className="relative h-80 sm:h-[600px] flex items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 to-neutral-800 opacity-70" />
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+                    <div className="flex-1 flex items-center justify-center">
+                      <CoverRenderer 
+                        state={{
+                          ...SAMPLE_STATE,
+                          templateId: template.id,
+                          orientation: 'portrait',
+                          exportSize: 'xiaohongshu',
+                          showDeviceFrame: ['mockup','bold','magazine'].includes(template.id) ? false : true,
+                        }}
+                        ref={() => {}}
+                      />
+                    </div>
+                    
+                    <div className="flex-1 text-white">
+                      <h3 className="text-3xl sm:text-4xl font-bold mb-4">{template.name}</h3>
+                      <p className="text-white/80 mb-6 max-w-lg">{template.description}</p>
+                      <button
+                        onClick={() => handleSelectTemplate(template.id)}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors font-medium"
+                      >
+                        立即使用
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex-1 text-white">
-                <h3 className="text-3xl sm:text-4xl font-bold mb-4">{TEMPLATES[currentIndex].name}</h3>
-                <p className="text-white/80 mb-6 max-w-lg">{TEMPLATES[currentIndex].description}</p>
-                <button
-                  onClick={() => handleSelectTemplate(TEMPLATES[currentIndex].id)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors font-medium"
-                >
-                  立即使用
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+            ))}
+          </div>
+        </div>
 
         {/* Navigation Buttons */}
         <button
@@ -126,7 +143,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
           {TEMPLATES.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
+              onClick={() => scrollToIndex(index)}
               className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white w-6' : 'bg-white/50'}`}
             />
           ))}
