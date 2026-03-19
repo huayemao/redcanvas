@@ -79,21 +79,18 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 relative">
-            <div className="absolute top-20 left-1/4 w-96 h-96 bg-red-50 rounded-full blur-3xl opacity-50" />
-            <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-red-50 rounded-full blur-3xl opacity-30" />
-
+        <div className="w-full py-16 px-4 sm:px-6 lg:px-16 relative bg-neutral-50 min-h-screen">
             <div className="relative z-10">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl sm:text-5xl font-black text-neutral-900 mb-4">模板商店</h1>
+                <div className="text-center mb-16">
+                    <h1 className="text-4xl sm:text-5xl font-black text-neutral-900 mb-4 tracking-wide">模板商店</h1>
                     <p className="text-[10px] text-neutral-400 font-medium uppercase tracking-widest">Premium Template Collection</p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
+                <div className="flex flex-wrap items-center justify-between mb-12 gap-4">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setShowFilterMenu(!showFilterMenu)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full text-xs font-black text-neutral-900 hover:bg-neutral-100 transition-all shadow-md border border-neutral-100"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full text-xs font-black text-neutral-900 hover:bg-neutral-100 transition-all shadow-sm border border-neutral-200"
                         >
                             <Filter className="w-4 h-4" />
                             <span className="uppercase tracking-wider">筛选</span>
@@ -101,8 +98,8 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                         </button>
 
                         {showFilterMenu && (
-                            <div className="absolute z-20 mt-2 bg-white rounded-2xl shadow-2xl p-4 border border-neutral-100">
-                                <div className="grid grid-cols-2 gap-2">
+                            <div className="absolute z-20 mt-2 bg-white rounded-2xl shadow-lg p-4 border border-neutral-200">
+                                <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { id: 'all', label: '全部' },
                                         { id: 'portrait', label: '纵向' },
@@ -115,7 +112,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                                         <button
                                             key={filter.id}
                                             onClick={() => handleFilterToggle(filter.id as FilterType)}
-                                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeFilters.includes(filter.id as FilterType) ? 'bg-neutral-900 text-white shadow-lg' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-600'}`}
+                                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeFilters.includes(filter.id as FilterType) ? 'bg-neutral-900 text-white shadow-sm' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-600'}`}
                                         >
                                             {filter.label}
                                         </button>
@@ -126,7 +123,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                     </div>
 
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
                     {filteredTemplates.map((template, index) => (
                         <motion.div
                             key={template.id}
@@ -135,8 +132,9 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                             className="group"
                         >
-                            <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-neutral-100 hover:shadow-2xl hover:shadow-red-50/50 transition-all duration-300">
-                                <div className="relative bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-neutral-200 hover:shadow-md transition-all duration-300 transform group-hover:translate-y-[-5px] flex flex-col md:flex-row">
+
+                                <div className="md:w-3/4 relative bg-gradient-to-br from-neutral-100 to-neutral-100 overflow-hidden">
                                     <CoverRenderer
                                         state={{
                                             ...SAMPLE_STATE,
@@ -148,13 +146,15 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                                         ref={() => { }}
                                     />
                                 </div>
-
-                                <div className="p-6">
-                                    <h3 className="text-lg font-black text-neutral-900 mb-2 uppercase tracking-wider">{template.name}</h3>
-                                    <p className="text-xs text-neutral-500 mb-4 leading-relaxed">{template.description}</p>
+                                <div className="md:w-1/4 p-8 flex flex-col justify-between items-center bg-neutral-100" >
+                                    <div style={{ writingMode: 'vertical-lr' }}>
+                                        <h3 className="text-lg font-black text-neutral-900 mb-6 uppercase tracking-wider font-serif-sc">{template.name}</h3>
+                                        <p className="text-sm text-neutral-500 mb-6 leading-[1.6] font-serif-sc">{template.description}</p>
+                                    </div>
                                     <button
                                         onClick={() => handleSelectTemplate(template.id)}
-                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-neutral-900 transition-all font-black text-xs uppercase tracking-wider shadow-lg shadow-red-100/50 hover:shadow-2xl hover:shadow-red-50/50 group-hover:scale-[1.02]"
+                                        style={{ writingMode: 'vertical-rl' }}
+                                        className="flex  align-middle items-center justify-center gap-2 px-2 py-2 bg-transparent text-neutral-900 rounded-xl hover:bg-neutral-50 transition-all font-black text-xs uppercase tracking-wider border border-neutral-300 group-hover:scale-[1.02] font-serif-sc"
                                     >
                                         使用模板
                                         <ExternalLink className="w-4 h-4" />
