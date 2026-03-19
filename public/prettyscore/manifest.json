@@ -1,0 +1,21 @@
+{
+  "name": "PrettyScore",
+  "short_name": "PrettyScore",
+  "description": "Tired of plain black and white sheet music? PrettyScore is a free online tool that lets you easily add beautiful colors and styles to your music sheets.",
+  "start_url": "/prettyscore",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a90e2",
+  "icons": [
+    {
+      "src": "/api/icon?size=192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/api/icon?size=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
