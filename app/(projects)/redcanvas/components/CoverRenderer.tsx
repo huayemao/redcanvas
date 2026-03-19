@@ -52,7 +52,7 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
 
     return (
       <div
-        className={`relative w-full ${exportSize === "xiaohongshu" || (exportSize === "custom" && orientation === "portrait") ? "max-w-[400px]" : "max-w-[600px]"} ${(exportSize === "bilibili" || exportSize === "youtube" || (exportSize === "custom" && orientation === "landscape")) ? "aspect-[3/2]" : "aspect-[3/4]"} rounded-[32px] overflow-hidden bg-white preview-shadow select-none mx-auto`}
+        className={`relative w-full ${exportSize === "xiaohongshu" || (exportSize === "custom" && orientation === "portrait") ? "max-w-[480px]" : "max-w-[600px]"} ${(exportSize === "bilibili" || exportSize === "youtube" || (exportSize === "custom" && orientation === "landscape")) ? "aspect-[3/2]" : "aspect-[3/4]"}  overflow-hidden bg-white preview-shadow select-none mx-auto`}
       >
         <div ref={ref} className="w-full h-full overflow-hidden">
           {TemplateComponent && (

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import './globals.css';
 import { APP_CONFIG, SEO_CONFIG } from './config';
+import Footer from './components/Footer';
+import Navbar from './components/Navbar';
 
 export function generateMetadata(): Metadata {
   return {
@@ -53,45 +53,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
-        <nav className="h-16 flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100 px-6 flex items-center justify-between z-50">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <div className="bg-red-500 p-1.5 rounded-lg shadow-lg shadow-red-200">
-              <Sparkles className="text-white w-4 h-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-neutral-900 tracking-tight leading-none">RedCanvas</span>
-              <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mt-0.5">XHS Creative Suite</span>
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-6">
-            <Link 
-              href="/" 
-              className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
-            >
-              主页
-            </Link>
-            <Link 
-              href="/store" 
-              className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
-            >
-              模板商店
-            </Link>
-            <Link 
-              href="/blog" 
-              className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
-            >
-              博客
-            </Link>
-            <Link 
-              href="/about" 
-              className="text-sm font-medium text-neutral-700 hover:text-red-500 transition-colors"
-            >
-              关于
-            </Link>
-          </div>
-        </nav>
+        <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );

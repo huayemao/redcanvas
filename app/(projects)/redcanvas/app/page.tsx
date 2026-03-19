@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Editor } from './components/Editor';
-import { CoverRenderer } from './components/CoverRenderer';
-import Footer from './components/Footer';
-import { TemplateCarousel } from './components/TemplateCarousel';
-import { EditorState, TemplateId, Orientation, ExportSize } from './types';
+import { Editor } from '../components/Editor';
+import { CoverRenderer } from '../components/CoverRenderer';
+import Footer from '../components/Footer';
+import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
 import * as htmlToImage from 'html-to-image';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { APP_CONFIG } from './config';
+import { APP_CONFIG } from '../config';
 
 const INITIAL_STATE: EditorState = {
   title: "我，花野猫\n喜欢写代码\n想开发小工具找我",
@@ -30,7 +29,7 @@ const INITIAL_STATE: EditorState = {
   exportSize: 'xiaohongshu',
 };
 
-const HomeClient: React.FC = () => {
+const AppPage: React.FC = () => {
   const [state, setState] = useState<EditorState>(INITIAL_STATE);
   const [isExporting, setIsExporting] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -75,15 +74,6 @@ const HomeClient: React.FC = () => {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, []);
-
-  const handleSelectTemplate = (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => {
-    setState(prev => ({
-      ...prev,
-      templateId,
-      orientation,
-      exportSize
-    }));
-  };
 
   const exportImage = useCallback(async () => {
     if (!previewRef.current) return;
@@ -195,33 +185,7 @@ const HomeClient: React.FC = () => {
             </div>
           </motion.div>
         </div>
-
       </main>
-      <section className="mx-auto max-w-[320px] text-center my-12 p-8 bg-gradient-to-br from-red-50 to-white rounded-3xl shadow-sm">
-        <h2 className="text-xl font-black text-neutral-900 mb-4">为什么选择 RedCanvas？</h2>
-        <ul className="text-sm text-neutral-600 space-y-3">
-          <li className="flex items-center gap-3">
-            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span>专业小红书风格模板</span>
-          </li>
-          <li className="flex items-center gap-3">
-            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span>高清无水印导出</span>
-          </li>
-          <li className="flex items-center gap-3">
-            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span>支持多种社交平台尺寸</span>
-          </li>
-          <li className="flex items-center gap-3">
-            <Sparkles className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span>免费使用，无广告</span>
-          </li>
-        </ul>
-      </section>
-      <div className="bg-neutral-100 py-16">
-        <TemplateCarousel onSelectTemplate={handleSelectTemplate} />
-      </div>
-
       <AnimatePresence>
         {isExporting && (
           <motion.div
@@ -249,9 +213,8 @@ const HomeClient: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <Footer />
     </>
   );
 };
 
-export default HomeClient;
+export default AppPage;
