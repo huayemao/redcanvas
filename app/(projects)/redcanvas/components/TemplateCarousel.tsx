@@ -24,7 +24,7 @@ const SAMPLE_STATE: EditorState = {
   imageUrl: "/screenshot.png",
   imageAspectRatio: 1.5,
   showDeviceFrame: true,
-  deviceType: 'macbook',
+  deviceType: 'device',
   templateId: 'classic',
   fontFamily: 'kuaile',
   accentColor: '#ff2442',

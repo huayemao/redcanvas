@@ -280,8 +280,9 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">设备类型</label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
+                        { type: 'none' as DeviceType, label: '无', icon: Monitor },
                         { type: 'browser' as DeviceType, label: '浏览器', icon: Monitor },
-                        { type: 'macbook' as DeviceType, label: 'MacBook', icon: Laptop },
+                        { type: 'device' as DeviceType, label: '设备', icon: Laptop },
                       ].map((device) => (
                         <button
                           key={device.type}

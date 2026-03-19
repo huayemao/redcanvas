@@ -140,7 +140,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                                             ...SAMPLE_STATE,
                                             templateId: template.id,
                                             exportSize: 'xiaohongshu',
-                                            deviceType: 'macbook',
+                                            deviceType: 'device',
                                             showDeviceFrame: ['mockup', 'bold', 'magazine'].includes(template.id) ? false : true,
                                         }}
                                         ref={() => { }}
