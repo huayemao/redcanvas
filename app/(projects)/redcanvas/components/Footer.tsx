@@ -25,6 +25,9 @@ const Footer: React.FC = () => {
       // { label: "联系我们", href: "/about" },
       { label: "反馈建议", href: "mailto:dev@huayemao.fun" },
     ],
+    tools: [
+      { label: "漂亮琴谱工具 prettyscore", href: "/prettyscore" },
+    ],
     legal: [
       { label: "隐私政策", href: "/about" },
       { label: "使用条款", href: "/about" },
@@ -93,6 +96,25 @@ const Footer: React.FC = () => {
               </h4>
               <ul className="space-y-3">
                 {footerLinks.support.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-xs text-neutral-500 hover:text-red-500 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* 工具链接 */}
+            <div>
+              <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider mb-4">
+                工具
+              </h4>
+              <ul className="space-y-3">
+                {footerLinks.tools.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}

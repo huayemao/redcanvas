@@ -145,8 +145,9 @@ const HomeClient: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 bg-white relative flex items-center justify-center p-6 lg:p-12 h-full min-h-[800px]">
+        <div className="flex-1 bg-gradient-to-br from-white to-neutral-50 relative flex items-center justify-center p-6 lg:p-12 h-full min-h-[800px]">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-50 rounded-full blur-2xl opacity-40" />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -196,7 +197,7 @@ const HomeClient: React.FC = () => {
         </div>
 
       </main>
-      <section className="mx-auto max-w-[320px] text-center my-8">
+      <section className="mx-auto max-w-[320px] text-center my-12 p-8 bg-gradient-to-br from-red-50 to-white rounded-3xl shadow-sm">
         <h2 className="text-xl font-black text-neutral-900 mb-4">为什么选择 RedCanvas？</h2>
         <ul className="text-sm text-neutral-600 space-y-3">
           <li className="flex items-center gap-3">
@@ -217,7 +218,9 @@ const HomeClient: React.FC = () => {
           </li>
         </ul>
       </section>
-      <TemplateCarousel onSelectTemplate={handleSelectTemplate} />
+      <div className="bg-neutral-100 py-16">
+        <TemplateCarousel onSelectTemplate={handleSelectTemplate} />
+      </div>
 
       <AnimatePresence>
         {isExporting && (

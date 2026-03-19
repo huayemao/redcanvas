@@ -58,7 +58,13 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
 
   return (
     <div className="relative w-full max-w-5xl mx-auto my-12">
-      <h2 className="text-2xl font-bold text-center mb-8">精选模板</h2>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold">精选模板</h2>
+        <a href="/store" className="text-sm font-medium text-red-500 hover:text-red-600 transition-colors flex items-center gap-1">
+          查看全部模板
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
       
       <div className="relative overflow-hidden rounded-2xl">
         <AnimatePresence mode="wait">
