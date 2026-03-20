@@ -52,7 +52,8 @@ export const PRESET_COLORS = [
 
 export const FONTS: FontOption[] = [
   { id: 'kuaile', name: '快乐体 (推荐)', className: 'font-kuaile' },
-  { id: 'sans', name: '极黑体', className: 'font-sans font-black' },
+  { id: 'xiangcui', name: '香萃打字机', className: 'font-xiangcui' },
+  { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },
   { id: 'serif', name: '优雅宋', className: 'font-serif-sc font-black' },
   { id: 'mashan', name: '书法行草', className: 'font-mashan' },
   { id: 'zhimang', name: '随性手写', className: 'font-zhimang' },

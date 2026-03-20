@@ -18,6 +18,8 @@ body {
 .font-zhimang { font-family: 'Zhi Mang Xing', cursive; }
 .font-kuaile { font-family: 'ZCOOL KuaiLe', cursive; }
 .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+.font-wenkai { font-family: 'LXGW WenKai Mono SC', monospace; }
+.font-xiangcui { font-family: 'XiangcuiDazijitiW15', monospace; }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
