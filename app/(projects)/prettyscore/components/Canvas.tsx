@@ -18,6 +18,8 @@ interface UseCanvasProps {
   debouncedOverlayColor: string;
   processScoreCanvas: (canvas: HTMLCanvasElement, rgb: { r: number; g: number; b: number }) => HTMLCanvasElement;
   hexToRgb: (hex: string) => { r: number; g: number; b: number };
+  canvasWidth: number;
+  canvasHeight: number;
 }
 
 export default function useCanvas({ 
@@ -35,7 +37,9 @@ export default function useCanvas({
   debouncedOverlayDirection, 
   debouncedOverlayColor,
   processScoreCanvas,
-  hexToRgb
+  hexToRgb,
+  canvasWidth,
+  canvasHeight
 }: UseCanvasProps) {
   const { bgType, bgPresetUrl, bgCustomUrl, bgThemeId } = usePrettyScoreStore();
   const drawThemeElements = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, elementsType: string) => {
@@ -334,8 +338,11 @@ export default function useCanvas({
     const ctx = finalCanvas.getContext('2d');
     if (!ctx) return;
 
-    finalCanvas.width = processedCanvas.width;
-    finalCanvas.height = processedCanvas.height;
+    // 使用自定义尺寸，如果没有设置则使用原始尺寸
+    const width = canvasWidth || processedCanvas.width;
+    const height = canvasHeight || processedCanvas.height;
+    finalCanvas.width = width;
+    finalCanvas.height = height;
 
     const drawBackground = () => {
       return new Promise<void>((resolve) => {
@@ -343,8 +350,8 @@ export default function useCanvas({
           const theme = THEMES.find(t => t.id === bgThemeId);
           if (theme) {
             ctx.fillStyle = debouncedCustomBgColor;
-            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-            drawThemeElements(ctx, finalCanvas.width, finalCanvas.height, theme.elements);
+            ctx.fillRect(0, 0, width, height);
+            drawThemeElements(ctx, width, height, theme.elements);
           }
           resolve();
           return;
@@ -355,9 +362,9 @@ export default function useCanvas({
         let hasRetried = false;
         
         img.onload = () => {
-          const scale = Math.max(finalCanvas.width / img.width, finalCanvas.height / img.height);
-          const x = (finalCanvas.width / 2) - (img.width / 2) * scale;
-          const y = (finalCanvas.height / 2) - (img.height / 2) * scale;
+          const scale = Math.max(width / img.width, height / img.height);
+          const x = (width / 2) - (img.width / 2) * scale;
+          const y = (height / 2) - (img.height / 2) * scale;
           ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
           resolve();
         };
@@ -367,7 +374,7 @@ export default function useCanvas({
             img.src = bgPresetUrl; // Fallback to the same URL for now
           } else {
             ctx.fillStyle = '#d4b58e';
-            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            ctx.fillRect(0, 0, width, height);
             resolve();
           }
         };
@@ -379,8 +386,8 @@ export default function useCanvas({
       // 0. Image Overlay
       if (bgType !== 'theme' && debouncedOverlayOpacity > 0) {
         ctx.save();
-        const w = finalCanvas.width;
-        const h = finalCanvas.height;
+        const w = width;
+        const h = height;
         const r = parseInt(debouncedOverlayColor.slice(1,3), 16) || 255;
         const g = parseInt(debouncedOverlayColor.slice(3,5), 16) || 255;
         const b = parseInt(debouncedOverlayColor.slice(5,7), 16) || 255;
@@ -412,22 +419,24 @@ export default function useCanvas({
       if (debouncedWarmth > 0) {
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillStyle = `rgba(210, 150, 80, ${debouncedWarmth})`;
-        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = 'source-over';
       }
 
-      // 2. Score
+      // 2. Score - 居中绘制乐谱
       ctx.globalCompositeOperation = debouncedBlendMode as any;
-      ctx.drawImage(processedCanvas, 0, 0);
+      const scoreX = (width - processedCanvas.width) / 2;
+      const scoreY = (height - processedCanvas.height) / 2;
+      ctx.drawImage(processedCanvas, scoreX, scoreY);
       ctx.globalCompositeOperation = 'source-over';
 
       // 3. Decorations
-      drawDecorations(ctx, finalCanvas.width, finalCanvas.height, debouncedDecoration, debouncedScoreColor, debouncedBlendMode);
+      drawDecorations(ctx, width, height, debouncedDecoration, debouncedScoreColor, debouncedBlendMode);
 
       // 4. Heavy Burnt Vignette
       if (debouncedVignette > 0) {
-        const cx = finalCanvas.width / 2;
-        const cy = finalCanvas.height / 2;
+        const cx = width / 2;
+        const cy = height / 2;
         const radius = Math.max(cx, cy);
         const gradient = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius * 1.2);
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
@@ -436,11 +445,11 @@ export default function useCanvas({
         
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = 'source-over';
       }
     });
-  }, [bgType, bgPresetUrl, bgCustomUrl, bgThemeId, debouncedCustomBgColor, debouncedWarmth, debouncedBlendMode, debouncedVignette, debouncedDecoration, debouncedScoreColor, debouncedOverlayOpacity, debouncedOverlayDirection, debouncedOverlayColor, drawThemeElements, drawDecorations, finalCanvasRef, processedCanvasRef]);
+  }, [bgType, bgPresetUrl, bgCustomUrl, bgThemeId, debouncedCustomBgColor, debouncedWarmth, debouncedBlendMode, debouncedVignette, debouncedDecoration, debouncedScoreColor, debouncedOverlayOpacity, debouncedOverlayDirection, debouncedOverlayColor, drawThemeElements, drawDecorations, finalCanvasRef, processedCanvasRef, canvasWidth, canvasHeight]);
 
   const processScore = useCallback(() => {
     if (!rawCanvasRef.current) return;

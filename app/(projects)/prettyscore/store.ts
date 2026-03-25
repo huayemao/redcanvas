@@ -47,6 +47,12 @@ interface PrettyScoreState {
   overlayColor: string;
   setOverlayColor: (overlayColor: string) => void;
   
+  // 尺寸相关
+  canvasWidth: number;
+  setCanvasWidth: (width: number) => void;
+  canvasHeight: number;
+  setCanvasHeight: (height: number) => void;
+  
   // 其他状态
   isProcessing: boolean;
   setIsProcessing: (isProcessing: boolean) => void;
@@ -102,6 +108,12 @@ export const usePrettyScoreStore = create<PrettyScoreState>((set, get) => ({
   setOverlayDirection: (overlayDirection) => set({ overlayDirection }),
   overlayColor: '#ffffff',
   setOverlayColor: (overlayColor) => set({ overlayColor }),
+  
+  // 尺寸相关
+  canvasWidth: 0,
+  setCanvasWidth: (canvasWidth) => set({ canvasWidth }),
+  canvasHeight: 0,
+  setCanvasHeight: (canvasHeight) => set({ canvasHeight }),
   
   // 其他状态
   isProcessing: false,

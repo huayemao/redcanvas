@@ -43,6 +43,10 @@ export default function ControlsPanel({
     setOverlayDirection,
     overlayColor,
     setOverlayColor,
+    canvasWidth,
+    setCanvasWidth,
+    canvasHeight,
+    setCanvasHeight,
     applyTheme,
     setAppState,
     setIsControlsOpen
@@ -294,6 +298,56 @@ export default function ControlsPanel({
                 onChange={e => setWarmth(parseFloat(e.target.value))}
                 className="w-full"
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Canvas Size Section */}
+        <section className="bg-[var(--color-ink)]/5 rounded-2xl p-5 border border-[var(--color-ink)]/5">
+          <div className="flex items-center gap-2 mb-4 opacity-80">
+            <Settings className="w-4 h-4" />
+            <h3 className="serif text-lg italic">Canvas Size</h3>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <label className="text-[10px] tracking-[0.2em] uppercase font-medium flex justify-between mb-2 opacity-60">
+                Width
+                <span>{canvasWidth || 'Auto'}</span>
+              </label>
+              <input
+                type="range"
+                min="800" max="3000" step="100"
+                value={canvasWidth || 1600}
+                onChange={e => setCanvasWidth(parseInt(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] tracking-[0.2em] uppercase font-medium flex justify-between mb-2 opacity-60">
+                Height
+                <span>{canvasHeight || 'Auto'}</span>
+              </label>
+              <input
+                type="range"
+                min="800" max="3000" step="100"
+                value={canvasHeight || 2000}
+                onChange={e => setCanvasHeight(parseInt(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <button
+                onClick={() => {
+                  setCanvasWidth(0);
+                  setCanvasHeight(0);
+                }}
+                className="w-full py-2 bg-[var(--color-ink)]/10 hover:bg-[var(--color-ink)]/20 transition-colors duration-300 rounded-xl text-xs uppercase tracking-widest font-medium"
+              >
+                Reset to Auto
+              </button>
             </div>
           </div>
         </section>

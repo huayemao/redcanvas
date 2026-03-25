@@ -41,6 +41,10 @@ export default function App() {
     overlayColor,
     isProcessing,
     setIsProcessing,
+    canvasWidth,
+    setCanvasWidth,
+    canvasHeight,
+    setCanvasHeight,
   } = usePrettyScoreStore();
 
   const debouncedCustomBgColor = useDebounce(customBgColor, 150);
@@ -52,6 +56,8 @@ export default function App() {
   const debouncedOverlayOpacity = useDebounce(overlayOpacity, 150);
   const debouncedOverlayDirection = useDebounce(overlayDirection, 150);
   const debouncedOverlayColor = useDebounce(overlayColor, 150);
+  const debouncedCanvasWidth = useDebounce(canvasWidth, 150);
+  const debouncedCanvasHeight = useDebounce(canvasHeight, 150);
 
   const rawCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -170,6 +176,8 @@ export default function App() {
     debouncedOverlayOpacity,
     debouncedOverlayDirection,
     debouncedOverlayColor,
+    canvasWidth: debouncedCanvasWidth,
+    canvasHeight: debouncedCanvasHeight,
   });
 
 
