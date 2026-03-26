@@ -6,16 +6,51 @@ import { usePrettyScoreStore } from '../store';
 import useDebounce from '../hooks/useDebounce';
 
 interface ControlsPanelProps {
-  exportImage: () => void;
-  exportPdf: () => void;
+  exportImage: (exportAll?: boolean) => Promise<void>;
+  exportPdf: (exportAll?: boolean) => Promise<void>;
   handleCustomBgUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isOverviewMode: boolean;
+  setIsOverviewMode: (isOverviewMode: boolean) => void;
+  generateThumbnails: () => Promise<void>;
 }
 
 export default function ControlsPanel({ 
   exportImage, 
   exportPdf, 
-  handleCustomBgUpload
+  handleCustomBgUpload,
+  isOverviewMode,
+  setIsOverviewMode,
+  generateThumbnails
 }: ControlsPanelProps) {
+  const [showImageMenu, setShowImageMenu] = React.useState(false);
+  const [showPdfMenu, setShowPdfMenu] = React.useState(false);
+  const imageMenuRef = React.useRef<HTMLDivElement>(null);
+  const pdfMenuRef = React.useRef<HTMLDivElement>(null);
+  const imageButtonRef = React.useRef<HTMLButtonElement>(null);
+  const pdfButtonRef = React.useRef<HTMLButtonElement>(null);
+
+  // Close menus when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Check if clicking outside image menu and its button
+      if (showImageMenu && !imageMenuRef.current?.contains(target) && !imageButtonRef.current?.contains(target)) {
+        setShowImageMenu(false);
+      }
+      
+      // Check if clicking outside PDF menu and its button
+      if (showPdfMenu && !pdfMenuRef.current?.contains(target) && !pdfButtonRef.current?.contains(target)) {
+        setShowPdfMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showImageMenu, showPdfMenu]);
+
   const {
     bgType,
     setBgType,
@@ -354,12 +389,59 @@ export default function ControlsPanel({
       </div>
 
       <div className="p-6 border-t border-[var(--color-ink)]/5 bg-white/80 space-y-3">
-        <button onClick={exportImage} className="w-full py-3 bg-[var(--color-ink)] text-white hover:bg-[var(--color-accent)] transition-colors duration-300 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-medium shadow-lg shadow-[var(--color-ink)]/10">
-          <Image className="w-4 h-4" /> Export Image
-        </button>
-        <button onClick={exportPdf} className="w-full py-3 border border-[var(--color-ink)]/20 hover:border-[var(--color-ink)] transition-colors duration-300 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-medium">
-          <Download className="w-4 h-4" /> Export PDF
-        </button>
+        <div className="relative">
+          <button 
+            ref={imageButtonRef}
+            onClick={() => setShowImageMenu(!showImageMenu)}
+            className="w-full py-3 bg-[var(--color-ink)] text-white hover:bg-[var(--color-accent)] transition-colors duration-300 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-medium shadow-lg shadow-[var(--color-ink)]/10"
+          >
+            <Image className="w-4 h-4" /> Export Image
+          </button>
+          
+          {showImageMenu && (
+            <div ref={imageMenuRef} className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-xl border border-[var(--color-ink)]/10 overflow-hidden z-10">
+              <button 
+                onClick={() => { exportImage(false); setShowImageMenu(false); }}
+                className="w-full px-4 py-3 text-left text-xs uppercase tracking-widest font-medium hover:bg-[var(--color-ink)]/5 transition-colors flex items-center gap-2"
+              >
+                <Image className="w-4 h-4" /> Current Page
+              </button>
+              <button 
+                onClick={() => { exportImage(true); setShowImageMenu(false); }}
+                className="w-full px-4 py-3 text-left text-xs uppercase tracking-widest font-medium hover:bg-[var(--color-ink)]/5 transition-colors flex items-center gap-2 border-t border-[var(--color-ink)]/10"
+              >
+                <Image className="w-4 h-4" /> All Pages
+              </button>
+            </div>
+          )}
+        </div>
+        
+        <div className="relative">
+          <button 
+            ref={pdfButtonRef}
+            onClick={() => setShowPdfMenu(!showPdfMenu)}
+            className="w-full py-3 border border-[var(--color-ink)]/20 hover:border-[var(--color-ink)] transition-colors duration-300 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-medium"
+          >
+            <Download className="w-4 h-4" /> Export PDF
+          </button>
+          
+          {showPdfMenu && (
+            <div ref={pdfMenuRef} className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-xl border border-[var(--color-ink)]/10 overflow-hidden z-10">
+              <button 
+                onClick={() => { exportPdf(false); setShowPdfMenu(false); }}
+                className="w-full px-4 py-3 text-left text-xs uppercase tracking-widest font-medium hover:bg-[var(--color-ink)]/5 transition-colors flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Current Page
+              </button>
+              <button 
+                onClick={() => { exportPdf(true); setShowPdfMenu(false); }}
+                className="w-full px-4 py-3 text-left text-xs uppercase tracking-widest font-medium hover:bg-[var(--color-ink)]/5 transition-colors flex items-center gap-2 border-t border-[var(--color-ink)]/10"
+              >
+                <Download className="w-4 h-4" /> All Pages
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </motion.aside>
   );

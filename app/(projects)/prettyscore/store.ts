@@ -58,6 +58,8 @@ interface PrettyScoreState {
   setIsProcessing: (isProcessing: boolean) => void;
   isControlsOpen: boolean;
   setIsControlsOpen: (isControlsOpen: boolean) => void;
+  isOverviewMode: boolean;
+  setIsOverviewMode: (isOverviewMode: boolean) => void;
   
   // 动作
   applyTheme: (themeId: string) => void;
@@ -120,6 +122,8 @@ export const usePrettyScoreStore = create<PrettyScoreState>((set, get) => ({
   setIsProcessing: (isProcessing) => set({ isProcessing }),
   isControlsOpen: true,
   setIsControlsOpen: (isControlsOpen) => set({ isControlsOpen }),
+  isOverviewMode: false,
+  setIsOverviewMode: (isOverviewMode) => set({ isOverviewMode }),
   
   // 动作
   applyTheme: (themeId) => {

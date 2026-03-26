@@ -466,10 +466,144 @@ export default function useCanvas({
     drawFinal();
   }, [rawCanvasRef, processedCanvasRef, lastProcessedColor, debouncedScoreColor, hexToRgb, processScoreCanvas, drawFinal]);
 
+  const generateThumbnails = useCallback(async (pdfDoc: any, numPages: number, renderPdfPageToCanvas: (pdfDoc: any, pageNum: number, scale: number) => Promise<HTMLCanvasElement | null>) => {
+    const thumbnails: {[key: number]: HTMLCanvasElement} = {};
+    
+    try {
+      if (!pdfDoc) {
+        // 处理 SVG 文件 (pdfDoc 为 null 表示是 SVG)
+        const finalCanvas = finalCanvasRef.current;
+        if (finalCanvas) {
+          // 创建缩略图 - 使用更高的分辨率
+          const tempCanvas = document.createElement('canvas');
+          // 适当缩小尺寸但保持足够的分辨率
+          const scale = 0.8;
+          tempCanvas.width = finalCanvas.width * scale;
+          tempCanvas.height = finalCanvas.height * scale;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (tempCtx) {
+            // 提高绘制质量
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = 'high';
+            // 绘制缩小的画布
+            tempCtx.drawImage(finalCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+            // 保存缩略图画布
+            thumbnails[1] = tempCanvas;
+          }
+        }
+      } else if (numPages > 0) {
+        // 处理 PDF 文件
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          // 渲染页面到画布 - 使用更高的缩放比例
+          const rawCanvas = await renderPdfPageToCanvas(pdfDoc, pageNum, 1.0); // 提高缩放比例以获得更清晰的缩略图
+          
+          // 处理画布以应用样式
+          if (rawCanvas) {
+            // 处理画布 - 应用乐谱颜色
+            const rgb = hexToRgb(debouncedScoreColor);
+            const processedCanvas = processScoreCanvas(rawCanvas, rgb);
+            
+            const tempCanvas = document.createElement('canvas');
+            // 适当缩小尺寸但保持足够的分辨率
+            const scale = 0.8;
+            tempCanvas.width = processedCanvas.width * scale;
+            tempCanvas.height = processedCanvas.height * scale;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            if (tempCtx) {
+              // 提高绘制质量
+              tempCtx.imageSmoothingEnabled = true;
+              tempCtx.imageSmoothingQuality = 'high';
+              
+              // 1. 绘制背景
+              tempCtx.fillStyle = debouncedCustomBgColor;
+              tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+              
+              // 2. 应用叠加层效果
+              if (debouncedOverlayOpacity > 0) {
+                tempCtx.save();
+                const w = tempCanvas.width;
+                const h = tempCanvas.height;
+                const r = parseInt(debouncedOverlayColor.slice(1,3), 16) || 255;
+                const g = parseInt(debouncedOverlayColor.slice(3,5), 16) || 255;
+                const b = parseInt(debouncedOverlayColor.slice(5,7), 16) || 255;
+                const rgba = (alpha: number) => `rgba(${r},${g},${b},${alpha})`;
+                
+                if (debouncedOverlayDirection === 'solid') {
+                  tempCtx.fillStyle = rgba(debouncedOverlayOpacity);
+                } else if (debouncedOverlayDirection === 'top-bottom') {
+                  const grad = tempCtx.createLinearGradient(0, 0, 0, h);
+                  grad.addColorStop(0, rgba(debouncedOverlayOpacity));
+                  grad.addColorStop(1, rgba(0));
+                  tempCtx.fillStyle = grad;
+                } else if (debouncedOverlayDirection === 'bottom-top') {
+                  const grad = tempCtx.createLinearGradient(0, h, 0, 0);
+                  grad.addColorStop(0, rgba(debouncedOverlayOpacity));
+                  grad.addColorStop(1, rgba(0));
+                  tempCtx.fillStyle = grad;
+                } else if (debouncedOverlayDirection === 'radial') {
+                  const grad = tempCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h)/2);
+                  grad.addColorStop(0, rgba(0));
+                  grad.addColorStop(1, rgba(debouncedOverlayOpacity));
+                  tempCtx.fillStyle = grad;
+                }
+                tempCtx.fillRect(0, 0, w, h);
+                tempCtx.restore();
+              }
+              
+              // 3. 应用温暖色调
+              if (debouncedWarmth > 0) {
+                tempCtx.globalCompositeOperation = 'multiply';
+                tempCtx.fillStyle = `rgba(210, 150, 80, ${debouncedWarmth})`;
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.globalCompositeOperation = 'source-over';
+              }
+              
+              // 4. 居中绘制乐谱
+              tempCtx.globalCompositeOperation = debouncedBlendMode as any;
+              const scoreX = (tempCanvas.width - processedCanvas.width * scale) / 2;
+              const scoreY = (tempCanvas.height - processedCanvas.height * scale) / 2;
+              tempCtx.drawImage(processedCanvas, scoreX, scoreY, processedCanvas.width * scale, processedCanvas.height * scale);
+              tempCtx.globalCompositeOperation = 'source-over';
+              
+              // 5. 应用装饰元素
+              drawDecorations(tempCtx, tempCanvas.width, tempCanvas.height, debouncedDecoration, debouncedScoreColor, debouncedBlendMode);
+              
+              // 6. 应用暗角效果
+              if (debouncedVignette > 0) {
+                const cx = tempCanvas.width / 2;
+                const cy = tempCanvas.height / 2;
+                const radius = Math.max(cx, cy);
+                const gradient = tempCtx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius * 1.2);
+                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(0.6, `rgba(70, 30, 10, ${debouncedVignette * 0.4})`);
+                gradient.addColorStop(1, `rgba(30, 10, 0, ${debouncedVignette})`);
+                
+                tempCtx.globalCompositeOperation = 'multiply';
+                tempCtx.fillStyle = gradient;
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.globalCompositeOperation = 'source-over';
+              }
+              
+              // 保存缩略图画布
+              thumbnails[pageNum] = tempCanvas;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generating thumbnails:', error);
+    }
+    
+    return thumbnails;
+  }, [debouncedCustomBgColor, debouncedBlendMode, debouncedWarmth, debouncedVignette, debouncedScoreColor, processScoreCanvas, hexToRgb, finalCanvasRef, drawDecorations, debouncedOverlayOpacity, debouncedOverlayDirection, debouncedOverlayColor]);
+
   return {
     drawFinal,
     processScore,
     drawThemeElements,
-    drawDecorations
+    drawDecorations,
+    generateThumbnails
   };
 }

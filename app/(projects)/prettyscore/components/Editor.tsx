@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, SlidersHorizontal, X, FileAudio } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SlidersHorizontal, X, FileAudio, Layers } from 'lucide-react';
 import ControlsPanel from './ControlsPanel';
 import { usePrettyScoreStore } from '../store';
 import useDebounce from '../hooks/useDebounce';
@@ -10,9 +10,13 @@ interface EditorProps {
   numPages: number;
   currentPage: number;
   handlePageChange: (delta: number) => void;
-  exportImage: () => void;
-  exportPdf: () => void;
+  exportImage: (exportAll?: boolean) => Promise<void>;
+  exportPdf: (exportAll?: boolean) => Promise<void>;
   handleCustomBgUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isOverviewMode: boolean;
+  setIsOverviewMode: (isOverviewMode: boolean) => void;
+  generateThumbnails: () => Promise<void>;
+  pdfDoc: any;
 }
 
 export default function Editor({ 
@@ -22,7 +26,11 @@ export default function Editor({
   handlePageChange, 
   exportImage, 
   exportPdf, 
-  handleCustomBgUpload
+  handleCustomBgUpload,
+  isOverviewMode,
+  setIsOverviewMode,
+  generateThumbnails,
+  pdfDoc
 }: EditorProps) {
   const {
     isControlsOpen,
@@ -49,6 +57,26 @@ export default function Editor({
           <canvas ref={finalCanvasRef} className="max-w-full max-h-[85vh] object-contain rounded-sm" />
         </motion.div>
 
+        {/* Preview Menu - Only show for PDF files */}
+        {pdfDoc && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="absolute top-8 right-8 flex items-center gap-3"
+          >
+            <button
+              onClick={async () => {
+                await generateThumbnails();
+                setIsOverviewMode(true);
+              }}
+              className="px-4 py-2 bg-[var(--color-ink)] text-white rounded-lg hover:bg-[var(--color-accent)] transition-colors shadow-lg shadow-[var(--color-ink)]/20 flex items-center gap-2"
+            >
+              <Layers className="w-4 h-4" /> Preview
+            </button>
+          </motion.div>
+        )}
+
         {/* Pagination Controls */}
         {numPages > 1 && (
           <motion.div
@@ -70,6 +98,9 @@ export default function Editor({
           exportImage={exportImage}
           exportPdf={exportPdf}
           handleCustomBgUpload={handleCustomBgUpload}
+          isOverviewMode={isOverviewMode}
+          setIsOverviewMode={setIsOverviewMode}
+          generateThumbnails={generateThumbnails}
         />
       </div>
 
@@ -78,10 +109,13 @@ export default function Editor({
         {isControlsOpen && (
           <div className="md:hidden">
             <ControlsPanel
-              exportImage={exportImage}
-              exportPdf={exportPdf}
-              handleCustomBgUpload={handleCustomBgUpload}
-            />
+            exportImage={exportImage}
+            exportPdf={exportPdf}
+            handleCustomBgUpload={handleCustomBgUpload}
+            isOverviewMode={isOverviewMode}
+            setIsOverviewMode={setIsOverviewMode}
+            generateThumbnails={generateThumbnails}
+          />
           </div>
         )}
       </AnimatePresence>

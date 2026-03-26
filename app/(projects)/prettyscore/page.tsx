@@ -12,6 +12,7 @@ import useDebounce from './hooks/useDebounce';
 import IntroScreen from './components/IntroScreen';
 import Editor from './components/Editor';
 import useCanvas from './components/Canvas';
+import ScoreOverview from './components/ScoreOverview';
 import { usePrettyScoreStore } from './store';
 import { Music } from 'lucide-react';
 
@@ -45,6 +46,8 @@ export default function App() {
     setCanvasWidth,
     canvasHeight,
     setCanvasHeight,
+    isOverviewMode,
+    setIsOverviewMode,
   } = usePrettyScoreStore();
 
   const debouncedCustomBgColor = useDebounce(customBgColor, 150);
@@ -63,6 +66,7 @@ export default function App() {
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const finalCanvasRef = useRef<HTMLCanvasElement>(null);
   const lastProcessedColor = useRef<string | null>(null);
+  const pageThumbnails = useRef<{[key: number]: HTMLCanvasElement}>({});
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -155,11 +159,14 @@ export default function App() {
   };
 
 
+
+
   const {
     drawThemeElements,
     drawDecorations,
     processScore,
     drawFinal,
+    generateThumbnails: generateThumbnailsFromCanvas,
   } = useCanvas({
     rawCanvasRef,
     processScoreCanvas,
@@ -195,6 +202,30 @@ export default function App() {
     processScore();
   }, [processScore]);
 
+  useEffect(() => {
+    // Redraw canvas when returning from overview mode
+    if (!isOverviewMode && appState === 'editor') {
+      processScore();
+    }
+  }, [isOverviewMode, appState, processScore]);
+
+  const generateThumbnails = async () => {
+    console.log(pdfDoc)
+    if (!pdfDoc || numPages === 0) return;
+    setIsProcessing(true);
+    try {
+      const thumbnails = await generateThumbnailsFromCanvas(pdfDoc, numPages, renderPdfPageToCanvas);
+      // Update the pageThumbnails ref with the generated thumbnails
+      if (thumbnails) {
+        pageThumbnails.current = thumbnails;
+      }
+    } catch (error) {
+      console.error('Error generating thumbnails:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handlePageChange = (delta: number) => {
     const newPage = currentPage + delta;
     if (newPage >= 1 && newPage <= numPages && pdfDoc) {
@@ -203,25 +234,105 @@ export default function App() {
     }
   };
 
-  const exportImage = () => {
+  const exportImage = async (exportAll: boolean = false) => {
     if (!finalCanvasRef.current) return;
-    const link = document.createElement('a');
-    link.download = `prettyscore-score-${currentPage}.png`;
-    link.href = finalCanvasRef.current.toDataURL('image/png');
-    link.click();
+    
+    if (!exportAll) {
+      // 导出当前页
+      const link = document.createElement('a');
+      link.download = `prettyscore-score-${currentPage}.png`;
+      link.href = finalCanvasRef.current.toDataURL('image/png');
+      link.click();
+    } else {
+      // 导出所有页
+      setIsProcessing(true);
+      try {
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          // 切换到当前页并渲染
+          await renderPage(pdfDoc, pageNum);
+          
+          // 等待渲染完成
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // 导出当前页为图片
+          if (finalCanvasRef.current) {
+            const link = document.createElement('a');
+            link.download = `prettyscore-score-${pageNum}.png`;
+            link.href = finalCanvasRef.current.toDataURL('image/png');
+            link.click();
+            
+            // 延迟以确保浏览器能处理多个下载
+            if (pageNum < numPages) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+        }
+        
+        // 恢复到原始页面
+        await renderPage(pdfDoc, currentPage);
+      } catch (error) {
+        console.error('Error exporting all images:', error);
+        alert('Failed to export all images. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+    }
   };
 
-  const exportPdf = () => {
+  const exportPdf = async (exportAll: boolean = false) => {
     if (!finalCanvasRef.current) return;
-    const canvas = finalCanvasRef.current;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: [canvas.width, canvas.height]
-    });
-    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-    pdf.save(`prettyscore-score-${currentPage}.pdf`);
+    
+    if (!exportAll) {
+      // 单独导出当前页
+      const canvas = finalCanvasRef.current;
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+      pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`prettyscore-score-${currentPage}.pdf`);
+    } else {
+      // 合并导出所有页
+      setIsProcessing(true);
+      try {
+        const canvas = finalCanvasRef.current;
+        const pdf = new jsPDF({
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          if (pageNum > 1) {
+            pdf.addPage();
+          }
+          
+          // 切换到当前页并渲染
+          await renderPage(pdfDoc, pageNum);
+          
+          // 等待渲染完成
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // 添加当前页到PDF
+          if (finalCanvasRef.current) {
+            const imgData = finalCanvasRef.current.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+          }
+        }
+        
+        // 恢复到原始页面
+        await renderPage(pdfDoc, currentPage);
+        
+        pdf.save('prettyscore-score-all.pdf');
+      } catch (error) {
+        console.error('Error exporting all pages:', error);
+        alert('Failed to export all pages. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+    }
   };
 
   return (
@@ -248,7 +359,7 @@ export default function App() {
           <IntroScreen getRootProps={getRootProps} getInputProps={getInputProps} isDragActive={isDragActive} useSampleFile={useSampleFile} />
         )}
 
-        {appState === 'editor' && (
+        {appState === 'editor' && !isOverviewMode && (
           <Editor
             finalCanvasRef={finalCanvasRef}
             numPages={numPages}
@@ -257,8 +368,24 @@ export default function App() {
             exportImage={exportImage}
             exportPdf={exportPdf}
             handleCustomBgUpload={handleCustomBgUpload}
+            isOverviewMode={isOverviewMode}
+            setIsOverviewMode={setIsOverviewMode}
+            generateThumbnails={generateThumbnails}
+            pdfDoc={pdfDoc}
           />
         )}
+
+        <ScoreOverview
+          isOverviewMode={isOverviewMode}
+          setIsOverviewMode={setIsOverviewMode}
+          numPages={numPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          pdfDoc={pdfDoc}
+          renderPage={renderPage}
+          pageThumbnails={pageThumbnails}
+          appState={appState}
+        />
       </AnimatePresence>
 
       {/* Global Processing Overlay */}
