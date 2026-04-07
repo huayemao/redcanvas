@@ -30,7 +30,7 @@ export const GradientTemplate = ({
 }: TemplateProps) => {
   if (isLandscape) {
     return (
-      <div className="relative w-full h-full bg-gradient-to-b from-green-100 to-blue-100 flex flex-col items-center justify-center p-4 overflow-hidden">
+      <div className="relative w-full h-full bg-gradient-to-b from-green-100 to-blue-100  p-4 overflow-hidden">
         {/* Text content */}
         <div className="z-10 mb-6 text-center max-w-md">
           {seriesNumber && (
