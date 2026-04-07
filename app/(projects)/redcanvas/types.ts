@@ -1,5 +1,5 @@
 
-export type TemplateId = 'classic' | 'minimal' | 'bold' | 'floating' | 'magazine'| 'mockup';
+export type TemplateId = 'classic' | 'minimal' | 'bold' | 'floating' | 'magazine'| 'mockup' | 'gradient';
 
 export interface Highlight {
   id: string;

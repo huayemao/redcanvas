@@ -37,7 +37,13 @@ export const TEMPLATES: TemplateConfig[] = [
     name: '电脑场景',
     description: '真实电脑场景，增强代入感',
     previewColor: '#6b7280'
-  }
+  },
+  {
+    id: 'gradient',
+    name: '渐变背景',
+    description: '渐变背景，增加视觉深度',
+    previewColor: '#000000'
+  },
 ];
 
 export const PRESET_COLORS = [

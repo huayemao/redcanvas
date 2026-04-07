@@ -10,6 +10,7 @@ import {
   BoldTemplate,
   FloatingTemplate,
   MockupTemplate,
+  GradientTemplate,
 } from "./preview/Templates";
 
 interface CoverRendererProps {
@@ -46,6 +47,7 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
       bold: BoldTemplate,
       floating: FloatingTemplate,
       mockup: MockupTemplate,
+      gradient: GradientTemplate,
     };
 
     const TemplateComponent = TemplateMap[templateId];
