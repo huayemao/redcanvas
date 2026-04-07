@@ -275,28 +275,57 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                      网站/App 壳子: {state.showDeviceFrame ? '开启' : '关闭'}
                    </button>
                 </div>
-                {state.showDeviceFrame && (
+                {state.showDeviceFrame ? (
                   <div className="mb-4">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">设备类型</label>
                     <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { type: 'none' as DeviceType, label: '无', icon: Monitor },
-                        { type: 'browser' as DeviceType, label: '浏览器', icon: Monitor },
-                        { type: 'device' as DeviceType, label: '设备', icon: Laptop },
-                      ].map((device) => (
-                        <button
-                          key={device.type}
-                          onClick={() => setState(prev => ({ ...prev, deviceType: device.type }))}
-                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                            state.deviceType === device.type 
-                              ? 'border-neutral-900 bg-neutral-900 text-white' 
-                              : 'border-neutral-100 hover:border-neutral-200 bg-white'
-                          }`}
-                        >
-                          <device.icon className="w-4 h-4" />
-                          <span className="text-[9px] font-black">{device.label}</span>
-                        </button>
-                      ))}
+                      {
+                        [
+                          { type: 'none' as DeviceType, label: '无', icon: Monitor },
+                          { type: 'browser' as DeviceType, label: '浏览器', icon: Monitor },
+                          { type: 'device' as DeviceType, label: '设备', icon: Laptop },
+                        ].map((device) => (
+                          <button
+                            key={device.type}
+                            onClick={() => setState(prev => ({ ...prev, deviceType: device.type }))}
+                            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                              state.deviceType === device.type 
+                                ? 'border-neutral-900 bg-neutral-900 text-white' 
+                                : 'border-neutral-100 hover:border-neutral-200 bg-white'
+                            }`}
+                          >
+                            <device.icon className="w-4 h-4" />
+                            <span className="text-[9px] font-black">{device.label}</span>
+                          </button>
+                        ))
+                      }
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">图片比例</label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {
+                        [
+                          { ratio: 16/9, label: '16:9' },
+                          { ratio: 3/2, label: '3:2' },
+                          { ratio: 4/3, label: '4:3' },
+                          { ratio: 2/3, label: '2:3' },
+                          { ratio: 9/20, label: '9:20' },
+                        ].map((option) => (
+                          <button
+                            key={option.ratio}
+                            onClick={() => setState(prev => ({ ...prev, imageAspectRatio: option.ratio }))}
+                            className={`flex items-center justify-center p-3 rounded-xl border-2 transition-all ${
+                              Math.abs(state.imageAspectRatio - option.ratio) < 0.01 
+                                ? 'border-neutral-900 bg-neutral-900 text-white' 
+                                : 'border-neutral-100 hover:border-neutral-200 bg-white'
+                            }`}
+                          >
+                            <span className="text-[9px] font-black">{option.label}</span>
+                          </button>
+                        ))
+                      }
                     </div>
                   </div>
                 )}

@@ -25,12 +25,14 @@ export const ImageWithFrame = ({
 
   if (!showDeviceFrame || deviceType === "none") {
     return (
-      <img
-        src={imageUrl}
-        crossOrigin="anonymous"
-        className="w-full h-full object-cover"
-        alt="cover"
-      />
+      <div style={{ aspectRatio: imageAspectRatio }} className="relative w-full">
+        <img
+          src={imageUrl}
+          crossOrigin="anonymous"
+          className="w-full h-full object-cover"
+          alt="cover"
+        />
+      </div>
     );
   }
 

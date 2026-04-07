@@ -99,7 +99,7 @@ export const GradientTemplate = ({
             />
           </div>
         ) : (
-          <div className="w-full max-w-md aspect-[3/4] rounded-lg shadow-xl overflow-hidden bg-white">
+          <div className="w-full max-w-md rounded-lg shadow-xl overflow-hidden bg-white">
             <ImageWithFrame
               imageUrl={imageUrl}
               showDeviceFrame={showDeviceFrame}
