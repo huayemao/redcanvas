@@ -9,7 +9,7 @@ interface TemplatePropsSimple {
   highlights: Highlight[];
   seriesNumber: string;
   imageUrl: string | null;
-  imageAspectRatio: number;
+  imageAspectRatio: number | null;
   fontClassName: string;
   isLandscape?: boolean;
 }

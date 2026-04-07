@@ -7,7 +7,7 @@ interface ImageWithFrameProps {
   imageUrl: string | null;
   showDeviceFrame: boolean;
   deviceType: DeviceType;
-  imageAspectRatio: number;
+  imageAspectRatio: number | null;
 }
 
 export const ImageWithFrame = ({
@@ -25,7 +25,7 @@ export const ImageWithFrame = ({
 
   if (!showDeviceFrame || deviceType === "none") {
     return (
-      <div style={{ aspectRatio: imageAspectRatio }} className="relative w-full">
+      <div style={{ aspectRatio: imageAspectRatio || undefined }} className="relative w-full">
         <img
           src={imageUrl}
           crossOrigin="anonymous"
@@ -36,7 +36,7 @@ export const ImageWithFrame = ({
     );
   }
 
-  const isLandscape = imageAspectRatio >= 1;
+  const isLandscape = imageAspectRatio !== null ? imageAspectRatio >= 1 : true;
 
   if (deviceType === "browser") {
     if (isLandscape) {

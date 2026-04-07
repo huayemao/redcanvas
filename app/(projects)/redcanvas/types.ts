@@ -18,7 +18,7 @@ export interface EditorState {
   highlights: Highlight[];
   seriesNumber: string;
   imageUrl: string | null;
-  imageAspectRatio: number; // Width / Height
+  imageAspectRatio: number | null; // Width / Height, null means original ratio
   showDeviceFrame: boolean;
   deviceType: DeviceType;
   templateId: TemplateId;

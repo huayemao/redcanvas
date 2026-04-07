@@ -12,7 +12,7 @@ interface TemplateProps {
   imageUrl: string | null;
   showDeviceFrame: boolean;
   deviceType: DeviceType;
-  imageAspectRatio: number;
+  imageAspectRatio: number | null;
   fontClassName: string;
   isLandscape: boolean;
 }

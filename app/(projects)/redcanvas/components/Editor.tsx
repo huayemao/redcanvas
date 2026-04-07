@@ -32,7 +32,7 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
         setState(prev => ({ 
           ...prev, 
           imageUrl: url, 
-          imageAspectRatio: img.naturalWidth / img.naturalHeight 
+          imageAspectRatio: null // Set to null for original ratio
         }));
       };
       img.src = url;
@@ -271,7 +271,7 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                        : 'bg-neutral-100 text-neutral-400 hover:bg-neutral-200'
                      }`}
                    >
-                     {state.imageAspectRatio > 1 ? <Monitor className="w-3 h-3" /> : <Smartphone className="w-3 h-3" />}
+                     {state.imageAspectRatio &&  state.imageAspectRatio > 1 ? <Monitor className="w-3 h-3" /> : <Smartphone className="w-3 h-3" />}
                      网站/App 壳子: {state.showDeviceFrame ? '开启' : '关闭'}
                    </button>
                 </div>
@@ -317,7 +317,7 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                             key={option.ratio}
                             onClick={() => setState(prev => ({ ...prev, imageAspectRatio: option.ratio }))}
                             className={`flex items-center justify-center p-3 rounded-xl border-2 transition-all ${
-                              Math.abs(state.imageAspectRatio - option.ratio) < 0.01 
+                              state.imageAspectRatio !== null && Math.abs(state.imageAspectRatio - option.ratio) < 0.01 
                                 ? 'border-neutral-900 bg-neutral-900 text-white' 
                                 : 'border-neutral-100 hover:border-neutral-200 bg-white'
                             }`}
@@ -326,6 +326,17 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                           </button>
                         ))
                       }
+                      <button
+                        key="original"
+                        onClick={() => setState(prev => ({ ...prev, imageAspectRatio: null }))}
+                        className={`flex items-center justify-center p-3 rounded-xl border-2 transition-all ${
+                          state.imageAspectRatio === null 
+                            ? 'border-neutral-900 bg-neutral-900 text-white' 
+                            : 'border-neutral-100 hover:border-neutral-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-[9px] font-black">原比例</span>
+                      </button>
                     </div>
                   </div>
                 )}

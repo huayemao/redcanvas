@@ -19,7 +19,7 @@ const INITIAL_STATE: EditorState = {
   ],
   seriesNumber: "#01",
   imageUrl: "/screenshot.png",
-  imageAspectRatio: 1.5,
+  imageAspectRatio: null, // null means original ratio
   showDeviceFrame: true,
   deviceType: 'browser',
   templateId: 'classic',
@@ -63,7 +63,7 @@ const AppPage: React.FC = () => {
               setState(prev => ({
                 ...prev,
                 imageUrl: url,
-                imageAspectRatio: img.naturalWidth / img.naturalHeight
+                imageAspectRatio: null // Set to null for original ratio
               }));
             };
             img.src = url;
