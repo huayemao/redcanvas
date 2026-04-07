@@ -11,7 +11,7 @@ export interface Highlight {
 export type DeviceType = 'none' | 'browser' | 'device';
 
 export type Orientation = 'portrait' | 'landscape';
-export type ExportSize = 'xiaohongshu' | 'bilibili' | 'youtube' | 'custom';
+export type ExportSize = '3:4' | '3:2' | '1:1' | '4:3' | '9:16';
 
 export interface EditorState {
   title: string;

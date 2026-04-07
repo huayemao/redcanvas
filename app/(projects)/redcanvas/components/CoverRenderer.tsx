@@ -36,9 +36,8 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
     const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
 
     const isLandscape =
-      orientation === "landscape" ||
-      exportSize === "bilibili" ||
-      exportSize === "youtube";
+      exportSize === "3:2" ||
+      exportSize === "4:3";
 
     const TemplateMap = {
       classic: ClassicTemplate,
@@ -54,7 +53,7 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
 
     return (
       <div
-        className={`relative w-full ${exportSize === "xiaohongshu" || (exportSize === "custom" && orientation === "portrait") ? "max-w-[480px]" : "max-w-[600px]"} ${(exportSize === "bilibili" || exportSize === "youtube" || (exportSize === "custom" && orientation === "landscape")) ? "aspect-[3/2]" : "aspect-[3/4]"}  overflow-hidden bg-white preview-shadow select-none mx-auto`}
+        className={`relative w-full ${exportSize === "3:4" || exportSize === "9:16" ? "max-w-[480px]" : exportSize === "1:1" ? "max-w-[500px]" : "max-w-[600px]"} ${exportSize === "1:1" ? "aspect-[1/1]" : exportSize === "4:3" ? "aspect-[4/3]" : exportSize === "9:16" ? "aspect-[9/16]" : exportSize === "3:2" ? "aspect-[3/2]" : "aspect-[3/4]"}  overflow-hidden bg-white preview-shadow select-none mx-auto`}
       >
         <div ref={ref} className="w-full h-full overflow-hidden">
           {TemplateComponent && (

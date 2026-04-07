@@ -26,7 +26,7 @@ const INITIAL_STATE: EditorState = {
   fontFamily: 'kuaile',
   accentColor: '#ff2442',
   orientation: 'portrait',
-  exportSize: 'xiaohongshu',
+  exportSize: '3:4',
 };
 
 const AppPage: React.FC = () => {
@@ -136,8 +136,6 @@ const AppPage: React.FC = () => {
         </div>
 
         <div className="flex-1 bg-gradient-to-br from-white to-neutral-50 relative flex items-center justify-center p-6 lg:p-12 h-full min-h-[800px]">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-50 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-50 rounded-full blur-2xl opacity-40" />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -154,20 +152,41 @@ const AppPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-3 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
                   <span>导出尺寸</span>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: 'xiaohongshu' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.orientation === 'portrait' && state.exportSize === 'xiaohongshu' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择竖版小红书尺寸"
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '3:4' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '3:4' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择3:4尺寸"
                   >
-                    竖版 (3:4)
+                    3:4
                   </button>
                   <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: 'bilibili' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.orientation === 'landscape' && state.exportSize === 'bilibili' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择横版哔哩哔哩尺寸"
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '9:16' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '9:16' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择9:16尺寸"
                   >
-                    横版 (3:2)
+                    9:16
+                  </button>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: '3:2' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '3:2' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择3:2尺寸"
+                  >
+                    3:2
+                  </button>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '1:1' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '1:1' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择1:1尺寸"
+                  >
+                    1:1
+                  </button>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: '4:3' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '4:3' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                    aria-label="选择4:3尺寸"
+                  >
+                    4:3
                   </button>
                 </div>
               </div>

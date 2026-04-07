@@ -44,11 +44,6 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-blue-50 min-h-screen flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-30" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-200 rounded-full blur-3xl opacity-30" />
-        </div>
-
         <div className="container mx-auto px-6 py-16 relative z-10">
           <div className="flex flex-col items-center max-w-4xl mx-auto">
             <motion.div
