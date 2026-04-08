@@ -28,8 +28,10 @@ const SAMPLE_STATE: EditorState = {
     templateId: 'classic',
     fontFamily: 'kuaile',
     accentColor: '#ff2442',
+    gradientStartColor: '#83b49f',
+    gradientEndColor: '#37674f',
     orientation: 'portrait',
-    exportSize: 'xiaohongshu',
+    exportSize: '3:4',
 };
 
 export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }) => {
@@ -62,7 +64,8 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
             minimal: ['minimal', 'portrait', 'landscape'],
             bold: ['bold', 'portrait', 'landscape'],
             floating: ['modern', 'portrait', 'landscape'],
-            mockup: ['modern', 'landscape']
+            mockup: ['modern', 'landscape'],
+            gradient: ['classic'],
         };
 
         return templateCategories[template.id].some(category => activeFilters.includes(category));
@@ -71,7 +74,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
     const handleSelectTemplate = (templateId: TemplateId) => {
         // 根据模板类型默认选择合适的方向和导出尺寸
         let orientation: Orientation = 'portrait';
-        let exportSize: ExportSize = 'xiaohongshu';
+        let exportSize: ExportSize = '3:4';
 
 
 
@@ -139,7 +142,7 @@ export const TemplateStore: React.FC<TemplateStoreProps> = ({ onSelectTemplate }
                                         state={{
                                             ...SAMPLE_STATE,
                                             templateId: template.id,
-                                            exportSize: 'xiaohongshu',
+                                            exportSize: '3:4',
                                             deviceType: 'device',
                                             showDeviceFrame: ['mockup', 'bold', 'magazine'].includes(template.id) ? false : true,
                                         }}

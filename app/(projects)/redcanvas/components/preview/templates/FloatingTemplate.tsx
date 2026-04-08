@@ -15,6 +15,8 @@ interface TemplateProps {
   imageAspectRatio: number | null;
   fontClassName: string;
   isLandscape: boolean;
+  gradientStartColor?: string;
+  gradientEndColor?: string;
 }
 
 export const FloatingTemplate = ({
@@ -27,6 +29,8 @@ export const FloatingTemplate = ({
   imageAspectRatio,
   fontClassName,
   isLandscape,
+  gradientStartColor,
+  gradientEndColor,
 }: TemplateProps) => {
   if (isLandscape) {
     return (

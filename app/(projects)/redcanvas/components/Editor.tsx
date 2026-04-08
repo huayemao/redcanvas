@@ -249,6 +249,47 @@ export const Editor: React.FC<EditorProps> = ({ state, setState, onDownload }) =
                   ))}
                 </div>
               </div>
+              
+              <div className="mt-8">
+                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">渐变颜色</label>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">起始颜色</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={state.gradientStartColor}
+                        onChange={(e) => setState(prev => ({ ...prev, gradientStartColor: e.target.value }))}
+                        className="w-10 h-10 rounded-xl border-2 border-neutral-200 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={state.gradientStartColor}
+                        onChange={(e) => setState(prev => ({ ...prev, gradientStartColor: e.target.value }))}
+                        className="flex-1 px-4 py-2 bg-neutral-50 rounded-xl font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">结束颜色</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={state.gradientEndColor}
+                        onChange={(e) => setState(prev => ({ ...prev, gradientEndColor: e.target.value }))}
+                        className="w-10 h-10 rounded-xl border-2 border-neutral-200 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={state.gradientEndColor}
+                        onChange={(e) => setState(prev => ({ ...prev, gradientEndColor: e.target.value }))}
+                        className="flex-1 px-4 py-2 bg-neutral-50 rounded-xl font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
+                      />
+                    </div>
+                  </div>
+                  <div className="h-12 rounded-xl" style={{ background: `linear-gradient(135deg, ${state.gradientStartColor} 0%, ${state.gradientEndColor} 100%)` }} />
+                </div>
+              </div>
             </motion.div>
           )}
 

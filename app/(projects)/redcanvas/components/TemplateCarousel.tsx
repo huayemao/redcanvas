@@ -28,8 +28,10 @@ const SAMPLE_STATE: EditorState = {
   templateId: 'classic',
   fontFamily: 'kuaile',
   accentColor: '#ff2442',
+  gradientStartColor: '#83b49f',
+  gradientEndColor: '#37674f',
   orientation: 'portrait',
-  exportSize: 'xiaohongshu',
+  exportSize: '3:4',
 };
 
 export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemplate }) => {
@@ -45,7 +47,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
   const handleSelectTemplate = (templateId: TemplateId) => {
     // 根据模板类型默认选择合适的方向和导出尺寸
     let orientation: Orientation = 'portrait';
-    let exportSize: ExportSize = 'xiaohongshu';
+    let exportSize: ExportSize = '3:4';
 
     onSelectTemplate(templateId, orientation, exportSize);
   };
@@ -95,7 +97,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
                             ...SAMPLE_STATE,
                             templateId: template.id,
                             orientation: 'portrait',
-                            exportSize: 'xiaohongshu',
+                            exportSize: '3:4',
                             showDeviceFrame: ['mockup', 'bold', 'magazine'].includes(template.id) ? false : true,
                           }}
                           ref={() => { }}

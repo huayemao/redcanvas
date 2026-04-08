@@ -15,6 +15,8 @@ interface TemplateProps {
   imageAspectRatio: number | null;
   fontClassName: string;
   isLandscape: boolean;
+  gradientStartColor?: string;
+  gradientEndColor?: string;
 }
 
 export const MagazineTemplate = ({
@@ -27,6 +29,8 @@ export const MagazineTemplate = ({
   imageAspectRatio,
   fontClassName,
   isLandscape,
+  gradientStartColor,
+  gradientEndColor,
 }: TemplateProps) => {
   if (isLandscape) {
     return (

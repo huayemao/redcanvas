@@ -31,6 +31,8 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
       imageAspectRatio,
       orientation,
       exportSize,
+      gradientStartColor,
+      gradientEndColor,
     } = state;
 
     const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
@@ -67,6 +69,8 @@ export const CoverRenderer = forwardRef<HTMLDivElement, CoverRendererProps>(
               imageAspectRatio={imageAspectRatio}
               fontClassName={fontConfig.className}
               isLandscape={isLandscape}
+              gradientStartColor={gradientStartColor}
+              gradientEndColor={gradientEndColor}
             />
           )}
         </div>

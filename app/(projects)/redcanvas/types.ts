@@ -24,6 +24,8 @@ export interface EditorState {
   templateId: TemplateId;
   fontFamily: string;
   accentColor: string; // Global accent
+  gradientStartColor: string; // Gradient start color
+  gradientEndColor: string; // Gradient end color
   orientation: Orientation;
   exportSize: ExportSize;
 }

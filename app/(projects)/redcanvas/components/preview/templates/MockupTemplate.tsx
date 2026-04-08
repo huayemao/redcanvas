@@ -12,6 +12,8 @@ interface TemplatePropsSimple {
   imageAspectRatio: number | null;
   fontClassName: string;
   isLandscape?: boolean;
+  gradientStartColor?: string;
+  gradientEndColor?: string;
 }
 
 export const MockupTemplate = ({
@@ -20,6 +22,8 @@ export const MockupTemplate = ({
   seriesNumber,
   imageUrl,
   fontClassName,
+  gradientStartColor,
+  gradientEndColor,
 }: TemplatePropsSimple) => {
   return (
     <div className="relative w-full h-full">

@@ -25,6 +25,8 @@ const INITIAL_STATE: EditorState = {
   templateId: 'classic',
   fontFamily: 'kuaile',
   accentColor: '#ff2442',
+  gradientStartColor: '#83b49f',
+  gradientEndColor: '#37674f',
   orientation: 'portrait',
   exportSize: '3:4',
 };
