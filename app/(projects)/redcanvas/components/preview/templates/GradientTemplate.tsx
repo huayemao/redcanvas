@@ -54,13 +54,13 @@ export const GradientTemplate = ({
           <TitleRenderer
             title={title}
             highlights={highlights}
-            sizeClass="text-2xl"
+            sizeClass="text-3xl"
             fontClassName={fontClassName}
             textColor="text-white"
           />
         </div>
         {/* Image */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="">
           {showDeviceFrame ? (
             <div className="w-full h-full">
               <ImageWithFrame
@@ -106,13 +106,13 @@ export const GradientTemplate = ({
         <TitleRenderer
           title={title}
           highlights={highlights}
-          sizeClass="text-3xl"
+          sizeClass="text-4xl"
           fontClassName={fontClassName}
           textColor="text-white"
         />
       </div>
       {/* Image */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="">
         {showDeviceFrame ? (
           <div className="w-full h-full">
             <ImageWithFrame
