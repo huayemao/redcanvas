@@ -5,7 +5,7 @@ import { Editor } from '../components/Editor';
 import { CoverRenderer } from '../components/CoverRenderer';
 import Footer from '../components/Footer';
 import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
-import * as htmlToImage from 'html-to-image';
+import { snapdom } from '@zumer/snapdom';
 import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../config';
@@ -89,15 +89,13 @@ const AppPage: React.FC = () => {
       await new Promise(r => setTimeout(r, 600));
 
       const options = {
-        pixelRatio: 2.5,
-        cacheBust: false,
+        scale: 2.5,
         backgroundColor: '#ffffff',
-        style: {
-          transform: 'scale(1)',
-        },
+        type: 'png' as const,
+        embedFonts: true,
       };
 
-      const blob = await htmlToImage.toBlob(previewRef.current, options);
+      const blob = await snapdom.toBlob(previewRef.current, options);
 
       if (!blob) throw new Error("Canvas generation failed");
 

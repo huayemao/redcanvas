@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { toPng } from 'html-to-image';
+import { snapdom } from '@zumer/snapdom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Copy, Image as ImageIcon, Check, Palette, Scissors } from 'lucide-react';
@@ -127,11 +127,12 @@ export default function Editor() {
       setIsExporting(true);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const dataUrl = await toPng(previewRef.current, {
-        quality: 1,
-        pixelRatio: 2,
+      const img = await snapdom.toPng(previewRef.current, {
+        scale: 2,
         backgroundColor: '#ffffff',
+        embedFonts: true,
       });
+      const dataUrl = img.src;
       
       if (autoSlice) {
         const slices = await sliceImage(dataUrl);
