@@ -8,7 +8,8 @@ interface TitleRendererProps {
   highlights: Highlight[];
   sizeClass?: string;
   fontClassName: string;
-  textColor?: string;
+  textColor?: string;         // className 形式：text-neutral-900 / text-white …
+  textColorStyle?: string;    // inline color：优先级高于 textColor（#RRGGBB）
 }
 
 export const TitleRenderer = ({
@@ -17,6 +18,7 @@ export const TitleRenderer = ({
   sizeClass = "text-4xl",
   fontClassName,
   textColor = "text-neutral-900",
+  textColorStyle,
 }: TitleRendererProps) => {
   let content: React.ReactNode[] = [title];
 
@@ -64,7 +66,8 @@ export const TitleRenderer = ({
 
   return (
     <h2
-      className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontClassName} ${textColor}`}
+      className={`${sizeClass} leading-[1.3] font-black whitespace-pre-wrap break-words ${fontClassName} ${textColorStyle ? '' : textColor}`}
+      style={textColorStyle ? { color: textColorStyle } : undefined}
     >
       {content}
     </h2>

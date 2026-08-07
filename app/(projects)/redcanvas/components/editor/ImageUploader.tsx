@@ -19,9 +19,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload }) =
   }, [onImageUpload]);
 
   return (
-    <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-neutral-100 rounded-3xl cursor-pointer hover:bg-neutral-50 transition-all group">
-      <Upload className="w-6 h-6 text-neutral-300 mb-2 group-hover:text-red-500" />
-      <span className="text-[10px] font-black text-neutral-400">点击/拖拽/粘贴图片素材</span>
+    <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/[0.1] rounded-3xl cursor-pointer hover:bg-white/[0.04] hover:border-white/[0.2] transition-all group">
+      <Upload className="w-6 h-6 text-white/30 mb-2 group-hover:text-red-400 transition-colors" />
+      <span className="text-[10px] font-black text-white/40 group-hover:text-white/60 transition-colors">
+        点击/拖拽/粘贴图片素材
+      </span>
       <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
     </label>
   );

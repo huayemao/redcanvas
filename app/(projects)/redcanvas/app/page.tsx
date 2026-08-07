@@ -1,57 +1,31 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Editor } from '../components/Editor';
-import { CoverRenderer } from '../components/CoverRenderer';
-import Footer from '../components/Footer';
-import { EditorState, TemplateId, Orientation, ExportSize } from '../types';
-import { snapdom } from '@zumer/snapdom';
-import { Sparkles, Share2, Loader2, Download, Info } from 'lucide-react';
+import { StudioEditor } from '../components/studio/StudioEditor';
+import { StudioCanvas } from '../components/studio/StudioCanvas';
+import { ElementPropertyPanel } from '../components/studio/ElementsControlTab';
+import { useStudioStore } from '../store/useStudioStore';
+import { exportElementToImage } from '../lib/exportUtils';
+import { ExportSize } from '../types';
+import { Loader2, Download, Info, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { APP_CONFIG } from '../config';
-
-const INITIAL_STATE: EditorState = {
-  title: "我，花野猫\n喜欢写代码\n想开发小工具找我",
-  highlights: [
-    { id: '1', text: '花野猫', color: '#ff2442', style: 'underline' },
-    { id: '2', text: '写代码', color: '#ff601a', style: 'text' },
-    { id: '3', text: '开发小工具', color: '#6bcbff', style: 'underline' }
-  ],
-  seriesNumber: "#01",
-  imageUrl: "/screenshot.png",
-  imageAspectRatio: null, // null means original ratio
-  showDeviceFrame: true,
-  deviceType: 'browser',
-  templateId: 'classic',
-  fontFamily: 'kuaile',
-  accentColor: '#ff2442',
-  gradientStartColor: '#83b49f',
-  gradientEndColor: '#37674f',
-  orientation: 'portrait',
-  exportSize: '3:4',
-};
 
 const AppPage: React.FC = () => {
-  const [state, setState] = useState<EditorState>(INITIAL_STATE);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState('正在初始化渲染引擎...');
   const previewRef = useRef<HTMLDivElement>(null);
 
+  const {
+    aspectRatio,
+    setAspectRatio,
+    addImage,
+    autoExtractColors,
+    autoColorEnabled,
+    selectedElementId,
+    setSelectedElementId,
+  } = useStudioStore();
+
   useEffect(() => {
-    // Parse URL parameters to set template state
-    const urlParams = new URLSearchParams(window.location.search);
-    const templateId = urlParams.get('template') as TemplateId;
-    const orientation = urlParams.get('orientation') as Orientation;
-    const exportSize = urlParams.get('exportSize') as ExportSize;
-
-    if (templateId || orientation || exportSize) {
-      setState(prev => ({
-        ...prev,
-        ...(templateId && { templateId }),
-        ...(orientation && { orientation }),
-        ...(exportSize && { exportSize })
-      }));
-    }
-
     const handlePaste = (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
       if (!items) return;
@@ -62,11 +36,14 @@ const AppPage: React.FC = () => {
             const url = URL.createObjectURL(blob);
             const img = new Image();
             img.onload = () => {
-              setState(prev => ({
-                ...prev,
-                imageUrl: url,
-                imageAspectRatio: null // Set to null for original ratio
-              }));
+              addImage({
+                id: `img-${Date.now()}`,
+                url,
+                title: '剪贴板粘贴截图',
+              });
+              if (autoColorEnabled) {
+                autoExtractColors(url);
+              }
             };
             img.src = url;
           }
@@ -75,164 +52,266 @@ const AppPage: React.FC = () => {
     };
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, []);
+  }, [addImage, autoColorEnabled, autoExtractColors]);
 
-  const exportImage = useCallback(async () => {
+  const handleExport = useCallback(async () => {
     if (!previewRef.current) return;
     setIsExporting(true);
+    setExportMessage('正在生成图片...');
+
+    // 导出前：给画布容器加 exporting 类，隐藏选中环、抓手等编辑态元素
+    const canvasEl = previewRef.current;
+    const prevClass = canvasEl.className;
+    canvasEl.classList.add('exporting');
 
     try {
-      if ('fonts' in document) {
-        await document.fonts.ready;
-      }
-
-      await new Promise(r => setTimeout(r, 600));
-
-      const options = {
+      await exportElementToImage(canvasEl, {
+        fileName: `redcanvas-studio-${Date.now()}.png`,
         scale: 2.5,
         backgroundColor: '#ffffff',
-        type: 'png' as const,
-        embedFonts: true,
-      };
-
-      const blob = await snapdom.toBlob(previewRef.current, options);
-
-      if (!blob) throw new Error("Canvas generation failed");
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `redcanvas-${Date.now()}.png`;
-      link.href = url;
-      link.click();
-
-      setTimeout(() => URL.revokeObjectURL(url), 500);
+        onProgress: (msg) => setExportMessage(msg),
+      });
     } catch (err) {
       console.error('Export error:', err);
-      alert('导出由于浏览器安全限制或资源加载失败。请确保网络顺畅，并建议使用 Chrome 或 Safari 浏览器。');
+      alert('导出图片遇到安全限制或加载超时，请重试。建议使用 Chrome 或 Edge 浏览器。');
     } finally {
+      // 导出完成：恢复样式
+      canvasEl.className = prevClass;
       setIsExporting(false);
     }
   }, []);
 
+  const ratios: { size: ExportSize; label: string; w: string; h: string }[] = [
+    { size: '3:4', label: '3 : 4', w: 'w-8', h: 'h-10' },
+    { size: '1:1', label: '1 : 1', w: 'w-9', h: 'h-9' },
+    { size: '9:16', label: '9 : 16', w: 'w-5', h: 'h-11' },
+    { size: '4:3', label: '4 : 3', w: 'w-11', h: 'h-8' },
+    { size: '16:9', label: '16 : 9', w: 'w-12', h: 'h-7' },
+  ];
+
   return (
-    <>
-      <main className="flex-1 flex flex-col-reverse lg:flex-row ">
-        <div className="w-full lg:w-[440px] xl:w-[520px] flex-shrink-0 bg-neutral-50/50 p-6 overflow-y-auto border-r border-neutral-100 h-full">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-red-500/40">
+      <main className="flex-1 flex flex-col lg:flex-row min-h-screen">
+        {/* Left Panel - Editor */}
+        <aside className="w-full lg:w-[460px] xl:w-[520px] flex-shrink-0 bg-[#0f0f0f] border-r border-white/[0.06] p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-md lg:max-w-lg xl:max-w-xl mx-auto space-y-6">
-            <header className="mb-4 hidden lg:block">
-              <h1 className="text-2xl font-black text-neutral-900 leading-tight">爆款封面工厂</h1>
-              <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase tracking-widest">Aesthetic Content Studio</p>
+            {/* Brand Header */}
+            <header className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">
+                  RedCanvas Studio
+                </span>
+              </div>
+              <h1 className="text-4xl xl:text-[44px] font-black tracking-tight leading-[1.05] text-white">
+                STUDIO<span className="text-red-500">.</span>
+              </h1>
+              <p className="text-[11px] text-white/40 font-bold mt-1.5 uppercase tracking-[0.15em]">
+                Aesthetic Content & Graphic Layout
+              </p>
             </header>
 
-            <Editor state={state} setState={setState} onDownload={() => { }} />
+            {/* Editor */}
+            <StudioEditor />
 
-            <div className="bg-white p-4 rounded-2xl border border-neutral-100 flex items-start gap-3">
-              <Info className="w-4 h-4 text-blue-500 mt-0.5" />
-              <p className="text-[10px] text-neutral-400 leading-relaxed font-medium">
-                推荐：开启<b>壳子模式</b>适配网站/APP 演示；使用<b>快乐体</b>提升亲和力。
+            {/* Tip Card + 下载按钮（整合为底部操作区） */}
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 flex items-center gap-3">
+              <Info className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-white/50 leading-relaxed font-medium flex-1">
+                支持 <b className="text-white/80">Ctrl + V 粘贴截图</b> 自动提色 · 所有标注支持
+                <b className="text-white/80"> 画布自由拖拽</b>
               </p>
+              <button
+                onClick={handleExport}
+                disabled={isExporting}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/90 hover:bg-red-500 text-white text-[11px] font-black transition-all hover:shadow-lg hover:shadow-red-500/20 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
+                title="生成 2.5x 高清 PNG 并下载"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                {isExporting ? '导出中…' : '下载 PNG'}
+              </button>
+            </div>
+
+            {/* Bottom status bar */}
+            <div className="flex items-center justify-between text-[10px] text-white/20 font-medium px-1">
+              <span>REDCANVAS · STUDIO v1.0</span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Ready
+              </span>
             </div>
           </div>
-        </div>
+        </aside>
 
-        <div className="flex-1 bg-gradient-to-br from-white to-neutral-50 relative flex items-center justify-center p-6 lg:p-12 h-full min-h-[800px]">
+        {/* Right Panel - Canvas & Export */}
+        <section className="flex-1 bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden">
+          {/* Ambient glow */}
+          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/[0.03] rounded-full blur-[100px] pointer-events-none" />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full flex flex-col items-center justify-center xl:flex-row gap-8 xl:gap-16 xl:items-center max-h-full"
-          >
-            <div className="w-full max-w-[380px] xl:max-w-[420px] xl:flex-1 xl:max-w-[380px]">
-              <div className="rounded-[44px] overflow-hidden border-[8px] sm:border-[12px] border-neutral-900 p-0" style={{ boxSizing: "border-box" }}>
-                <CoverRenderer state={state} ref={previewRef} />
+          <div className="relative z-10 flex flex-col items-center justify-center gap-10 p-6 lg:p-12 min-h-screen">
+            {/* Canvas Preview + 桌面端属性面板 */}
+            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8 w-full max-w-[1100px]">
+              {/* Canvas */}
+              <div className="w-full max-w-[580px] flex flex-col items-center gap-6 flex-shrink-0">
+                <div className="relative w-full">
+                  {/* Outer frame - premium dark */}
+                  <div className="overflow-hidden border border-white/[0.08] bg-white/[0.02] p-3 shadow-2xl shadow-black/50">
+                    <div className="overflow-hidden border border-white/[0.05]">
+                      <StudioCanvas ref={previewRef} />
+                    </div>
+                  </div>
+                  {/* Corner accents */}
+                  <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-500/60 rounded-tl-lg pointer-events-none" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-red-500/60 rounded-tr-lg pointer-events-none" />
+                  <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-red-500/60 rounded-bl-lg pointer-events-none" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-500/60 rounded-br-lg pointer-events-none" />
+                </div>
+
+                {/* Ratio selector below canvas */}
+                <div className="flex items-center gap-3">
+                  {ratios.map((r) => {
+                    const isActive = aspectRatio === r.size;
+                    return (
+                      <button
+                        key={r.size}
+                        onClick={() => setAspectRatio(r.size)}
+                        className={`group flex flex-col items-center gap-1.5 transition-all ${
+                          isActive ? 'scale-110' : 'opacity-50 hover:opacity-80'
+                        }`}
+                      >
+                        <div
+                          className={`border-2 transition-all ${
+                            isActive
+                              ? 'border-red-500 bg-red-500/10'
+                              : 'border-white/30 group-hover:border-white/60'
+                          } rounded-sm ${r.w} ${r.h}`}
+                        />
+                        <span
+                          className={`text-[10px] font-black tracking-wider ${
+                            isActive ? 'text-red-400' : 'text-white/40'
+                          }`}
+                        >
+                          {r.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 桌面端属性面板（画布右侧，lg 以上显示） */}
+              <div className="hidden lg:block w-[320px] xl:w-[340px] flex-shrink-0">
+                <AnimatePresence mode="wait">
+                  {selectedElementId ? (
+                    <motion.div
+                      key="prop-panel"
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 12 }}
+                      transition={{ duration: 0.18 }}
+                      className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto bg-white/[0.02] border border-white/[0.06] rounded-[28px] p-5 scroll-smooth"
+                    >
+                      <ElementPropertyPanel />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="prop-empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="sticky top-6 bg-white/[0.02] border border-white/[0.06] rounded-[28px] p-8 text-center"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
+                        <Sparkles className="w-5 h-5 text-white/30" />
+                      </div>
+                      <p className="text-xs text-white/40 font-medium leading-relaxed">
+                        点击画布中的元素<br />即可在此调整属性
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-            <div className="xl:flex-1 flex flex-col items-center gap-8 w-sm max-w-md">
-              <div className="w-full max-w-[320px]">
-                <div className="flex items-center justify-between mb-3 text-[10px] font-black text-neutral-500 uppercase tracking-[0.1em]">
-                  <span>导出尺寸</span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '3:4' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '3:4' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择3:4尺寸"
-                  >
-                    3:4
-                  </button>
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '9:16' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '9:16' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择9:16尺寸"
-                  >
-                    9:16
-                  </button>
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: '3:2' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '3:2' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择3:2尺寸"
-                  >
-                    3:2
-                  </button>
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'portrait', exportSize: '1:1' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '1:1' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择1:1尺寸"
-                  >
-                    1:1
-                  </button>
-                  <button
-                    onClick={() => setState(prev => ({ ...prev, orientation: 'landscape', exportSize: '4:3' }))}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${state.exportSize === '4:3' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
-                    aria-label="选择4:3尺寸"
-                  >
-                    4:3
-                  </button>
-                </div>
-              </div>
-              <div className="w-full max-w-[320px]">
-                <button
-                  onClick={exportImage}
-                  className="w-full py-5 bg-red-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:bg-neutral-900 hover:shadow-2xl active:scale-95 group shadow-xl shadow-red-100/50"
-                  aria-label="生成并下载高清封面"
-                >
-                  <Download className="w-5 h-5" />
-                  生成高清封面
-                </button>
-              </div>
 
-            </div>
-          </motion.div>
-        </div>
+            {/* Export Panel 已移除，下载按钮整合到左侧底部 */}
+          </div>
+        </section>
       </main>
+
+      {/* 移动端属性面板抽屉（lg 以下显示，选中元素时从底部滑出） */}
+      <AnimatePresence>
+        {selectedElementId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 z-[90] flex items-end"
+            onClick={() => setSelectedElementId(null)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-h-[80vh] overflow-y-auto bg-[#0f0f0f] border-t border-white/[0.1] rounded-t-[28px] p-5 pb-8 scroll-smooth"
+            >
+              {/* 拖拽指示条 */}
+              <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4 flex-shrink-0" />
+              {/* 关闭按钮 */}
+              <button
+                onClick={() => setSelectedElementId(null)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4 text-white/60" />
+              </button>
+              <ElementPropertyPanel />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading Overlay */}
       <AnimatePresence>
         {isExporting && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-neutral-900/60 backdrop-blur-xl z-[100] flex items-center justify-center p-6"
+            className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6"
             aria-hidden="true"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 max-w-xs w-full"
+              initial={{ scale: 0.9, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="bg-[#111111] border border-white/10 p-8 rounded-[32px] shadow-2xl flex flex-col items-center gap-6 max-w-xs w-full text-center"
             >
               <div className="relative">
-                <div className="w-12 h-12 border-4 border-neutral-100 rounded-full" />
-                <Loader2 className="w-12 h-12 text-red-500 animate-spin absolute inset-0" />
+                <div className="w-14 h-14 rounded-2xl border border-white/10 flex items-center justify-center">
+                  <Loader2 className="w-7 h-7 text-red-500 animate-spin" />
+                </div>
+                <div className="absolute -inset-2 rounded-2xl bg-red-500/10 blur-xl" />
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-black text-neutral-900">正在渲染高清封面</h3>
-                <p className="text-neutral-400 text-[9px] leading-relaxed mt-2 uppercase tracking-widest">Processing High Precision Layers</p>
+              <div>
+                <h3 className="text-lg font-black text-white">正在生成高清图片</h3>
+                <p className="text-white/40 text-xs mt-2 font-medium">
+                  {exportMessage}
+                </p>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-    </>
+    </div>
   );
 };
 

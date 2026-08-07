@@ -22,7 +22,7 @@ const SAMPLE_STATE: EditorState = {
   ],
   seriesNumber: "#01",
   imageUrl: "/screenshot.png",
-  imageAspectRatio: 1.5,
+  imageAspectRatio: '3:2',
   showDeviceFrame: true,
   deviceType: 'device',
   templateId: 'classic',

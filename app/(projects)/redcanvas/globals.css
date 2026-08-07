@@ -2,12 +2,13 @@
 
 :root {
   --xhs-red: #ff2442;
+  color-scheme: dark;
 }
 
 body {
   font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  background-color: #fcfcfc;
-  color: #1a1a1a;
+  background-color: #0a0a0a;
+  color: #ffffff;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -20,14 +21,15 @@ body {
 .font-serif-sc { font-family: 'Noto Serif SC', serif; }
 .font-wenkai { font-family: 'LXGW WenKai Mono SC', monospace; }
 .font-xiangcui { font-family: 'XiangcuiDazijitiW15', monospace; }
+.font-xiaolai { font-family: 'Xiaolai SC', 'Xiaolai', cursive; }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #ddd; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
 .preview-shadow {
-  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15), 0 20px 40px -15px rgba(0,0,0,0.1);
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6), 0 20px 40px -15px rgba(0,0,0,0.4);
 }
 
 .marker-underline {
@@ -46,4 +48,30 @@ body {
   z-index: -1;
   border-radius: 100px 20px 100px 20px;
   transform: rotate(-1deg);
+}
+
+/* LongTextBody 引用块：大号引号字符做装饰（伪元素 content 无法用 Tailwind 任意值传含引号字符串） */
+.prose-sm blockquote::before,
+.prose-base blockquote::before {
+  content: '\201C'; /* 左双引号 “ */
+}
+
+/* 导出时隐藏编辑态元素：选中环、抓手、操作控件等 */
+.exporting .ring-2,
+.exporting .ring-offset-2,
+.exporting [class*="ring-red"],
+.exporting .hide-on-export {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.exporting .hide-on-export,
+.exporting .absolute.-top-8 {
+  display: none !important;
+}
+
+/* 导出时取消选中元素的 ring 效果 */
+.exporting [class*="ring-red-500"] {
+  --tw-ring-color: transparent !important;
+  box-shadow: none !important;
 }

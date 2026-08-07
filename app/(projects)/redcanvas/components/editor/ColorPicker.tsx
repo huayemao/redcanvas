@@ -1,15 +1,36 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 
 interface ColorPickerProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onAutoExtract?: () => void;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ label, value, onChange }) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({
+  label,
+  value,
+  onChange,
+  onAutoExtract,
+}) => {
   return (
     <div>
-      <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 block">{label}</label>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">
+          {label}
+        </label>
+        {onAutoExtract && (
+          <button
+            onClick={onAutoExtract}
+            className="inline-flex items-center gap-1 text-[10px] font-black text-red-500 hover:text-neutral-900 transition-colors"
+            title="自动从主图中提取最佳配色"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>智能提取</span>
+          </button>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <input
           type="color"

@@ -60,7 +60,7 @@ export const FloatingTemplate = ({
               />
             </div>
           ) : (
-            <div className="relative aspect-video rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
+            <div className="relative aspect-video overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
               <ImageWithFrame
                 imageUrl={imageUrl}
                 showDeviceFrame={showDeviceFrame}
@@ -100,7 +100,7 @@ export const FloatingTemplate = ({
           />
         </div>
       ) : (
-        <div className="relative aspect-[3/4] rounded-[24px] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
+        <div className="relative aspect-[3/4] overflow-hidden shadow-2xl z-10 transform rotate-1 bg-white">
           <ImageWithFrame
             imageUrl={imageUrl}
             showDeviceFrame={showDeviceFrame}

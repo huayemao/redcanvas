@@ -2,13 +2,8 @@
 
 import React from "react";
 import { Highlight, DeviceType } from "../../types";
-import { ClassicTemplate } from "./templates/ClassicTemplate";
-import { MagazineTemplate } from "./templates/MagazineTemplate";
-import { MinimalTemplate } from "./templates/MinimalTemplate";
-import { BoldTemplate } from "./templates/BoldTemplate";
-import { FloatingTemplate } from "./templates/FloatingTemplate";
-import { MockupTemplate } from "./templates/MockupTemplate";
-import { GradientTemplate } from "./templates/GradientTemplate";
+import { ShowcaseTemplate } from "./templates/ShowcaseTemplate";
+import { AestheticGalleryTemplate } from "./templates/AestheticGalleryTemplate";
 
 export interface TemplateProps {
   title: string;
@@ -32,29 +27,18 @@ export interface TemplatePropsSimple {
   isLandscape?: boolean;
 }
 
-export type TemplateType = 'classic' | 'magazine' | 'minimal' | 'bold' | 'floating' | 'mockup' | 'gradient';
+export type TemplateType = 'showcase' | 'aesthetic-gallery';
 
 const templateMap: Record<TemplateType, React.ComponentType<any>> = {
-  classic: ClassicTemplate,
-  magazine: MagazineTemplate,
-  minimal: MinimalTemplate,
-  bold: BoldTemplate,
-  floating: FloatingTemplate,
-  mockup: MockupTemplate,
-  gradient: GradientTemplate,
+  showcase: ShowcaseTemplate,
+  'aesthetic-gallery': AestheticGalleryTemplate,
 };
 
 export const getTemplateComponent = (template: TemplateType) => {
-  return templateMap[template] || ClassicTemplate;
+  return templateMap[template] || ShowcaseTemplate;
 };
 
 export {
-  ClassicTemplate,
-  MagazineTemplate,
-  MinimalTemplate,
-  BoldTemplate,
-  FloatingTemplate,
-  MockupTemplate,
-  GradientTemplate,
+  ShowcaseTemplate,
+  AestheticGalleryTemplate,
 };
-
