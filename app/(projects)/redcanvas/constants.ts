@@ -59,7 +59,7 @@ export const PRESET_COLORS = [
 export const FONTS: FontOption[] = [
   { id: 'kuaile', name: '快乐体 (推荐)', className: 'font-kuaile' },
   { id: 'xiaolai', name: '小赖字体', className: 'font-xiaolai' },
-  { id: 'xiangcui', name: '香萃打字机', className: 'font-xiangcui' },
+  { id: 'yozai', name: '悠哉体', className: 'font-yozai' },
   { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },
   { id: 'serif', name: '优雅宋', className: 'font-serif-sc font-black' },
   { id: 'mashan', name: '书法行草', className: 'font-mashan' },

@@ -374,7 +374,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
       {/* ===== 高亮贴纸：荧光记号笔 —— accent 半透明色块 + accent 实心文字（同色相） ===== */}
       {element.type === 'sticker' && (
         <div
-          className={`inline-block font-black whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
+          className={`inline-block font-bold whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
           style={{
             // 记号笔效果：accent 35% 透明底，文字用 accent 实心（同色相，文字全不透明显眼）
             backgroundColor: mixColorAlpha(element.bgColor || '#ff601a', 0.35),

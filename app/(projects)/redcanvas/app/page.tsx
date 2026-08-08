@@ -4,7 +4,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { StudioEditor } from '../components/studio/StudioEditor';
 import { StudioCanvas } from '../components/studio/StudioCanvas';
 import { ElementPropertyPanel } from '../components/studio/ElementsControlTab';
+import { MobileConfigBar } from '../components/studio/MobileConfigBar';
 import { useStudioStore } from '../store/useStudioStore';
+import { useStudioPersistence } from '../lib/studioPersistence';
 import { exportElementToImage } from '../lib/exportUtils';
 import { ExportSize } from '../types';
 import { Loader2, Info, Sparkles, X, SlidersHorizontal } from 'lucide-react';
@@ -16,6 +18,9 @@ const AppPage: React.FC = () => {
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
   const [mobilePropDrawerOpen, setMobilePropDrawerOpen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // 本地化存储：首次挂载从 localStorage 恢复配置，之后自动保存（刷新不丢）
+  useStudioPersistence();
 
   const {
     aspectRatio,
@@ -145,14 +150,17 @@ const AppPage: React.FC = () => {
 
         {/* Right Panel - Canvas & Export */}
         <section className="flex-1 bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden">
-          {/* Mobile editor toggle */}
-          <button
-            onClick={() => setMobileEditorOpen(true)}
-            className="lg:hidden absolute top-4 left-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/50 backdrop-blur-md text-white/80 text-[11px] font-black border border-white/10 hover:bg-black/70 transition-colors"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            编辑
-          </button>
+          {/* Mobile top bar：编辑 + 导入导出（抽屉外，便于随时存读档） */}
+          <div className="lg:hidden absolute top-4 left-4 z-40 flex items-center gap-1.5">
+            <button
+              onClick={() => setMobileEditorOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/50 backdrop-blur-md text-white/80 text-[11px] font-black border border-white/10 hover:bg-black/70 transition-colors"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              编辑
+            </button>
+            <MobileConfigBar onExportPng={handleExport} isPngExporting={isExporting} />
+          </div>
           {/* Ambient glow */}
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/[0.03] rounded-full blur-[100px] pointer-events-none" />

@@ -778,6 +778,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         shadowLevel: 1,
         badgeNumber: '',
         fontSize: 10,
+        fontWeight: 700,
       });
       // 文本框样例：zIndex=16 作为"模板默认正文"标记，融入背景无卡片
       elements.push({
@@ -1071,7 +1072,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           color: accent,
           bgColor: accent,
           fontSize: 14,
-          fontWeight: 900,
+          fontWeight: 700,
           shadowLevel: 0,
           rotation: -3,
         };
@@ -1131,12 +1132,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: `el-${UID()}`,
           type: 'badge',
           content: 'NEW',
-          x: 50, y: 50,
-          zIndex: nextZ,
-          color: '#FFFFFF',
-          bgColor: primary,
-          shadowLevel: 2,
-          badgeNumber: '',
+        x: 50, y: 50,
+        zIndex: nextZ,
+        color: '#FFFFFF',
+        bgColor: primary,
+        shadowLevel: 2,
+        badgeNumber: '',
+        fontWeight: 700,
         };
         break;
     }

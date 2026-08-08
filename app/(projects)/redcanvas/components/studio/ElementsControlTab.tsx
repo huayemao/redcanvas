@@ -568,7 +568,7 @@ export const ElementPropertyPanel: React.FC = () => {
                 onChange={(v) => update({ borderWidth: v })}
               />
             )}
-            {selected.type === 'timestamp' && (
+            {(selected.type === 'badge' || selected.type === 'timestamp') && (
               <SelectField
                 label="字体"
                 value={selected.fontFamily || _globalFont}
