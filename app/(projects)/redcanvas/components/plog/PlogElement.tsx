@@ -3,14 +3,15 @@
 import React, { useMemo, useRef } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { marked } from 'marked';
-import { X, Move, Pencil } from 'lucide-react';
 import {
   PlogElement as PlogElementType,
-  SHADOW_PRESETS,
   ExtractedColors,
 } from '../../types';
 import { usePlogStore } from '../../store/usePlogStore';
-import { FONTS } from '../../constants';
+import { shadowOf, resolveFontClass, mixColorAlpha } from './elementUtils';
+import { LongTextBody } from './LongTextBody';
+import { TimestampBlock } from './TimestampBlock';
+import { ElementToolbar } from './ElementToolbar';
 
 interface ElementActions {
   setSelectedElementId?: (id: string | null) => void;
@@ -31,18 +32,6 @@ interface PlogElementProps {
   /** 点击抓手中的"编辑"按钮时回调（移动端打开属性抽屉） */
   onEditElement?: () => void;
 }
-
-const shadowOf = (lvl: number | undefined): string => {
-  if (lvl === undefined) return '';
-  return SHADOW_PRESETS[Math.max(0, Math.min(4, lvl))] || '';
-};
-
-/** 把字体 ID（如 'kuaile'）映射为 Tailwind className（如 'font-kuaile'）；找不到则回退 fallbackClass */
-const resolveFontClass = (fontFamilyId: string | undefined, fallbackClass: string): string => {
-  if (!fontFamilyId) return fallbackClass;
-  const found = FONTS.find((f) => f.id === fontFamilyId);
-  return found ? found.className : fallbackClass;
-};
 
 export const PlogElement: React.FC<PlogElementProps> = ({
   element,
@@ -430,241 +419,11 @@ export const PlogElement: React.FC<PlogElementProps> = ({
 
       {/* Selected Action Controls overlay (Hide on image export) */}
       {isSelected && (
-        <div className="hide-on-export absolute -top-8 left-0 right-0 flex items-center justify-center gap-1.5 bg-neutral-900 text-white rounded-lg p-1 text-[10px] shadow-xl z-50">
-          <Move className="w-3 h-3 text-neutral-400" />
-          {onEditElement && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditElement();
-              }}
-              className="p-0.5 hover:text-blue-400 transition-colors lg:hidden"
-              title="编辑属性"
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeElement(element.id);
-            }}
-            className="p-0.5 hover:text-red-400 transition-colors"
-            title="删除元素"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
+        <ElementToolbar
+          onEditElement={onEditElement}
+          onRemove={() => removeElement(element.id)}
+        />
       )}
     </motion.div>
   );
 };
-
-// ============================================================================
-//  LongTextBody：负责"长文字 + Markdown + 智能配色 + 默认融入背景"
-//  - 默认：无卡片背景 / 无阴影 / 无圆角（文字直接铺在背景上，像杂志正文）
-//  - 仅当用户显式设置 bgColor 时：渲染卡片外壳（背景 + 圆角 + 阴影）
-//  - 文字颜色：用户显式 element.color > 智能配色 palette.textSecondary > 中性色
-//  - 链接/引用/strong 强调色：智能配色 palette.accent
-// ============================================================================
-interface LongTextBodyProps {
-  element: PlogElementType;
-  fontClassName: string;
-  textInlines: React.CSSProperties;
-  extractedColors: ExtractedColors | null;
-  renderedMd: string;
-}
-
-const LongTextBody: React.FC<LongTextBodyProps> = ({
-  element,
-  fontClassName,
-  textInlines,
-  extractedColors,
-  renderedMd,
-}) => {
-  // —— 智能配色：若 element 没写 color，用 palette 的正文色（保证背景对比度）
-  const effColor =
-    element.color ||
-    extractedColors?.textSecondary ||
-    extractedColors?.textPrimary ||
-    (element.bgColor ? '#1f2937' : undefined); // 只有当有卡片白底时，默认深灰；否则 undefined 继承 CSS
-
-  // —— 语义化强调色：
-  //   accent     → 链接（保留，高饱和强调）
-  //   emphasis   → 加粗关键词（primary 派生，可读版）
-  //   primaryMuted → 引用边框 / 分隔线 / 弱装饰（primary 揉进背景 55%）
-  const accent =
-    extractedColors?.accent ||
-    (effColor ? mixColorAlpha(effColor, 0.85) : '#2563eb');
-  const emphasis =
-    extractedColors?.emphasis ||
-    (effColor ? mixColorAlpha(effColor, 0.9) : accent);
-  const primaryMuted =
-    extractedColors?.primaryMuted ||
-    mixColorAlpha(accent, 0.35);
-
-  // —— 是否"卡片模式"：仅用户显式给了 bgColor 才算卡片（没给则融入背景，不画外壳）
-  const isCardMode = !!element.bgColor;
-
-  const shellStyle: React.CSSProperties = {};
-  if (isCardMode) {
-    shellStyle.background = element.bgColor;
-    shellStyle.borderRadius = `${element.borderRadius ?? 16}px`;
-    shellStyle.boxShadow = shadowOf(element.shadowLevel ?? 1);
-  }
-
-  const shellPad = isCardMode ? 'px-4 py-3' : 'py-1';
-  const shellRadius = isCardMode ? 'rounded-2xl' : '';
-
-  // 注入 CSS var，让 Markdown prose 子元素能拿到语义色
-  const cssVars = {
-    '--lt-color': effColor || 'inherit',
-    '--lt-accent': accent,            // 链接
-    '--lt-emphasis': emphasis,        // 加粗关键词
-    '--lt-primary-muted': primaryMuted, // 引用边框 / 分隔线
-  } as React.CSSProperties;
-
-  return (
-    <div
-      className={`max-w-full prose-sm md:prose-base ${shellPad} ${shellRadius} ${resolveFontClass(element.fontFamily, fontClassName)}`}
-      style={{
-        ...shellStyle,
-        color: effColor || 'inherit',
-        ...textInlines,
-        ...cssVars,
-      }}
-    >
-      {(element.markdownEnabled ?? true) ? (
-        <div
-          className={[
-            // 段落/标题/列表的基础排版
-            '[&>p]:my-2 [&>p]:leading-relaxed',
-            '[&_strong]:font-black [&_em]:italic',
-            '[&>h1]:text-2xl [&>h1]:font-black [&>h1]:leading-tight [&>h1]:my-3',
-            '[&>h2]:text-xl [&>h2]:font-black [&>h2]:leading-tight [&>h2]:my-3',
-            '[&>h3]:text-lg [&>h3]:font-bold [&>h3]:my-2',
-            '[&>ul]:list-disc [&>ul]:pl-5 [&>ul]:my-2',
-            '[&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:my-2',
-            '[&_li]:my-0.5',
-            '[&_code]:text-[0.9em] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-white/10',
-            '[&_pre]:rounded-xl [&_pre]:p-3 [&_pre]:text-xs [&_pre]:bg-white/10 [&_pre]:overflow-auto',
-            // 链接：accent（高饱和强调，仅留给超链接）
-            '[&_a]:underline [&_a]:decoration-[var(--lt-primary-muted)] [&_a]:underline-offset-2 [&_a]:text-[var(--lt-accent)] [&_a:hover]:decoration-[var(--lt-accent)]',
-            // 引用块：左边框 primaryMuted（主色弱化），文字降饱和 italic
-            '[&_blockquote]:border-l-4 [&_blockquote]:border-[var(--lt-primary-muted)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-3 [&_blockquote]:opacity-85',
-            // 加粗强调：用 emphasis（primary 派生的可读版，像杂志正文的高亮关键词）
-            '[&_strong]:text-[var(--lt-emphasis)]',
-            // 分隔线：primaryMuted（主色弱化）
-            '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-primary-muted)]',
-            // 引用块：引号风格 —— 去掉左边框线条，改用大号引号字符做装饰
-            // 实现思路：blockquote 相对定位 + ::before 伪元素放大引号字符，正文缩进让出空间
-            // 引号字符的 content 在 globals.css 的 .prose-sm blockquote::before 定义（Tailwind 任意值不能传含引号字符串）
-            '[&_blockquote]:relative [&_blockquote]:border-0 [&_blockquote]:pl-8 [&_blockquote]:pr-2 [&_blockquote]:py-1 [&_blockquote]:my-3 [&_blockquote]:italic [&_blockquote]:opacity-90',
-            '[&_blockquote::before]:absolute [&_blockquote::before]:left-0 [&_blockquote::before]:top-[-6px] [&_blockquote::before]:text-4xl [&_blockquote::before]:leading-none [&_blockquote::before]:font-serif [&_blockquote::before]:text-[var(--lt-primary-muted)]',
-          ].join(' ')}
-          dangerouslySetInnerHTML={{ __html: renderedMd }}
-        />
-      ) : (
-        <p className="whitespace-pre-wrap leading-relaxed">{element.content}</p>
-      )}
-    </div>
-  );
-};
-
-// ============================================================================
-//  TimestampBlock：杂志风日期块
-//  - content 存日期串(YYYY-MM-DD)，空 = 今天，无效 = 今天
-//  - 渲染：顶部短横线 + 大号 年·月·日 + 星期中文/英文（统一文字色，无强调色）
-// ============================================================================
-interface TimestampBlockProps {
-  element: PlogElementType;
-  fontClassName: string;
-  textInlines: React.CSSProperties;
-}
-
-const WEEKDAY_CN = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-const WEEKDAY_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-const TimestampBlock: React.FC<TimestampBlockProps> = ({ element, fontClassName, textInlines }) => {
-  const date = useMemo(() => {
-    const raw = (element.content || '').trim();
-    if (!raw) return new Date();
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? new Date() : d;
-  }, [element.content]);
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const weekdayCn = WEEKDAY_CN[date.getDay()];
-  const weekdayEn = WEEKDAY_EN[date.getDay()];
-
-  const textColor = element.color || '#111827';
-  const baseSize = element.fontSize ?? 14;
-
-  return (
-    <div
-      className={`inline-flex flex-col ${resolveFontClass(element.fontFamily, fontClassName)}`}
-      style={{ color: textColor, ...textInlines }}
-    >
-      {/* 顶部短横线（沿用文字色） */}
-      {/* <span
-        style={{ width: '30px', height: '2px', background: 'currentColor', marginBottom: '7px' }}
-      /> */}
-      {/* 主日期：年 · 月 · 日 */}
-      <div
-        className="tracking-wider leading-none"
-        style={{ fontSize: `${baseSize * 1.2}px`, letterSpacing: '0.04em' }}
-      >
-        <span>{year}</span>
-        年
-        <span>{month}</span>
-        月
-        <span>{day}</span>
-        日
-      </div>
-      {/* 星期：中文 + 英文缩写 */}
-      <div
-        className="flex items-center gap-1.5 mt-1.5"
-        style={{ fontSize: `${baseSize * 1}px` }}
-      >
-        <span className="font-bold">{weekdayCn}</span>
-        <span style={{ fontWeight: 900, opacity: 0.45 }}>·</span>
-        <span className="font-black tracking-widest opacity-70">{weekdayEn}</span>
-      </div>
-    </div>
-  );
-};
-
-// 简易工具：给 6 位/8 位 hex 或 rgb(...) 色加 alpha；失败原样返回
-function mixColorAlpha(color: string, alpha: number): string {
-  try {
-    if (color.startsWith('#')) {
-      let hex = color.slice(1);
-      if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
-      if (hex.length === 6) {
-        const r = parseInt(hex.slice(0, 2), 16);
-        const g = parseInt(hex.slice(2, 4), 16);
-        const b = parseInt(hex.slice(4, 6), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-      }
-      if (hex.length === 8) {
-        // rgba hex → 覆盖 alpha
-        const r = parseInt(hex.slice(0, 2), 16);
-        const g = parseInt(hex.slice(2, 4), 16);
-        const b = parseInt(hex.slice(4, 6), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-      }
-    }
-    if (color.startsWith('rgba(')) {
-      const m = color.match(/rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)/);
-      if (m) return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`;
-    }
-    if (color.startsWith('rgb(')) {
-      const m = color.match(/rgb\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)/);
-      if (m) return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`;
-    }
-  } catch { /* ignore */ }
-  return color;
-}
-
