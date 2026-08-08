@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Loader2, ChevronDown, FileText } from 'lucide-react';
 import { useStudioStore } from '../../store/useStudioStore';
 import { packConfigZip, unpackConfigZip } from '../../lib/configPack';
 
@@ -20,6 +20,7 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
   const fileRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const flashToast = (kind: 'ok' | 'err', msg: string) => {
     setToast({ kind, msg });
@@ -130,18 +131,56 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
   return (
     <>
       <div className="flex items-center gap-2 mb-3">
-        <button
-          onClick={handleExport}
-          disabled={busy}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all text-[11px] font-black disabled:opacity-50 disabled:cursor-not-allowed"
-          title={hasImageAssets ? '打包图片资源 + 配置为 ZIP' : '导出为 JSON 文件'}
-        >
-          <Download className="w-3.5 h-3.5" />
-          {busy ? '处理中…' : '导出'}
-          {hasImageAssets && (
-            <span className="text-[9px] font-bold opacity-60 ml-0.5">ZIP</span>
+        {/* 导出下拉菜单 */}
+        <div className="relative flex-1">
+          <button
+            onClick={() => setExportMenuOpen((v) => !v)}
+            disabled={busy || isPngExporting}
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all text-[11px] font-black disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {busy || isPngExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            {busy || isPngExporting ? '处理中…' : '导出'}
+            <ChevronDown className={`w-3 h-3 transition-transform ${exportMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {exportMenuOpen && !(busy || isPngExporting) && (
+            <>
+              {/* 点击外部关闭 */}
+              <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
+              {/* 下拉菜单 */}
+              <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-2xl overflow-hidden">
+                <button
+                  onClick={() => { setExportMenuOpen(false); handleExport(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"
+                >
+                  <FileText className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-bold text-white/80">导出配置</div>
+                    <div className="text-[9px] text-white/30 font-medium">{hasImageAssets ? 'ZIP · 含图片资源' : 'JSON · 纯配置'}</div>
+                  </div>
+                </button>
+                {onExportPng && (
+                  <button
+                    onClick={() => { setExportMenuOpen(false); onExportPng(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-bold text-white/80">导出图片</div>
+                      <div className="text-[9px] text-white/30 font-medium">高清 PNG · 2.5x</div>
+                    </div>
+                  </button>
+                )}
+              </div>
+            </>
           )}
-        </button>
+        </div>
+
+        {/* 导入按钮 */}
         <button
           onClick={handleImportClick}
           disabled={busy}
@@ -151,21 +190,6 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
           <Upload className="w-3.5 h-3.5" />
           导入
         </button>
-        {onExportPng && (
-          <button
-            onClick={onExportPng}
-            disabled={isPngExporting || busy}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500/90 hover:bg-red-500 text-white transition-all text-[11px] font-black disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-red-500/20 active:scale-[0.97]"
-            title="生成 2.5x 高清 PNG 并下载"
-          >
-            {isPngExporting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <ImageIcon className="w-3.5 h-3.5" />
-            )}
-            {isPngExporting ? '生成中…' : 'PNG'}
-          </button>
-        )}
         <input
           ref={fileRef}
           type="file"
