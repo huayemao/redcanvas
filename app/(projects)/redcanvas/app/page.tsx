@@ -24,6 +24,7 @@ const AppPage: React.FC = () => {
     autoExtractColors,
     autoColorEnabled,
     selectedElementId,
+    setSelectedElementId,
   } = useStudioStore();
 
   useEffect(() => {
@@ -156,11 +157,26 @@ const AppPage: React.FC = () => {
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/[0.03] rounded-full blur-[100px] pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col items-center justify-center gap-10 p-6 lg:p-12 min-h-screen">
+          <div
+            className="relative z-10 flex flex-col items-center justify-center gap-10 p-6 lg:p-12 min-h-screen"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedElementId(null);
+            }}
+          >
             {/* Canvas Preview + 桌面端属性面板 */}
-            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8 w-full max-w-[1100px]">
+            <div
+              className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8 w-full max-w-[1100px]"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setSelectedElementId(null);
+              }}
+            >
               {/* Canvas */}
-              <div className="w-full max-w-[580px] flex flex-col items-center gap-6 flex-shrink-0">
+              <div
+                className="w-full max-w-[580px] flex flex-col items-center gap-6 flex-shrink-0"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setSelectedElementId(null);
+                }}
+              >
                 <div className="relative w-full">
                   {/* Outer frame - premium dark */}
                   <div className="overflow-hidden border border-white/[0.08] bg-white/[0.02] p-3 shadow-2xl shadow-black/50">
