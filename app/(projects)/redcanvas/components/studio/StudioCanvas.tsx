@@ -6,7 +6,11 @@ import { FONTS } from '../../constants';
 import { PlogElement as PlogElementType } from '../../types';
 import { PlogElement } from '../plog/PlogElement';
 
-export const StudioCanvas = forwardRef<HTMLDivElement>((_, ref) => {
+interface StudioCanvasProps {
+  onEditElement?: () => void;
+}
+
+export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onEditElement }, ref) => {
   const {
     aspectRatio,
     customWidth,
@@ -144,6 +148,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement>((_, ref) => {
             fontClassName={fontConfig.className}
             selectedId={selectedElementId}
             extractedColors={extractedColors}
+            onEditElement={onEditElement}
             actions={{
               setSelectedElementId,
               updateElement: updateFloatingElement,

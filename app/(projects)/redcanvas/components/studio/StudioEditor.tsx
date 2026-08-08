@@ -10,14 +10,19 @@ import { ElementsControlTab } from './ElementsControlTab';
 import { ConfigToolbar } from './ConfigToolbar';
 import { AnimatePresence, motion } from 'framer-motion';
 
-export const StudioEditor: React.FC = () => {
+interface StudioEditorProps {
+  onExportPng?: () => void;
+  isExporting?: boolean;
+}
+
+export const StudioEditor: React.FC<StudioEditorProps> = ({ onExportPng, isExporting }) => {
   const { activeTab } = useStudioStore();
 
   return (
     <div className="flex flex-col h-full bg-white/[0.02] rounded-[32px] border border-white/[0.06] overflow-hidden">
       {/* 存档 / 读档工具栏 */}
       <div className="px-4 pt-4">
-        <ConfigToolbar />
+        <ConfigToolbar onExportPng={onExportPng} isPngExporting={isExporting} />
       </div>
 
       {/* Tab Navigation Header */}

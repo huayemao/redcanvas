@@ -3,7 +3,7 @@
 import React, { useMemo, useRef } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { marked } from 'marked';
-import { X, Move } from 'lucide-react';
+import { X, Move, Pencil } from 'lucide-react';
 import {
   PlogElement as PlogElementType,
   SHADOW_PRESETS,
@@ -28,6 +28,8 @@ interface PlogElementProps {
   selectedId?: string | null;
   /** 智能配色方案（Studio 场景传入；未传则回退到 element.color 硬编码） */
   extractedColors?: ExtractedColors | null;
+  /** 点击抓手中的"编辑"按钮时回调（移动端打开属性抽屉） */
+  onEditElement?: () => void;
 }
 
 const shadowOf = (lvl: number | undefined): string => {
@@ -49,6 +51,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   actions,
   selectedId,
   extractedColors = null,
+  onEditElement,
 }) => {
   const plogStore = usePlogStore();
 
@@ -429,6 +432,18 @@ export const PlogElement: React.FC<PlogElementProps> = ({
       {isSelected && (
         <div className="hide-on-export absolute -top-8 left-0 right-0 flex items-center justify-center gap-1.5 bg-neutral-900 text-white rounded-lg p-1 text-[10px] shadow-xl z-50">
           <Move className="w-3 h-3 text-neutral-400" />
+          {onEditElement && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditElement();
+              }}
+              className="p-0.5 hover:text-blue-400 transition-colors lg:hidden"
+              title="编辑属性"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

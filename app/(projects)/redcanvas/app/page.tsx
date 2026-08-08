@@ -7,12 +7,14 @@ import { ElementPropertyPanel } from '../components/studio/ElementsControlTab';
 import { useStudioStore } from '../store/useStudioStore';
 import { exportElementToImage } from '../lib/exportUtils';
 import { ExportSize } from '../types';
-import { Loader2, Download, Info, Sparkles, X } from 'lucide-react';
+import { Loader2, Info, Sparkles, X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AppPage: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState('正在初始化渲染引擎...');
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+  const [mobilePropDrawerOpen, setMobilePropDrawerOpen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -22,7 +24,6 @@ const AppPage: React.FC = () => {
     autoExtractColors,
     autoColorEnabled,
     selectedElementId,
-    setSelectedElementId,
   } = useStudioStore();
 
   useEffect(() => {
@@ -53,6 +54,11 @@ const AppPage: React.FC = () => {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [addImage, autoColorEnabled, autoExtractColors]);
+
+  // 选中元素变化时，关闭移动端属性抽屉（仅选中，不自动打开抽屉）
+  useEffect(() => {
+    setMobilePropDrawerOpen(false);
+  }, [selectedElementId]);
 
   const handleExport = useCallback(async () => {
     if (!previewRef.current) return;
@@ -92,8 +98,8 @@ const AppPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-red-500/40">
       <main className="flex-1 flex flex-col lg:flex-row min-h-screen">
-        {/* Left Panel - Editor */}
-        <aside className="w-full lg:w-[460px] xl:w-[520px] flex-shrink-0 bg-[#0f0f0f] border-r border-white/[0.06] p-6 lg:p-8 overflow-y-auto">
+        {/* Left Panel - Editor (desktop only; mobile uses drawer) */}
+        <aside className="hidden lg:block w-[460px] xl:w-[520px] flex-shrink-0 bg-[#0f0f0f] border-r border-white/[0.06] p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-md lg:max-w-lg xl:max-w-xl mx-auto space-y-6">
             {/* Brand Header */}
             <header className="mb-4">
@@ -114,28 +120,15 @@ const AppPage: React.FC = () => {
             </header>
 
             {/* Editor */}
-            <StudioEditor />
+            <StudioEditor onExportPng={handleExport} isExporting={isExporting} />
 
-            {/* Tip Card + 下载按钮（整合为底部操作区） */}
+            {/* Tip Card */}
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 flex items-center gap-3">
               <Info className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
               <p className="text-[11px] text-white/50 leading-relaxed font-medium flex-1">
                 支持 <b className="text-white/80">Ctrl + V 粘贴截图</b> 自动提色 · 所有标注支持
                 <b className="text-white/80"> 画布自由拖拽</b>
               </p>
-              <button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/90 hover:bg-red-500 text-white text-[11px] font-black transition-all hover:shadow-lg hover:shadow-red-500/20 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-                title="生成 2.5x 高清 PNG 并下载"
-              >
-                {isExporting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Download className="w-3.5 h-3.5" />
-                )}
-                {isExporting ? '导出中…' : '下载 PNG'}
-              </button>
             </div>
 
             {/* Bottom status bar */}
@@ -151,6 +144,14 @@ const AppPage: React.FC = () => {
 
         {/* Right Panel - Canvas & Export */}
         <section className="flex-1 bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden">
+          {/* Mobile editor toggle */}
+          <button
+            onClick={() => setMobileEditorOpen(true)}
+            className="lg:hidden absolute top-4 left-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/50 backdrop-blur-md text-white/80 text-[11px] font-black border border-white/10 hover:bg-black/70 transition-colors"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            编辑
+          </button>
           {/* Ambient glow */}
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/[0.03] rounded-full blur-[100px] pointer-events-none" />
@@ -164,7 +165,7 @@ const AppPage: React.FC = () => {
                   {/* Outer frame - premium dark */}
                   <div className="overflow-hidden border border-white/[0.08] bg-white/[0.02] p-3 shadow-2xl shadow-black/50">
                     <div className="overflow-hidden border border-white/[0.05]">
-                      <StudioCanvas ref={previewRef} />
+                      <StudioCanvas ref={previewRef} onEditElement={() => setMobilePropDrawerOpen(true)} />
                     </div>
                   </div>
                   {/* Corner accents */}
@@ -245,15 +246,52 @@ const AppPage: React.FC = () => {
         </section>
       </main>
 
-      {/* 移动端属性面板抽屉（lg 以下显示，选中元素时从底部滑出） */}
+      {/* 移动端编辑器抽屉（lg 以下显示，点击"编辑"按钮从底部滑出） */}
       <AnimatePresence>
-        {selectedElementId && (
+        {mobileEditorOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 z-[95] flex items-end"
+            onClick={() => setMobileEditorOpen(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-h-[88vh] overflow-y-auto bg-[#0f0f0f] border-t border-white/[0.1] rounded-t-[28px] p-4 pb-8 scroll-smooth"
+            >
+              {/* 拖拽指示条 */}
+              <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3 flex-shrink-0" />
+              {/* 标题 + 关闭按钮 */}
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-sm font-black text-white/80 tracking-wider">编辑器</h2>
+                <button
+                  onClick={() => setMobileEditorOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
+                >
+                  <X className="w-4 h-4 text-white/60" />
+                </button>
+              </div>
+              <StudioEditor onExportPng={handleExport} isExporting={isExporting} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 移动端属性面板抽屉（lg 以下显示，点击抓手编辑按钮后从底部滑出） */}
+      <AnimatePresence>
+        {mobilePropDrawerOpen && selectedElementId && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="lg:hidden fixed inset-0 z-[90] flex items-end"
-            onClick={() => setSelectedElementId(null)}
+            onClick={() => setMobilePropDrawerOpen(false)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <motion.div
@@ -268,7 +306,7 @@ const AppPage: React.FC = () => {
               <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4 flex-shrink-0" />
               {/* 关闭按钮 */}
               <button
-                onClick={() => setSelectedElementId(null)}
+                onClick={() => setMobilePropDrawerOpen(false)}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4 text-white/60" />

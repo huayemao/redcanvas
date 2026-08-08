@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Download, Upload, Check, AlertCircle } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useStudioStore } from '../../store/useStudioStore';
 import { packConfigZip, unpackConfigZip } from '../../lib/configPack';
 
@@ -10,7 +10,12 @@ import { packConfigZip, unpackConfigZip } from '../../lib/configPack';
  * - 导出：有图片资源 → ZIP（含 config.json + assets/）；无图片 → 纯 JSON 文件
  * - 导入：按文件扩展名 / MIME 分派（.zip → ZIP；.json → JSON）
  */
-export const ConfigToolbar: React.FC = () => {
+interface ConfigToolbarProps {
+  onExportPng?: () => void;
+  isPngExporting?: boolean;
+}
+
+export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPngExporting }) => {
   const { exportConfig, importConfig, images, floatingElements } = useStudioStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
@@ -132,7 +137,7 @@ export const ConfigToolbar: React.FC = () => {
           title={hasImageAssets ? '打包图片资源 + 配置为 ZIP' : '导出为 JSON 文件'}
         >
           <Download className="w-3.5 h-3.5" />
-          {busy ? '处理中…' : '存档 · 导出'}
+          {busy ? '处理中…' : '导出'}
           {hasImageAssets && (
             <span className="text-[9px] font-bold opacity-60 ml-0.5">ZIP</span>
           )}
@@ -144,8 +149,23 @@ export const ConfigToolbar: React.FC = () => {
           title="从 JSON 或 ZIP 文件恢复配置"
         >
           <Upload className="w-3.5 h-3.5" />
-          读档 · 导入
+          导入
         </button>
+        {onExportPng && (
+          <button
+            onClick={onExportPng}
+            disabled={isPngExporting || busy}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500/90 hover:bg-red-500 text-white transition-all text-[11px] font-black disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-red-500/20 active:scale-[0.97]"
+            title="生成 2.5x 高清 PNG 并下载"
+          >
+            {isPngExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ImageIcon className="w-3.5 h-3.5" />
+            )}
+            {isPngExporting ? '生成中…' : 'PNG'}
+          </button>
+        )}
         <input
           ref={fileRef}
           type="file"
