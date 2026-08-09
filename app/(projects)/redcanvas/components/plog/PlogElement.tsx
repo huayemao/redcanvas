@@ -373,14 +373,14 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         const hasCard = !!element.bgColor && element.bgColor !== 'transparent';
         // 尾巴方向 → 定位 + 可见边（旋转 45° 的小方块，露出的两条边构成三角）
         const tailPos: Record<string, string> = {
-          'bottom-left': 'left-3 -bottom-1.5 border-r border-b',
-          'bottom-right': 'right-3 -bottom-1.5 border-l border-b',
-          'top-left': 'left-3 -top-1.5 border-r border-t',
-          'top-right': 'right-3 -top-1.5 border-l border-t',
+          'bottom-left': 'left-3 -bottom-1.5 border-b border-r',
+          'bottom-right': 'right-3 -bottom-1.5 border-b border-r',
+          'top-left': 'left-3 -top-1.5 border-t border-r',
+          'top-right': 'right-3 -top-1.5 border-t border-r',
         };
         const dir = element.tailDirection ?? 'bottom-left';
         return (
-          <div className="relative">
+          <div className="relative inline-block">
             <div
               className={`relative text-xs font-medium leading-relaxed ${resolveFontClass(element.fontFamily, fontClassName)} ${hasCard ? 'px-4 py-2 rounded-2xl border' : 'px-1 py-0.5'}`}
               style={{
