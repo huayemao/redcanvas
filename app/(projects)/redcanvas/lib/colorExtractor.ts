@@ -556,6 +556,44 @@ async function sampleRawTriad(
   return pickTriadForDominant(sorted[0], topPool);
 }
 
+// ============================================================================
+//  黑白图救援 — 当图片无彩色（黑/白/灰）占比过高时，找最具色彩的主色
+// ============================================================================
+
+/** 判定是否为无彩色（饱和度极低，即黑/白/灰系），阈值与 hueFamilyName 一致 */
+function isAchromaticColor(c: SampledColor): boolean {
+  const { s } = rgbToHsl({ r: c.r, g: c.g, b: c.b });
+  return s < 0.12;
+}
+
+/** 计算候选池中无彩色的占比（按像素计数加权） */
+function computeAchromaticRatio(pool: SampledColor[]): number {
+  let total = 0;
+  let ach = 0;
+  for (const c of pool) {
+    total += c.count;
+    if (isAchromaticColor(c)) ach += c.count;
+  }
+  return total > 0 ? ach / total : 0;
+}
+
+/**
+ * 在候选池中找"最具色彩"的颜色：仅看饱和度 ≥ 0.15 的明显带色像素，
+ * 评分 = 饱和度 × 占比（colorfulness × frequency），选出既鲜艳又有分量的主色。
+ * 全池无彩色时返回 null。
+ */
+function findMostColorful(pool: SampledColor[]): SampledColor | null {
+  let best: SampledColor | null = null;
+  let bestScore = -1;
+  for (const c of pool) {
+    const { s } = rgbToHsl({ r: c.r, g: c.g, b: c.b });
+    if (s < 0.15) continue; // 跳过低饱和，只看明显带色的
+    const score = s * c.count;
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return best;
+}
+
 // 默认配色（含语义化字段）
 const DEFAULT_PALETTE: ExtractedColors = (() => {
   const p = buildPalette('#E9E4DA', '#C9C0B0', '#B5433A');
@@ -666,7 +704,7 @@ export async function extractPaletteCandidates(
   }
   if (picked.length === 0) picked.push(topPool[0]);
 
-  return picked.map((c, idx) => {
+  const candidates: PaletteCandidate[] = picked.map((c, idx) => {
     const triad = pickTriadForDominant(c, topPool);
     // 根据最终色深浅补充语义化后缀名（浅/深标注）
     const l = rgbToHsl(hexToRgb(triad.dominant)).l;
@@ -678,6 +716,37 @@ export async function extractPaletteCandidates(
       ...triad,
     };
   });
+
+  // —— 图片黑白很多时，额外增加"忽略黑白、找鲜彩主色"的候选 ——
+  // 触发：无彩色（黑/白/灰）像素占比 ≥ 55%。此时常规候选的 dominant 多被灰度占据，
+  // 追加一个用"最具色彩的颜色"作为 dominant 的候选；且其 secondary/accent 也仅从
+  // 彩色池派生，保证整套配色鲜活可用。插到索引 1（紧跟真主色之后）让用户一眼可见。
+  const achromaticRatio = computeAchromaticRatio(topPool);
+  if (achromaticRatio >= 0.55) {
+    const colorful = findMostColorful(topPool);
+    if (colorful) {
+      const colorfulHex = rgbToHex({ r: colorful.r, g: colorful.g, b: colorful.b });
+      const exists = candidates.some((cand) => cand.dominantHex === colorfulHex);
+      if (!exists) {
+        // 为鲜彩候选准备"仅彩色"的 topPool，让 secondary/accent 也具色彩
+        const chromaticPool = topPool.filter((c) => !isAchromaticColor(c));
+        const colorfulPool = chromaticPool.length >= 2 ? chromaticPool : topPool;
+        const triad = pickTriadForDominant(colorful, colorfulPool);
+        const l = rgbToHsl(hexToRgb(triad.dominant)).l;
+        const depthTag = l < 0.5 ? '（深）' : '（浅）';
+        candidates.splice(1, 0, {
+          candidateId: 'c-colorful',
+          candidateName: `主色 · ${hueFamilyName(triad.dominant)}${depthTag} · 鲜彩`,
+          dominantHex: triad.dominant,
+          ...triad,
+        });
+        // 重新编号 candidateId 以保持与索引一致
+        return candidates.map((c, i) => ({ ...c, candidateId: `c${i}` }));
+      }
+    }
+  }
+
+  return candidates;
 }
 
 // ============================================================================
