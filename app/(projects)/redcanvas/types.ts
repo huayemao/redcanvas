@@ -130,6 +130,10 @@ export interface PlogElement {
 
   // ---- asset 专属 ----
   assetKind?: 'bitmap' | 'vector';
+
+  // ---- annotation 专属 ----
+  /** 气泡尾巴方向（指向被注释内容），默认 'bottom-left' */
+  tailDirection?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
 }
 
 /** 预设阴影等级 → CSS box-shadow（与"默认好看"对齐） */

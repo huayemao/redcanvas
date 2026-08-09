@@ -356,15 +356,23 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         </div>
       )}
 
-      {/* ===== 说明提示框：气泡式注释卡片，左下角小尾巴指向被注释内容 =====
+      {/* ===== 说明提示框：气泡式注释卡片，尾巴方向可配置，指向被注释内容 =====
            有 bgColor → 卡片模式（背景+边框+尾巴+阴影）
            无 bgColor → 融入背景（仅文字，避免白底与浅色画布冲突） */}
       {element.type === 'annotation' && (() => {
         const hasCard = !!element.bgColor && element.bgColor !== 'transparent';
+        // 尾巴方向 → 定位 + 可见边（旋转 45° 的小方块，露出的两条边构成三角）
+        const tailPos: Record<string, string> = {
+          'bottom-left': 'left-3 -bottom-1.5 border-r border-b',
+          'bottom-right': 'right-3 -bottom-1.5 border-l border-b',
+          'top-left': 'left-3 -top-1.5 border-r border-t',
+          'top-right': 'right-3 -top-1.5 border-l border-t',
+        };
+        const dir = element.tailDirection ?? 'bottom-left';
         return (
           <div className="relative">
             <div
-              className={`relative text-xs font-medium leading-relaxed ${resolveFontClass(element.fontFamily, fontClassName)} ${hasCard ? 'px-4 py-3 rounded-2xl border' : 'px-1 py-0.5'}`}
+              className={`relative text-xs font-medium leading-relaxed ${resolveFontClass(element.fontFamily, fontClassName)} ${hasCard ? 'px-4 py-2 rounded-2xl border' : 'px-1 py-0.5'}`}
               style={{
                 backgroundColor: hasCard ? element.bgColor : 'transparent',
                 color: element.color || '#18181b',
@@ -373,10 +381,10 @@ export const PlogElement: React.FC<PlogElementProps> = ({
                 ...textInlines,
               }}
             >
-              {/* 气泡小尾巴：仅卡片模式下显示，左下角三角，颜色与卡片底色一致 */}
+              {/* 气泡小尾巴：仅卡片模式下显示，方向可配置，颜色与卡片底色一致 */}
               {hasCard && (
                 <span
-                  className="absolute left-3 -bottom-1.5 w-3 h-3 rotate-45 border-r border-b"
+                  className={`absolute w-3 h-3 rotate-45 ${tailPos[dir]}`}
                   style={{
                     backgroundColor: element.bgColor,
                     borderColor: element.borderColor || 'rgba(0,0,0,0.08)',

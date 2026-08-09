@@ -560,6 +560,19 @@ export const ElementPropertyPanel: React.FC = () => {
             {(selected.type === 'annotation' || selected.type === 'tag') && (
               <ColorField label="边框色" value={selected.borderColor || 'rgba(0,0,0,0.08)'} onChange={(v) => update({ borderColor: v })} />
             )}
+            {selected.type === 'annotation' && (
+              <SegmentField
+                label="尾巴方向"
+                value={selected.tailDirection ?? 'bottom-left'}
+                options={[
+                  { value: 'bottom-left', label: '↙ 左下' },
+                  { value: 'bottom-right', label: '↘ 右下' },
+                  { value: 'top-left', label: '↖ 左上' },
+                  { value: 'top-right', label: '↗ 右上' },
+                ]}
+                onChange={(v) => update({ tailDirection: v as PlogElement['tailDirection'] })}
+              />
+            )}
             {selected.type === 'tag' && (
               <NumberField
                 label="边框(px)"
