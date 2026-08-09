@@ -308,39 +308,58 @@ function buildPalette(
   }
 
   // —— 文字三级（深底/浅底非对称） ——
-  // 深底：正文=浅主题色（带色调、柔和），加粗=更白（极端醒目）—— 白比彩色更跳
-  // 浅底：正文=低饱和深主题色（带色调、舒适阅读），加粗=高饱和深主题色（更醒目）
-  //   textPrimary（主标题）两底都用候选池"不极端"的可读色：深底奶油白 / 浅底暖炭灰
+  // 深底：正文=主色淡色（mix 0.5），主标题=主色强淡色（mix 0.7，更醒目但仍带色相），加粗=纯白（最极端）
+  // 浅底：正文=主色深色（mix 0.5），主标题=主色强深色（mix 0.7，更醒目但仍带色相），加粗=暖炭黑（最极端）
+  // 三级层次：emphasis(纯白/黑) > textPrimary(主色强淡/强深) > textSecondary(主色淡/深) > textMuted
+  //          —— 全部 mix 派生自主色，不再用候选池固定值，避免所有预设主色都一样
   const lightPool = LIGHT_TEXT_CANDIDATES;
   const darkPool = DARK_TEXT_CANDIDATES;
+  const darkAnchor = '#1C1917'; // 暖黑（带红棕调，不是 #000）
 
-  const textPrimary = pickBestTextColor(
-    bgRepresent,
-    isDark ? lightPool : darkPool,
-    4.5,
-    true,
-  );
+  // textPrimary：主标题色 — mix 比例 0.7（比 textSecondary 的 0.5 更接近极端，更醒目但仍带色相）
+  let textPrimary: string;
+  if (isDark) {
+    textPrimary = mix(primary, '#FFFFFF', 0.7);
+    // 保证主标题 AA 级 ≥ 4.5:1；不达标则向白拉到 0.85（更白、对比度更高，仍保留色相）
+    if (contrastRatio(textPrimary, bgRepresent) < 4.5) {
+      textPrimary = mix(primary, '#FFFFFF', 0.85);
+    }
+  } else {
+    textPrimary = mix(primary, darkAnchor, 0.7);
+    if (contrastRatio(textPrimary, bgRepresent) < 4.5) {
+      textPrimary = mix(primary, darkAnchor, 0.85);
+    }
+  }
 
   let emphasis: string;
   let textSecondary: string;
   if (isDark) {
-    // 深底：加粗 = 候选池对比度最高者再往纯白拉 30%（最白）；正文 = primary 派生浅主题色
-    emphasis = pickBestTextColor(bgRepresent, lightPool, 4.5, false);
-    emphasis = mix(emphasis, '#FFFFFF', 0.3);
-    textSecondary = primary;
+    // 深底：加粗 = 纯白（极端醒目）；正文 = primary 派生的浅主题色（带色相、柔和）
+    // 用 mix(primary, 白, t) 派生正文，色相保留、只提亮，不再用 setLuminosity 丢色相
+    emphasis = '#FFFFFF';
+    // 若纯白与背景对比度不足（极浅深底罕见情况），用最白候选兜底
+    if (contrastRatio(emphasis, bgRepresent) < 4.5) {
+      emphasis = mix('#FFFFFF', '#FAF8F0', 0.2);
+    }
+    // 正文：primary 与白 50/50 混合 → 主色淡色（带色相、柔和、不刺眼）
+    textSecondary = mix(primary, '#FFFFFF', 0.5);
+    // 若 primary 与背景太接近，对比度仍不够 → 增加白比例到 0.72，仍保留色相
     if (contrastRatio(textSecondary, bgRepresent) < 3) {
-      textSecondary = setLuminosity(primary, 0.82);
+      textSecondary = mix(primary, '#FFFFFF', 0.72);
     }
   } else {
-    // 浅底：加粗 = primary 派生的深主题色（高饱和、醒目）
-    emphasis = primary;
+    // 浅底：加粗 = primary 派生的深主题色（高饱和、彩色醒目）；正文 = 低饱和深主题色（带色相、舒适阅读）
+    // 设计意图（保留原精心设计）：加粗靠"鲜艳彩色"醒目，正文靠"低调灰化"阅读 —— 两者方向不同，区分清晰
+    // emphasis 用 adjustHsl 调深 + 加饱和，保留色相且比 primary 更鲜艳；fallback 用 mix 仍保留色相
+    emphasis = adjustHsl(primary, { l: -0.2, s: +0.1 });
     if (contrastRatio(emphasis, bgRepresent) < 3) {
-      emphasis = setLuminosity(primary, 0.24);
+      emphasis = mix(primary, darkAnchor, 0.55);
     }
-    // 正文 = 低饱和深主题色（保留色相但降饱和，比纯灰黑有色彩感，又不如加粗醒目）
-    textSecondary = adjustHsl(primary, { l: -0.15, s: -0.15 });
+    // 正文：primary 与暖黑 50/50 → 主色深色版（色相弱化但仍带色、可读、不刺眼）
+    textSecondary = mix(primary, darkAnchor, 0.5);
+    // 若 primary 与背景太接近，对比度仍不够 → 增加深比例到 0.72，仍保留色相
     if (contrastRatio(textSecondary, bgRepresent) < 3) {
-      textSecondary = setLuminosity(textSecondary, 0.32);
+      textSecondary = mix(primary, darkAnchor, 0.72);
     }
   }
 
