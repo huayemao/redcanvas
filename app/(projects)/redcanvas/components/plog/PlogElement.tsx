@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useRef } from 'react';
-import { motion, useMotionValue } from 'framer-motion';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { motion, useMotionValue, useDragControls } from 'framer-motion';
 import { marked } from 'marked';
 import {
   PlogElement as PlogElementType,
@@ -67,6 +67,21 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   const dragX = useMotionValue(0);
   const dragY = useMotionValue(0);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  // 移动端检测：移动端仅允许通过抓手（ElementToolbar 里的 Move 图标）拖动，避免误触。
+  // 桌面端保持"抓任意位置即可拖动"的体验。lg 断点（1024px）与项目其它 lg:hidden 对齐。
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // dragControls：让抓手通过 onPointerDown → dragControls.start 发起拖拽
+  const dragControls = useDragControls();
 
   const handleDragStart = (_: any, info: any) => {
     dragStartRef.current = { x: info.point.x, y: info.point.y };
@@ -152,6 +167,9 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   return (
     <motion.div
       drag
+      // 移动端关闭默认 drag listener，仅允许抓手发起拖拽；桌面端保持整元素可拖
+      dragListener={!isMobile}
+      dragControls={dragControls}
       dragConstraints={containerRef}
       dragElastic={0.05}
       dragMomentum={false}
@@ -422,6 +440,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         <ElementToolbar
           onEditElement={onEditElement}
           onRemove={() => removeElement(element.id)}
+          onDragStart={(e) => dragControls.start(e)}
         />
       )}
     </motion.div>

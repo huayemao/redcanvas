@@ -387,16 +387,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   autoExtractColors: async (imageSrc: string) => {
-    // 并行：单套默认配色（向后兼容）+ 多个主色候选
-    const [colors, candidates] = await Promise.all([
-      extractDominantColors(imageSrc),
-      extractPaletteCandidates(imageSrc),
-    ]);
+    // 只走候选提取一条路：用 candidates[0] 构建配色，保证"应用配色"与
+    // "UI 高亮候选"始终一致（此前 extractDominantColors 与 candidates[0]
+    // 可能取到不同主色，造成添加图片与一键提色结果不一致）。
+    const candidates = await extractPaletteCandidates(imageSrc);
     set({
       paletteCandidates: candidates,
       selectedCandidateId: candidates[0]?.candidateId ?? null,
       selectedStyleId: 'balanced',
     });
+    const cand = candidates[0];
+    let colors: ExtractedColors;
+    if (cand) {
+      colors = buildPaletteStyled(cand.dominant, cand.secondary, cand.accent, 'balanced');
+    } else {
+      // 兜底：候选为空（图片采样失败）→ 回退到单套提取
+      colors = await extractDominantColors(imageSrc);
+    }
     get()._applyPaletteToState(colors, imageSrc);
   },
 

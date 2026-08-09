@@ -8,23 +8,37 @@ interface ElementToolbarProps {
   onEditElement?: () => void;
   /** 删除当前元素 */
   onRemove: () => void;
+  /** 拖拽手柄：移动端只能通过此抓手拖动元素，避免误触 */
+  onDragStart?: (e: React.PointerEvent) => void;
 }
 
 /**
- * 选中元素时浮出的操作条（移动图标 + 编辑 + 删除）。
+ * 选中元素时浮出的操作条（抓手 + 编辑 + 删除）。
  *
  * 设计要点：
- * - 宽度由内容撑开（不再 left-0 right-0 铺满整个元素宽度），避免宽元素拖出一条超长工具条；
- * - 水平居中于元素顶部，footprint 极小，最大限度减少与相邻元素的重叠，
- *   从而避免工具条被其它元素遮挡、点击事件被别的元素捕获。
+ * - 定位在元素内部左上角（不再悬于元素外侧），避免被相邻元素遮挡或溢出画布；
+ * - 抓手（Move 图标）作为拖拽手柄，移动端仅可通过抓手拖动元素，杜绝误触；
+ * - 宽度由内容撑开，footprint 极小。
  */
 export const ElementToolbar: React.FC<ElementToolbarProps> = ({
   onEditElement,
   onRemove,
+  onDragStart,
 }) => {
   return (
-    <div className="hide-on-export absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-neutral-900 text-white rounded-lg p-1 text-[10px] shadow-xl z-50">
-      <Move className="w-3 h-3 text-neutral-400" />
+    <div className="hide-on-export absolute top-1 left-1 flex items-center gap-1 bg-neutral-900/90 text-white rounded-lg p-1 text-[10px] shadow-xl z-50 backdrop-blur-sm">
+      {/* 抓手 —— 拖拽手柄（移动端唯一拖动入口） */}
+      <span
+        onPointerDown={(e) => {
+          // 阻止事件冒泡到 motion.div 的默认 drag listener，统一由 dragControls 接管
+          e.stopPropagation();
+          onDragStart?.(e);
+        }}
+        className="p-0.5 cursor-grab active:cursor-grabbing touch-none hover:text-blue-400 transition-colors flex items-center"
+        title="拖动"
+      >
+        <Move className="w-3 h-3" />
+      </span>
       {onEditElement && (
         <button
           onClick={(e) => {

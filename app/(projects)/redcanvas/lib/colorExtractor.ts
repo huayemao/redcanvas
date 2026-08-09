@@ -284,20 +284,52 @@ function buildPalette(
   // 背景代表色（用于文字对比度校验）取渐变中点
   const bgRepresent = mix(gradientStart, gradientEnd, 0.5);
 
-  // 文字三级：4.5 / 3 / 1.5
+  // —— primary 先算（textSecondary 要派生自它） ——
+  // primary：dominant 派生的"实心填充色"，饱和度更高、亮度调到适合小面积色块（徽章/标签/贴纸）
+  let primary = adjustHsl(refinedBg, {
+    s: Math.min(1, rgbToHsl(hexToRgb(refinedBg)).s + 0.22),
+    l: isDark ? +0.14 : -0.2,
+  });
+  // 保证 primary 与背景有足够对比（小面积色块 ≥ 2.5:1）
+  if (contrastRatio(primary, bgRepresent) < 2.5) {
+    primary = isDark ? setLuminosity(refinedBg, 0.72) : setLuminosity(refinedBg, 0.28);
+  }
+
+  // —— 文字三级（深底/浅底非对称） ——
+  // 深底：正文=浅主题色（带色调、柔和），加粗=更白（极端醒目）—— 白比彩色更跳
+  // 浅底：正文=偏灰黑（中性、舒适阅读），加粗=主题色（带色彩才是"高亮"）
+  //   textPrimary（主标题）两底都用候选池"不极端"的可读色：深底奶油白 / 浅底暖炭灰
   const lightPool = LIGHT_TEXT_CANDIDATES;
   const darkPool = DARK_TEXT_CANDIDATES;
 
-  const textPrimary = pickBestTextColor(bgRepresent, isDark ? lightPool : darkPool, 4.5, true);
-  // 次级文字：可以比主标题"更近中间"一点，所以换优先更温和的
-  const textSecondary = pickBestTextColor(
+  const textPrimary = pickBestTextColor(
     bgRepresent,
     isDark ? lightPool : darkPool,
-    3,
+    4.5,
     true,
   );
-  // Muted：对比度较低，用混合把 textPrimary 往 bg 里揉 50%~55%
-  const textMuted = mix(textPrimary, bgRepresent, isDark ? 0.58 : 0.52);
+
+  let emphasis: string;
+  let textSecondary: string;
+  if (isDark) {
+    // 深底：加粗 = 候选池对比度最高者再往纯白拉 30%（最白）；正文 = primary 派生浅主题色
+    emphasis = pickBestTextColor(bgRepresent, lightPool, 4.5, false);
+    emphasis = mix(emphasis, '#FFFFFF', 0.3);
+    textSecondary = primary;
+    if (contrastRatio(textSecondary, bgRepresent) < 3) {
+      textSecondary = setLuminosity(primary, 0.82);
+    }
+  } else {
+    // 浅底：加粗 = primary 派生的深主题色（带色彩、醒目）；正文 = 偏灰黑（中性）
+    emphasis = primary;
+    if (contrastRatio(emphasis, bgRepresent) < 3) {
+      emphasis = setLuminosity(primary, 0.24);
+    }
+    textSecondary = pickBestTextColor(bgRepresent, darkPool, 3, true);
+  }
+
+  // Muted：把正文色往背景里揉，得到弱化版（深底弱主题色 / 浅底弱灰）
+  const textMuted = mix(textSecondary, bgRepresent, isDark ? 0.58 : 0.52);
 
   // 卡片 + 边
   const { cardBg, cardBorder } = buildCardBg(gradientStart, gradientEnd, isDark);
@@ -312,21 +344,6 @@ function buildPalette(
       : adjustHsl(rawSecondary, { l: -0.18, s: +0.08 });
   }
 
-  // —— 语义化主色派生（替代 accent 的滥用） ——
-  // primary：dominant 派生的"实心填充色"，饱和度更高、亮度调到适合小面积色块（徽章/标签/贴纸）
-  let primary = adjustHsl(refinedBg, {
-    s: Math.min(1, rgbToHsl(hexToRgb(refinedBg)).s + 0.22),
-    l: isDark ? +0.14 : -0.2,
-  });
-  // 保证 primary 与背景有足够对比（小面积色块 ≥ 2.5:1）
-  if (contrastRatio(primary, bgRepresent) < 2.5) {
-    primary = isDark ? setLuminosity(refinedBg, 0.72) : setLuminosity(refinedBg, 0.28);
-  }
-  // emphasis：长文字加粗关键词色，primary 的文字可读版（≥ 3:1）
-  let emphasis = primary;
-  if (contrastRatio(emphasis, bgRepresent) < 3) {
-    emphasis = isDark ? setLuminosity(primary, 0.82) : setLuminosity(primary, 0.24);
-  }
   // primaryMuted：引用边框 / 分隔线 / 弱装饰 — primary 揉进背景 55%
   const primaryMuted = mix(primary, bgRepresent, 0.55);
 
@@ -597,12 +614,25 @@ export async function extractPaletteCandidates(
     lightPicked.push(synthesizeOpposite(darkPicked[0] ?? topPool[0], false));
   }
 
-  // 组装候选顺序：浅 + 深 + 浅（若有）+ 深（若有），保证 UI 里首屏同时可见浅深
+  // 组装候选顺序：真正的最主色（占比最高）排第一，保证 candidates[0] 与
+  // extractDominantColors / autoExtractColors 应用的一致；其余按浅深交错排列，
+  // 让 UI 首屏同时可见浅深。
   const picked: SampledColor[] = [];
+  const pickedKey = new Set<string>();
+  const tryPick = (c: SampledColor | undefined) => {
+    if (!c) return;
+    const key = `${c.r},${c.g},${c.b}`;
+    if (pickedKey.has(key)) return;
+    pickedKey.add(key);
+    picked.push(c);
+  };
+  // 1) 真正的最主色排第一（与 extractDominantColors 一致）
+  tryPick(topPool[0]);
+  // 2) 其余浅深交错
   const maxPerSide = 2;
   for (let i = 0; i < maxPerSide; i++) {
-    if (lightPicked[i]) picked.push(lightPicked[i]);
-    if (darkPicked[i]) picked.push(darkPicked[i]);
+    tryPick(lightPicked[i]);
+    tryPick(darkPicked[i]);
   }
   if (picked.length === 0) picked.push(topPool[0]);
 
