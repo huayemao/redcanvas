@@ -156,9 +156,14 @@ export interface ExtractedColors {
   textMuted: string;     // 装饰小字/品牌标识，对比度 ≥ 1.5:1
 
   // 语义化色值 —— 由 dominant 派生，用于不同元素角色（避免 accent 滥用）
-  primary: string;        // 主色实心填充（徽章/标签/贴纸背景）— dominant 派生，饱和度更高、适合小面积实心
+  primary: string;        // 主色实心填充（标签/贴纸背景）— dominant 派生，适合小面积实心
   emphasis: string;       // 长文字加粗关键词色 — dominant 派生，保证在背景上可读
   primaryMuted: string;   // 主色弱化（引用边框/分隔线/弱装饰）— primary 与背景混合
+
+  // 徽章专用：永远深色背景 + 永远浅色文字（保
+  // 证浅画布上也有强对比胶囊）
+  badgeBg: string;
+  badgeText: string;
 
   // 卡片与边框色（基于背景的和谐色差）
   cardBg: string;

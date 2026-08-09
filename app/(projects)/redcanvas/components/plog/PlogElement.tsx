@@ -330,12 +330,21 @@ export const PlogElement: React.FC<PlogElementProps> = ({
       {/* 以下：装饰类（badge / sticker / annotation / tag）保持原样，但加上字体/阴影增强 */}
 
       {/* ===== 步骤徽章：实心胶囊 + 编号圆点（用于分步说明） ===== */}
-      {element.type === 'badge' && (
+      {element.type === 'badge' && (() => {
+        // 永远深底亮字：bg → badgeBg（永远深色），text → badgeText（永远浅色）
+        const badgeColor = element.color || extractedColors?.badgeText || '#F5F1E8';
+        const badgeBg = element.bgColor || extractedColors?.badgeBg || '#1C1917';
+        // 边框：与背景不同色 —— 用文字色 40% 透明度（亮文字 → 亮边框半透明，与深底对比明显）
+        const badgeBorder = element.borderColor || mixColorAlpha(badgeColor, 0.4);
+        return (
         <div
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-black backdrop-blur-md border border-white/20 whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-black backdrop-blur-md border whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
           style={{
-            backgroundColor: element.bgColor || '#ff2442',
-            color: element.color || '#ffffff',
+            backgroundColor: badgeBg,
+            color: badgeColor,
+            borderWidth: `${element.borderWidth ?? 2}px`,
+            borderColor: badgeBorder,
+            borderStyle: 'solid',
             boxShadow: shadowOf(element.shadowLevel ?? 1),
             whiteSpace: 'nowrap',
             ...textInlines,
@@ -354,7 +363,8 @@ export const PlogElement: React.FC<PlogElementProps> = ({
           )}
           <span className="whitespace-nowrap">{element.content}</span>
         </div>
-      )}
+        );
+      })()}
 
       {/* ===== 说明提示框：气泡式注释卡片，尾巴方向可配置，指向被注释内容 =====
            有 bgColor → 卡片模式（背景+边框+尾巴+阴影）

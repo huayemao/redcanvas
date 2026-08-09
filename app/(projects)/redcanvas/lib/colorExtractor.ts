@@ -285,19 +285,31 @@ function buildPalette(
   const bgRepresent = mix(gradientStart, gradientEnd, 0.5);
 
   // —— primary 先算（textSecondary 要派生自它） ——
-  // primary：dominant 派生的"实心填充色"，饱和度更高、亮度调到适合小面积色块（徽章/标签/贴纸）
+  // primary：dominant 派生的"实心填充色"（用于徽章/标签/贴纸背景）
+  // 核心视觉原则：
+  //   深底：primary 是【深色彩色块】—— 饱和度温和、亮度与背景拉开但不变成亮色，让白色文字可读
+  //   浅底：primary 是【浅色彩色块】—— 饱和度温和、与背景有对比，深色文字可读
+  // 饱和度仅微提（+0.08），避免高饱和"霓虹"感破坏杂志质感
   let primary = adjustHsl(refinedBg, {
-    s: Math.min(1, rgbToHsl(hexToRgb(refinedBg)).s + 0.22),
-    l: isDark ? +0.14 : -0.2,
+    s: Math.min(0.55, rgbToHsl(hexToRgb(refinedBg)).s + 0.08),
+    l: isDark ? +0.12 : -0.12,
   });
-  // 保证 primary 与背景有足够对比（小面积色块 ≥ 2.5:1）
+  // 保证 primary 与背景有 ≥2.5:1 对比（小面积色块基本可读）
   if (contrastRatio(primary, bgRepresent) < 2.5) {
-    primary = isDark ? setLuminosity(refinedBg, 0.72) : setLuminosity(refinedBg, 0.28);
+    if (isDark) {
+      // 深底：如果提亮不够，进一步提亮但保持在中等亮度区间（0.35~0.55），不跳成亮白
+      const curL = rgbToHsl(hexToRgb(primary)).l;
+      primary = setLuminosity(primary, Math.min(0.55, Math.max(0.35, curL + 0.15)));
+    } else {
+      // 浅底：压暗一点但保持在中等亮度区间（0.2~0.4）
+      const curL = rgbToHsl(hexToRgb(primary)).l;
+      primary = setLuminosity(primary, Math.max(0.2, Math.min(0.4, curL - 0.15)));
+    }
   }
 
   // —— 文字三级（深底/浅底非对称） ——
   // 深底：正文=浅主题色（带色调、柔和），加粗=更白（极端醒目）—— 白比彩色更跳
-  // 浅底：正文=偏灰黑（中性、舒适阅读），加粗=主题色（带色彩才是"高亮"）
+  // 浅底：正文=低饱和深主题色（带色调、舒适阅读），加粗=高饱和深主题色（更醒目）
   //   textPrimary（主标题）两底都用候选池"不极端"的可读色：深底奶油白 / 浅底暖炭灰
   const lightPool = LIGHT_TEXT_CANDIDATES;
   const darkPool = DARK_TEXT_CANDIDATES;
@@ -320,15 +332,19 @@ function buildPalette(
       textSecondary = setLuminosity(primary, 0.82);
     }
   } else {
-    // 浅底：加粗 = primary 派生的深主题色（带色彩、醒目）；正文 = 偏灰黑（中性）
+    // 浅底：加粗 = primary 派生的深主题色（高饱和、醒目）
     emphasis = primary;
     if (contrastRatio(emphasis, bgRepresent) < 3) {
       emphasis = setLuminosity(primary, 0.24);
     }
-    textSecondary = pickBestTextColor(bgRepresent, darkPool, 3, true);
+    // 正文 = 低饱和深主题色（保留色相但降饱和，比纯灰黑有色彩感，又不如加粗醒目）
+    textSecondary = adjustHsl(primary, { l: -0.15, s: -0.15 });
+    if (contrastRatio(textSecondary, bgRepresent) < 3) {
+      textSecondary = setLuminosity(textSecondary, 0.32);
+    }
   }
 
-  // Muted：把正文色往背景里揉，得到弱化版（深底弱主题色 / 浅底弱灰）
+  // Muted：把正文色往背景里揉，得到弱化版
   const textMuted = mix(textSecondary, bgRepresent, isDark ? 0.58 : 0.52);
 
   // 卡片 + 边
@@ -347,6 +363,18 @@ function buildPalette(
   // primaryMuted：引用边框 / 分隔线 / 弱装饰 — primary 揉进背景 55%
   const primaryMuted = mix(primary, bgRepresent, 0.55);
 
+  // 徽章：永远深色背景 + 永远浅色文字（无论画布深浅，胶囊一律深底亮字）
+  // badgeBg：取 dominant 色相，压暗到 L≈0.22（深到与浅画布有强烈对比），保留一定饱和度带色调
+  const { h } = rgbToHsl(hexToRgb(refinedBg));
+  const badgeBgRaw = rgbToHex(hslToRgb({ h, s: Math.min(0.55, 0.35 + Math.abs(h - 250) * 0.002), l: 0.22 }));
+  // 保证 badgeBg 与浅画布的对比度 ≥ 3（如已经够深则不动）
+  const badgeBg =
+    contrastRatio(badgeBgRaw, '#FFFFFF') >= 3
+      ? badgeBgRaw
+      : setLuminosity(badgeBgRaw, 0.18);
+  // badgeText：永远从浅文字池选（奶油白方向），在 badgeBg 上对比度 ≥ 4.5
+  const badgeText = pickBestTextColor(badgeBg, LIGHT_TEXT_CANDIDATES, 4.5, true);
+
   return {
     dominant: refinedBg,
     secondary,
@@ -355,9 +383,11 @@ function buildPalette(
     textSecondary,
     textMuted,
     // —— 语义化色值（由 dominant 派生，避免 accent 滥用） ——
-    primary,          // 徽章/标签/贴纸实心填充
+    primary,          // 标签/贴纸实心填充
     emphasis,         // 长文字加粗关键词
     primaryMuted,     // 引用边框 / 分隔线 / 弱装饰
+    badgeBg,          // 徽章背景（永远深色）
+    badgeText,        // 徽章文字（永远浅色）
     cardBg,
     cardBorder,
     gradientStart,

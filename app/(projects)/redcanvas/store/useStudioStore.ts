@@ -355,9 +355,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           if (el.type === 'longtext') {
             return { ...el, color: colors.textSecondary };
           }
-          // 徽章 → 主色派生 primary（实心填充）
+          // 徽章 → badgeBg（永远深色）背景 + badgeText（永远浅色）文字
           if (el.type === 'badge') {
-            return { ...el, bgColor: colors.primary };
+            return { ...el, bgColor: colors.badgeBg, color: colors.badgeText };
           }
           // 高亮贴纸 → accent 同色相（半透明底 + 实心文字）
           if (el.type === 'sticker') {
@@ -684,7 +684,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     let textSecondary: string;
     let textMuted: string;
     let accent: string;
-    let primary: string; // 主色派生（徽章/标签/贴纸实心填充）
+    let primary: string; // 主色派生（标签/贴纸实心填充）
+    let dominant: string; // 图片提取主色
+    let badgeBg: string;  // 徽章背景（永远深色）
+    let badgeText: string;// 徽章文字（永远浅色）
     let cardBg: string;
     let cardBorder: string;
     if (palette) {
@@ -693,6 +696,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       textMuted = palette.textMuted;
       accent = palette.accent;
       primary = palette.primary;
+      dominant = palette.dominant;
+      badgeBg = palette.badgeBg;
+      badgeText = palette.badgeText;
       cardBg = palette.cardBg;
       cardBorder = palette.cardBorder;
     } else {
@@ -708,7 +714,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         textSecondary = '#C8C0AE';
         textMuted = '#8A8276';
         accent = s.accentColor || '#ff6b6b';
-        primary = s.bgColor || '#3A3F4A'; // 无提取色时：primary ≈ 背景色加深版
+        primary = s.bgColor || '#3A3F4A';
+        dominant = s.bgColor || '#3A3F4A';
+        badgeBg = '#2A2318'; // 永远深色
+        badgeText = '#F5F1E8'; // 永远浅色
         cardBg = '#15171C';
         cardBorder = 'rgba(255,255,255,0.08)';
       } else {
@@ -717,6 +726,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         textMuted = '#78716C';
         accent = s.accentColor || '#111827';
         primary = s.bgColor || '#1C1917';
+        dominant = s.bgColor || '#1C1917';
+        badgeBg = '#1C1917'; // 永远深色（深炭灰）
+        badgeText = '#F5F1E8'; // 永远浅色（奶油白）
         cardBg = '#FFFFFF';
         cardBorder = 'rgba(0,0,0,0.06)';
       }
@@ -780,8 +792,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         content: 'RED CANVAS',
         x: 68, y: 6,
         zIndex: 12,
-        color: '#FFFFFF',
-        bgColor: primary,
+        color: badgeText,
+        bgColor: badgeBg,
         shadowLevel: 1,
         badgeNumber: '',
         fontSize: 10,
@@ -881,8 +893,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         content: '',
         x: 80, y: 85,
         zIndex: 12,
-        color: '#FFFFFF',
-        bgColor: primary,
+        color: badgeText,
+        bgColor: badgeBg,
         shadowLevel: 0,
         badgeNumber: '',
         borderRadius: 999,
@@ -940,6 +952,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     let textSecondary: string;
     let accent: string;
     let primary: string;
+    let dominant: string;
+    let badgeBg: string;
+    let badgeText: string;
     let cardBg: string;
     let cardBorder: string;
     if (palette) {
@@ -947,6 +962,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       textSecondary = palette.textSecondary;
       accent = palette.accent;
       primary = palette.primary;
+      dominant = palette.dominant;
+      badgeBg = palette.badgeBg;
+      badgeText = palette.badgeText;
       cardBg = palette.cardBg;
       cardBorder = palette.cardBorder;
     } else {
@@ -961,6 +979,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       textSecondary = isDark ? '#C8C0AE' : '#44403C';
       accent = isDark ? '#ff8787' : '#ff2442';
       primary = isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917');
+      dominant = isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917');
+      badgeBg = '#1C1917'; // 永远深色
+      badgeText = '#F5F1E8'; // 永远浅色
       // 卡片底色：深底用半透明白、浅底用纯白，均能与背景拉开层次且不刺眼
       cardBg = isDark ? 'rgba(255,255,255,0.10)' : '#FFFFFF';
       cardBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)';
@@ -1060,8 +1081,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           content: '步骤',
           x: 50, y: 50,
           zIndex: nextZ,
-          color: '#FFFFFF',
-          bgColor: primary,
+          color: badgeText,
+          bgColor: badgeBg,
           fontSize: 12,
           fontWeight: 800,
           shadowLevel: 2,
@@ -1141,8 +1162,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           content: 'NEW',
         x: 50, y: 50,
         zIndex: nextZ,
-        color: '#FFFFFF',
-        bgColor: primary,
+        color: badgeText,
+        bgColor: badgeBg,
         shadowLevel: 2,
         badgeNumber: '',
         fontWeight: 700,
