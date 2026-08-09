@@ -600,6 +600,65 @@ const DEFAULT_PALETTE: ExtractedColors = (() => {
   return p;
 })();
 
+// ============================================================================
+//  精选预设配色 — 覆盖基本色相，杂志风美学
+//  每色含深/浅两套（共 16 套），任何情况下都能直接切换而无需等待提色
+// ============================================================================
+
+type PresetTriad = {
+  candidateName: string;
+  dominant: string;
+  secondary: string;
+  accent: string;
+};
+
+// 设计约束：
+//   深色：L≈0.18~0.28，饱和度不过高（避免霓虹感）
+//   浅色：L≈0.80~0.92，饱和度温和（米色/奶油感而非糖果色）
+//   accent：与 dominant 有清晰对比，保证用作小装饰/链接时醒目
+const PRESET_TRIADS: PresetTriad[] = [
+  // —— 暖色系 ——
+  { candidateName: '砖红缎 · 深', dominant: '#3A1E1A', secondary: '#5A2E26', accent: '#E8B4A0' },
+  { candidateName: '砖红缎 · 浅', dominant: '#F0D9D2', secondary: '#D9B8AE', accent: '#8C3B2E' },
+
+  { candidateName: '赤陶橙 · 深', dominant: '#3B2418', secondary: '#5E3A24', accent: '#F3B182' },
+  { candidateName: '赤陶橙 · 浅', dominant: '#F4E2D0', secondary: '#E3C7A9', accent: '#B65630' },
+
+  { candidateName: '琥珀金 · 深', dominant: '#3C2D14', secondary: '#614A1F', accent: '#F2CC8F' },
+  { candidateName: '琥珀金 · 浅', dominant: '#F3E7CC', secondary: '#DDC79A', accent: '#A3741C' },
+
+  // —— 中色系 ——
+  { candidateName: '橄榄苔 · 深', dominant: '#262E1D', secondary: '#405030', accent: '#B8D08A' },
+  { candidateName: '橄榄苔 · 浅', dominant: '#E6EBDB', secondary: '#C7D0B1', accent: '#5A6B36' },
+
+  { candidateName: '松石青 · 深', dominant: '#173331', secondary: '#24524D', accent: '#8CD1CA' },
+  { candidateName: '松石青 · 浅', dominant: '#DCECEA', secondary: '#B3D2CE', accent: '#2E726A' },
+
+  // —— 冷色系 ——
+  { candidateName: '深海蓝 · 深', dominant: '#15243A', secondary: '#253E60', accent: '#9BB9D9' },
+  { candidateName: '深海蓝 · 浅', dominant: '#DCE3EC', secondary: '#B6C3D5', accent: '#2E4F7A' },
+
+  { candidateName: '暮色紫 · 深', dominant: '#2A1E3A', secondary: '#473262', accent: '#C6B0DD' },
+  { candidateName: '暮色紫 · 浅', dominant: '#E6DFEE', secondary: '#C6B8DA', accent: '#5E4583' },
+
+  { candidateName: '玫褐粉 · 深', dominant: '#341C28', secondary: '#562E42', accent: '#E8B1C7' },
+  { candidateName: '玫褐粉 · 浅', dominant: '#F0DCE5', secondary: '#DCBACB', accent: '#8F3D62' },
+];
+
+// 把预设 triad 包装为 PaletteCandidate（供 UI 直接追加）
+const PRESET_PALETTES: PaletteCandidate[] = PRESET_TRIADS.map((t, i) => {
+  // 先用 buildPalette 过一遍精炼，保证后续 UI 的 gradient/text/badge 全部派生一致
+  const colors = buildPalette(t.dominant, t.secondary, t.accent);
+  return {
+    candidateId: `p${i}`,
+    candidateName: t.candidateName,
+    dominantHex: colors.dominant,
+    dominant: colors.dominant,
+    secondary: colors.secondary,
+    accent: colors.accent,
+  };
+});
+
 export async function extractDominantColors(imageSrc: string): Promise<ExtractedColors> {
   const triad = await sampleRawTriad(imageSrc);
   if (!triad) return DEFAULT_PALETTE;
@@ -616,8 +675,8 @@ export async function extractPaletteCandidates(
 ): Promise<PaletteCandidate[]> {
   const sorted = await sampleImageColors(imageSrc);
   if (!sorted || sorted.length === 0) {
-    // 兜底：一深一浅两套保证
-    return [
+    // 兜底：先放两套保险，再追加精选预设
+    const fallback: PaletteCandidate[] = [
       {
         candidateId: 'c0',
         candidateName: '主色 · 素白（浅）',
@@ -635,6 +694,7 @@ export async function extractPaletteCandidates(
         accent: '#E8B34A',
       },
     ];
+    return [...fallback, ...PRESET_PALETTES];
   }
   const topPool = sorted.slice(0, Math.min(12, sorted.length));
 
@@ -704,7 +764,7 @@ export async function extractPaletteCandidates(
   }
   if (picked.length === 0) picked.push(topPool[0]);
 
-  const candidates: PaletteCandidate[] = picked.map((c, idx) => {
+  let candidates: PaletteCandidate[] = picked.map((c, idx) => {
     const triad = pickTriadForDominant(c, topPool);
     // 根据最终色深浅补充语义化后缀名（浅/深标注）
     const l = rgbToHsl(hexToRgb(triad.dominant)).l;
@@ -741,12 +801,14 @@ export async function extractPaletteCandidates(
           ...triad,
         });
         // 重新编号 candidateId 以保持与索引一致
-        return candidates.map((c, i) => ({ ...c, candidateId: `c${i}` }));
+        candidates = candidates.map((c, i) => ({ ...c, candidateId: `c${i}` }));
       }
     }
   }
 
-  return candidates;
+  // —— 永远在末尾追加精选预设配色（覆盖全色相，任何提取结果不满意时的手动备选） ——
+  // candidateId 用 p0~p15，与动态提取的 c0~cN 天然不冲突，无需重新编号
+  return [...candidates, ...PRESET_PALETTES];
 }
 
 // ============================================================================

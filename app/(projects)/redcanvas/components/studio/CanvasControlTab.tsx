@@ -52,56 +52,86 @@ export const CanvasControlTab: React.FC = () => {
       {paletteCandidates.length > 0 && (
         <div className="space-y-4">
           {/* —— 主色候选（主变体）：横向滚动 —— */}
-          <div className="space-y-2.5">
-            <label className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center justify-between">
-              <span>主色候选 · Dominant</span>
-              <span className="text-white/20 font-mono">{paletteCandidates.length} 个</span>
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 scrollbar-thin">
-              {paletteCandidates.map((c) => {
-                const active = selectedCandidateId === c.candidateId;
-                return (
-                  <button
-                    key={c.candidateId}
-                    onClick={() => applyPaletteCandidate(c.candidateId)}
-                    className={`group flex-shrink-0 w-[88px] text-left rounded-2xl overflow-hidden border transition-all ${
-                      active
-                        ? 'border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.4)] scale-[1.03]'
-                        : 'border-white/[0.06] hover:border-white/20'
-                    }`}
+          {(() => {
+            // 按 candidateId 前缀分组：c 开头=图片提取，p 开头=精选预设
+            const extracted = paletteCandidates.filter((c) => c.candidateId.startsWith('c'));
+            const presets = paletteCandidates.filter((c) => c.candidateId.startsWith('p'));
+
+            // 单个候选按钮渲染（提取与预设共用）
+            const renderCandidate = (c: typeof paletteCandidates[number]) => {
+              const active = selectedCandidateId === c.candidateId;
+              return (
+                <button
+                  key={c.candidateId}
+                  onClick={() => applyPaletteCandidate(c.candidateId)}
+                  className={`group flex-shrink-0 w-[88px] text-left rounded-2xl overflow-hidden border transition-all ${
+                    active
+                      ? 'border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.4)] scale-[1.03]'
+                      : 'border-white/[0.06] hover:border-white/20'
+                  }`}
+                >
+                  {/* 主色色块 */}
+                  <div
+                    className="h-12 w-full relative flex items-end justify-end gap-1 p-1.5"
+                    style={{ backgroundColor: c.dominantHex }}
                   >
-                    {/* 主色色块 */}
-                    <div
-                      className="h-12 w-full relative flex items-end justify-end gap-1 p-1.5"
-                      style={{ backgroundColor: c.dominantHex }}
+                    {/* 次色 / 强调色小球 */}
+                    <span
+                      className="w-3 h-3 rounded-full shadow-sm ring-1 ring-black/10"
+                      style={{ backgroundColor: c.secondary }}
+                      title="次色"
+                    />
+                    <span
+                      className="w-3 h-3 rounded-full shadow-sm ring-1 ring-black/10"
+                      style={{ backgroundColor: c.accent }}
+                      title="强调色"
+                    />
+                  </div>
+                  {/* 名称 */}
+                  <div className="px-2 py-1.5 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-center">
+                    <span
+                      className={`text-[10px] font-black tracking-wide truncate ${
+                        active ? 'text-red-400' : 'text-white/60 group-hover:text-white/80'
+                      }`}
                     >
-                      {/* 次色 / 强调色小球 */}
-                      <span
-                        className="w-3 h-3 rounded-full shadow-sm ring-1 ring-black/10"
-                        style={{ backgroundColor: c.secondary }}
-                        title="次色"
-                      />
-                      <span
-                        className="w-3 h-3 rounded-full shadow-sm ring-1 ring-black/10"
-                        style={{ backgroundColor: c.accent }}
-                        title="强调色"
-                      />
+                      {c.candidateName}
+                    </span>
+                  </div>
+                </button>
+              );
+            };
+
+            return (
+              <>
+                {/* 第一行：图片提取的主色候选 */}
+                {extracted.length > 0 && (
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center justify-between">
+                      <span>主色候选 · Dominant</span>
+                      <span className="text-white/20 font-mono">{extracted.length} 个</span>
+                    </label>
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 scrollbar-thin">
+                      {extracted.map(renderCandidate)}
                     </div>
-                    {/* 名称 */}
-                    <div className="px-2 py-1.5 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-center">
-                      <span
-                        className={`text-[10px] font-black tracking-wide truncate ${
-                          active ? 'text-red-400' : 'text-white/60 group-hover:text-white/80'
-                        }`}
-                      >
-                        {c.candidateName}
-                      </span>
+                  </div>
+                )}
+
+                {/* 第二行：精选预设配色（另起一行，仅在提取不理想时手动切换） */}
+                {presets.length > 0 && (
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center justify-between">
+                      <span>精选预设 · Presets</span>
+                      <span className="text-white/20 font-mono">{presets.length} 套</span>
+                    </label>
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 scrollbar-thin">
+                      {presets.map(renderCandidate)}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
 
           {/* —— 风格（次变体）：按钮组 —— */}
           <div className="space-y-2.5">
