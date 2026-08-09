@@ -1040,7 +1040,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           zIndex: nextZ,
           color: textPrimary,
           fontSize: 22,
-          fontWeight: 800,
+          fontWeight: 400,
           fontFamily: s.fontFamily,
           markdownEnabled: true,
         };
@@ -1054,7 +1054,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           zIndex: nextZ,
           color: textPrimary,
           fontSize: 22,
-          fontWeight: 800,
+          fontWeight: 400,
           fontFamily: s.fontFamily,
           markdownEnabled: true,
         };
