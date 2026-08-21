@@ -61,11 +61,13 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
   const shellRadius = isCardMode ? 'rounded-2xl' : '';
 
   // 注入 CSS var，让 Markdown prose 子元素能拿到语义色
+  // --lt-line-height：用户调整的行高倍数；未设时由内层段落类 fallback 到 1.625（原 leading-relaxed）
   const cssVars = {
     '--lt-color': effColor || 'inherit',
     '--lt-accent': accent,            // 链接
     '--lt-emphasis': emphasis,        // 加粗关键词
     '--lt-primary-muted': primaryMuted, // 引用边框 / 分隔线
+    '--lt-line-height': element.lineHeight !== undefined ? String(element.lineHeight) : undefined,
   } as React.CSSProperties;
 
   return (
@@ -82,7 +84,8 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
         <div
           className={[
             // 段落/标题/列表的基础排版
-            '[&>p]:my-2 [&>p]:leading-relaxed',
+            // leading 用 CSS 变量，用户设的 element.lineHeight 才能覆盖默认 1.625
+            '[&>p]:my-2 [&>p]:leading-[var(--lt-line-height,1.625)]',
             '[&_strong]:font-black [&_em]:italic',
             '[&>h1]:text-2xl [&>h1]:font-black [&>h1]:leading-tight [&>h1]:my-3',
             '[&>h2]:text-xl [&>h2]:font-black [&>h2]:leading-tight [&>h2]:my-3',
@@ -109,7 +112,7 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
           dangerouslySetInnerHTML={{ __html: renderedMd }}
         />
       ) : (
-        <p className="whitespace-pre-wrap leading-relaxed">{element.content}</p>
+        <p className="whitespace-pre-wrap leading-[var(--lt-line-height,1.625)]">{element.content}</p>
       )}
     </div>
   );
