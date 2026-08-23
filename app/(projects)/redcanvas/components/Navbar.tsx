@@ -15,7 +15,7 @@ export default function Navbar() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-black text-white tracking-tight leading-none">RedCanvas</span>
-            <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-0.5">XHS Creative Suite</span>
+            <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-0.5">花野猫的Plog排版工具</span>
           </div>
         </Link>
 
@@ -74,7 +74,7 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-black text-white tracking-tight leading-none">RedCanvas</span>
-              <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-0.5">XHS Creative Suite</span>
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mt-0.5">花野猫的Plog排版工具</span>
             </div>
           </Link>
           <button 

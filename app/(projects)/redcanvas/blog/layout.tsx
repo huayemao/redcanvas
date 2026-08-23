@@ -21,9 +21,7 @@ export function generateMetadata() {
 }
 
 export default function BlogLayout({ children }: BlogLayoutProps) {
-  return (
-    <article className="max-w-4xl mx-auto my-6">
-      {children}
-    </article>
-  );
+  // 深色主题锁定：统一使用 bg-[#0a0a0a]，不混入浅色内容容器
+  // 详情页的实际内容包裹在 [slug]/page.tsx 中做更深一层的玻璃卡片壳
+  return <div className="bg-[#0a0a0a]">{children}</div>;
 }
