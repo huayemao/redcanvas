@@ -277,9 +277,31 @@ function buildPalette(
   rawDominant: string,
   rawSecondary: string,
   rawAccent: string,
+  options?: { rawBackground?: boolean },
 ): ExtractedColors {
-  const { refinedBg, isDark, hsl } = refineBackground(rawDominant);
-  const { start: gradientStart, end: gradientEnd } = buildGradientPair(refinedBg, isDark, hsl);
+  // 原色模式：跳过 refineBackground 美学精炼，直接用 raw dominant 作为背景
+  // （渐变铺平为同一色），真正实现"背景色=图片里面积最大的那个颜色"
+  let refinedBg: string;
+  let isDark: boolean;
+  let hsl: HSL;
+  let gradientStart: string;
+  let gradientEnd: string;
+  if (options?.rawBackground) {
+    const rawHsl = rgbToHsl(hexToRgb(rawDominant));
+    refinedBg = rawDominant;
+    isDark = rawHsl.l < 0.5;
+    hsl = rawHsl;
+    gradientStart = rawDominant;
+    gradientEnd = rawDominant;
+  } else {
+    const refined = refineBackground(rawDominant);
+    refinedBg = refined.refinedBg;
+    isDark = refined.isDark;
+    hsl = refined.hsl;
+    const pair = buildGradientPair(refinedBg, isDark, hsl);
+    gradientStart = pair.start;
+    gradientEnd = pair.end;
+  }
 
   // 背景代表色（用于文字对比度校验）取渐变中点
   const bgRepresent = mix(gradientStart, gradientEnd, 0.5);
@@ -430,6 +452,7 @@ export const PALETTE_STYLES: Array<{ styleId: string; styleName: string }> = [
   { styleId: 'high-contrast', styleName: '高对比杂志' },
   { styleId: 'morandi', styleName: '莫兰迪柔和' },
   { styleId: 'complementary', styleName: '色相互补' },
+  { styleId: 'raw', styleName: '原色·最大面积' },
 ];
 
 /** 按风格 id 对 raw dominant 做 HSL 变换 */
@@ -456,6 +479,10 @@ export function buildPaletteStyled(
   rawAccent: string,
   styleId: string,
 ): ExtractedColors {
+  // 原色方案：直接用图片占比最大的颜色作为背景，不做任何 HSL 美学变换与精炼
+  if (styleId === 'raw') {
+    return buildPalette(rawDominant, rawSecondary, rawAccent, { rawBackground: true });
+  }
   const dom = styleDominantHex(rawDominant, styleId);
   return buildPalette(dom, rawSecondary, rawAccent);
 }
