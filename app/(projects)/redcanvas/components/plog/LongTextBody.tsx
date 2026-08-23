@@ -101,7 +101,7 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
             '[&_strong]:text-[var(--lt-emphasis)]',
             // 分隔线：primaryMuted（主色弱化）
             '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-primary-muted)]',
-            // 引用块：左边框 + 斜体（样式在 globals.css 中定义）
+            // 引用块：SVG 引号装饰 + 斜体（样式在 globals.css 中定义，em 单位随文字自适应）
             '[&_blockquote]:border-0 [&_blockquote]:italic',
           ].join(' ')}
           dangerouslySetInnerHTML={{ __html: renderedMd }}
