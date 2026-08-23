@@ -66,6 +66,27 @@ const AppPage: React.FC = () => {
     setMobilePropDrawerOpen(false);
   }, [selectedElementId]);
 
+  // —— 取消选中：按下 ESC 键 或 点击画布/面板外的空白容器区域 ——
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        // 移动端抽屉打开时：Esc 先关抽屉，不关选中（符合直觉）
+        if (mobileEditorOpen) { setMobileEditorOpen(false); return; }
+        if (mobilePropDrawerOpen) { setMobilePropDrawerOpen(false); return; }
+        setSelectedElementId(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [setSelectedElementId, mobileEditorOpen, mobilePropDrawerOpen]);
+
+  /** 点击"容器自身"（e.target === e.currentTarget）代表点到了容器的空白 padding / margin，
+   *  而非其内部的按钮、输入框、图层项等可交互子元素 → 此时取消选中是安全且符合直觉的。
+   *  把此函数挂到所有外层布局容器上，即可实现「点击非画布空白区域 / 面板空白 → 取消选中」。 */
+  const clearSelectionOnBlankClick = (e: React.MouseEvent<HTMLElement>) => {
+    if (e.target === e.currentTarget) setSelectedElementId(null);
+  };
+
   const handleExport = useCallback(async () => {
     if (!previewRef.current) return;
     setIsExporting(true);
@@ -102,10 +123,19 @@ const AppPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-red-500/40">
-      <main className="flex-1 flex flex-col lg:flex-row min-h-screen">
+    <div
+      className="min-h-screen bg-[#0a0a0a] text-white selection:bg-red-500/40"
+      onClick={clearSelectionOnBlankClick}
+    >
+      <main
+        className="flex-1 flex flex-col lg:flex-row min-h-screen"
+        onClick={clearSelectionOnBlankClick}
+      >
         {/* Left Panel - Editor (desktop only; mobile uses drawer) */}
-        <aside className="hidden lg:block w-[460px] xl:w-[520px] flex-shrink-0 bg-[#0f0f0f] border-r border-white/[0.06] p-6 lg:p-8 overflow-y-auto">
+        <aside
+          className="hidden lg:block w-[460px] xl:w-[520px] flex-shrink-0 bg-[#0f0f0f] border-r border-white/[0.06] p-6 lg:p-8 overflow-y-auto"
+          onClick={clearSelectionOnBlankClick}
+        >
           <div className="max-w-md lg:max-w-lg xl:max-w-xl mx-auto space-y-6">
             {/* Brand Header */}
             <header className="mb-4">
@@ -149,7 +179,10 @@ const AppPage: React.FC = () => {
         </aside>
 
         {/* Right Panel - Canvas & Export */}
-        <section className="flex-1 bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden">
+        <section
+          className="flex-1 bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden"
+          onClick={clearSelectionOnBlankClick}
+        >
           {/* Mobile top bar：编辑 + 导入导出（抽屉外，便于随时存读档） */}
           <div className="lg:hidden absolute top-4 left-4 z-40 flex items-center gap-1.5">
             <button
@@ -167,23 +200,17 @@ const AppPage: React.FC = () => {
 
           <div
             className="relative z-10 flex flex-col items-center justify-center gap-10 p-6 lg:p-12 min-h-screen"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setSelectedElementId(null);
-            }}
+            onClick={clearSelectionOnBlankClick}
           >
             {/* Canvas Preview + 桌面端属性面板 */}
             <div
               className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8 w-full max-w-[1100px]"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setSelectedElementId(null);
-              }}
+              onClick={clearSelectionOnBlankClick}
             >
               {/* Canvas */}
               <div
                 className="w-full max-w-[580px] flex flex-col items-center gap-6 flex-shrink-0"
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) setSelectedElementId(null);
-                }}
+                onClick={clearSelectionOnBlankClick}
               >
                 <div className="relative w-full">
                   {/* Outer frame - premium dark */}

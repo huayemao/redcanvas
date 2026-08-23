@@ -178,6 +178,8 @@ interface StudioState {
   addFloatingElement: (element: PlogElement) => void;
   updateFloatingElement: (id: string, partial: Partial<PlogElement>) => void;
   removeFloatingElement: (id: string) => void;
+  /** 调整图层顺序：direction = 'up'上移一层 / 'down'下移一层 / 'top'置顶 / 'bottom'置底。背景层不允许重排。 */
+  reorderFloatingElementLayer: (id: string, direction: 'up' | 'down' | 'top' | 'bottom') => void;
   setSelectedElementId: (id: string | null) => void;
   /** 对图片/素材元素：按 imageUrl 测量原图真实宽高 → 写入 aspectRatio 并锁定宽高比。URL 改变会自动重新测量。 */
   ensureImageAspectRatio: (id: string) => void;
@@ -640,6 +642,50 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       floatingElements: state.floatingElements.filter((el) => el.id !== id),
     })),
+  reorderFloatingElementLayer: (id, direction) =>
+    set((state) => {
+      const elements = state.floatingElements;
+      const target = elements.find((e) => e.id === id);
+      if (!target || target.type === 'background') return state;
+
+      const bgEls = elements.filter((e) => e.type === 'background');
+      const bgZ = bgEls.length > 0 ? Math.min(...bgEls.map((e) => e.zIndex)) : 0;
+      const nonBg = elements
+        .filter((e) => e.type !== 'background')
+        .sort((a, b) => a.zIndex - b.zIndex);
+      const pos = nonBg.findIndex((e) => e.id === id);
+      if (pos < 0) return state;
+
+      const updates: Record<string, number> = {};
+
+      if (direction === 'up') {
+        if (pos + 1 >= nonBg.length) return state;
+        const partner = nonBg[pos + 1];
+        updates[target.id] = partner.zIndex;
+        updates[partner.id] = target.zIndex;
+      } else if (direction === 'down') {
+        if (pos - 1 < 0) return state;
+        const partner = nonBg[pos - 1];
+        updates[target.id] = partner.zIndex;
+        updates[partner.id] = target.zIndex;
+      } else if (direction === 'top') {
+        const maxZ = Math.max(...nonBg.map((e) => e.zIndex));
+        updates[target.id] = maxZ + 1;
+      } else if (direction === 'bottom') {
+        const others = nonBg.filter((e) => e.id !== id);
+        if (others.length === 0) return state;
+        const othersMinZ = Math.min(...others.map((e) => e.zIndex));
+        updates[target.id] = Math.max(othersMinZ - 1, bgZ + 1);
+      }
+
+      const ids = Object.keys(updates);
+      if (ids.length === 0) return state;
+      return {
+        floatingElements: elements.map((e) =>
+          ids.includes(e.id) ? { ...e, zIndex: updates[e.id] } : e
+        ),
+      };
+    }),
   setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
 
   ensureImageAspectRatio: (id) => {
@@ -1025,8 +1071,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           zIndex: nextZ,
           widthPct: 50, heightPct: 40,
           imageUrl: s.images[0]?.url || '',
-          borderRadius: 16,
-          shadowLevel: 3,
+          borderRadius: 0,
+          shadowLevel: 0,
           objectFit: 'contain',
         };
         break;
@@ -1041,7 +1087,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           color: textPrimary,
           fontSize: 22,
           fontWeight: 400,
-          fontFamily: s.fontFamily,
+          fontFamily: 'xiaolai',
           markdownEnabled: true,
         };
         break;
@@ -1055,7 +1101,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           color: textPrimary,
           fontSize: 22,
           fontWeight: 400,
-          fontFamily: s.fontFamily,
+          fontFamily: 'xiaolai',
           markdownEnabled: true,
         };
         break;
@@ -1087,6 +1133,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           fontWeight: 800,
           shadowLevel: 2,
           badgeNumber: '01',
+          fontFamily: 'xiaolai',
         };
         break;
       case 'sticker':
@@ -1149,7 +1196,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           x: 50, y: 50,
           zIndex: nextZ,
           color: textPrimary,
-          fontFamily: s.fontFamily,
+          fontFamily: 'xiaolai',
           fontSize: 14,
           fontWeight: 800,
           shadowLevel: 0,
@@ -1167,6 +1214,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         shadowLevel: 2,
         badgeNumber: '',
         fontWeight: 700,
+        fontFamily: 'xiaolai',
         };
         break;
     }

@@ -58,6 +58,7 @@ export const PRESET_COLORS = [
 
 export const FONTS: FontOption[] = [
   { id: 'kuaile', name: '快乐体 (推荐)', className: 'font-kuaile' },
+  { id: 'xiaowei', name: 'ZCOOL 小薇', className: 'font-xiaowei' },
   { id: 'xiaolai', name: '小赖字体', className: 'font-xiaolai' },
   { id: 'yozai', name: '悠哉体', className: 'font-yozai' },
   { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },

@@ -20,6 +20,11 @@ import {
   Upload,
   Link2,
   Calendar,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUp,
+  ChevronsDown,
+  Lock,
 } from 'lucide-react';
 import { PlogElement } from '../../types';
 import { FONTS, PRESET_COLORS } from '../../constants';
@@ -49,6 +54,7 @@ export const ElementsControlTab: React.FC = () => {
     setSelectedElementId,
     removeFloatingElement,
     addElementByType,
+    reorderFloatingElementLayer,
     fontFamily: _globalFont,
   } = useStudioStore();
 
@@ -113,38 +119,116 @@ export const ElementsControlTab: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {floatingElements.map((el) => (
-              <div
-                key={el.id}
-                onClick={() => setSelectedElementId(el.id)}
-                className={`p-3 rounded-2xl border flex items-center justify-between transition-all cursor-pointer ${
-                  selectedElementId === el.id
-                    ? 'border-red-500 bg-red-500/[0.08] shadow-sm'
-                    : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-                  <span className="text-[9px] font-black text-white/40 px-1.5 py-0.5 rounded-md bg-white/[0.04] uppercase">
-                    {el.type.slice(0, 4)}
-                  </span>
-                  <span className="text-xs font-bold text-white/80 truncate">
-                    {el.content || el.imageUrl || `[${el.type}]`}
-                  </span>
-                </div>
+            {/* 图层列表按 zIndex 降序排列：列表顶部 = 画布最上层（最前），列表底部 = 画布最底层（最后） */}
+            {(() => {
+              const sorted = [...floatingElements].sort((a, b) => b.zIndex - a.zIndex);
+              const nonBgSortedAsc = floatingElements
+                .filter((e) => e.type !== 'background')
+                .sort((a, b) => a.zIndex - b.zIndex);
+              return sorted.map((el) => {
+                const isBg = el.type === 'background';
+                const pos = nonBgSortedAsc.findIndex((e) => e.id === el.id);
+                const isTopMost = !isBg && pos === nonBgSortedAsc.length - 1;
+                const isBottomMost = !isBg && pos === 0;
+                const mkBtn = (
+                  onClick: (e: React.MouseEvent) => void,
+                  disabled: boolean,
+                  title: string,
+                  Icon: React.ComponentType<{ className?: string }>,
+                  hoverColor: 'emerald' | 'sky',
+                ) => {
+                  const hover =
+                    hoverColor === 'emerald'
+                      ? 'hover:text-emerald-400 hover:bg-emerald-500/5'
+                      : 'hover:text-sky-400 hover:bg-sky-500/5';
+                  return (
+                    <button
+                      onClick={onClick}
+                      disabled={disabled}
+                      title={title}
+                      className={`p-0.5 rounded-md transition-colors ${
+                        disabled ? 'text-white/10 cursor-not-allowed' : `text-white/30 ${hover}`
+                      }`}
+                    >
+                      <Icon className="w-3 h-3" />
+                    </button>
+                  );
+                };
+                return (
+                  <div
+                    key={el.id}
+                    onClick={() => setSelectedElementId(el.id)}
+                    className={`p-2.5 rounded-2xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                      selectedElementId === el.id
+                        ? 'border-red-500 bg-red-500/[0.08] shadow-sm'
+                        : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    {/* 左：类型标记 + 名称 */}
+                    <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
+                      <span
+                        className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase shrink-0 ${
+                          isBg
+                            ? 'bg-rose-500/15 text-rose-300/70 border border-rose-500/20'
+                            : 'bg-white/[0.04] text-white/40'
+                        }`}
+                      >
+                        {isBg ? 'BG' : el.type.slice(0, 4)}
+                      </span>
+                      <span className="text-xs font-bold text-white/80 truncate">
+                        {el.content || el.imageUrl || `[${el.type}]`}
+                      </span>
+                    </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFloatingElement(el.id);
-                    if (selectedElementId === el.id) setSelectedElementId(null);
-                  }}
-                  className="p-1 text-white/30 hover:text-red-400 transition-colors"
-                  title="删除图层"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                    {/* 右：排序按钮 + 删除 */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {isBg ? (
+                        <span className="px-1 text-white/15" title="背景层已锁定顺序">
+                          <Lock className="w-3 h-3" />
+                        </span>
+                      ) : (
+                        <>
+                          {mkBtn(
+                            (e) => { e.stopPropagation(); reorderFloatingElementLayer(el.id, 'top'); },
+                            isTopMost, '置顶（移至所有元素最前）', ChevronsUp, 'emerald',
+                          )}
+                          {mkBtn(
+                            (e) => { e.stopPropagation(); reorderFloatingElementLayer(el.id, 'up'); },
+                            isTopMost, '上移一层（向前）', ChevronUp, 'emerald',
+                          )}
+                          {mkBtn(
+                            (e) => { e.stopPropagation(); reorderFloatingElementLayer(el.id, 'down'); },
+                            isBottomMost, '下移一层（向后）', ChevronDown, 'sky',
+                          )}
+                          {mkBtn(
+                            (e) => { e.stopPropagation(); reorderFloatingElementLayer(el.id, 'bottom'); },
+                            isBottomMost, '置底（移至背景之上）', ChevronsDown, 'sky',
+                          )}
+                        </>
+                      )}
+                      <div className="w-px h-4 bg-white/[0.06] mx-1" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isBg) return; // 背景层禁止删除
+                          removeFloatingElement(el.id);
+                          if (selectedElementId === el.id) setSelectedElementId(null);
+                        }}
+                        disabled={isBg}
+                        className={`p-1 rounded-md transition-colors ${
+                          isBg
+                            ? 'text-white/10 cursor-not-allowed'
+                            : 'text-white/30 hover:text-red-400 hover:bg-red-500/5'
+                        }`}
+                        title={isBg ? '背景层不可删除' : '删除图层'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         )}
       </div>
