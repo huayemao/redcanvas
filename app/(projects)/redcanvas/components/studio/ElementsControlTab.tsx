@@ -938,16 +938,41 @@ function NumberField({
 
 function ColorField({ label, value, onChange }:
   { label: string; value: string; onChange: (v: string) => void }) {
+  const isTransparent = value === 'transparent' || value === '';
+  // 用于原生 color input 的回退颜色：有值就用，否则占位白
+  const hexValue = value.startsWith('#') && value.length >= 7
+    ? value
+    : (value.startsWith('rgba(') || value.startsWith('rgb('))
+      ? '#ffffff'
+      : '#ffffff';
   return (
     <div className="mt-2">
       <FieldLabel>{label}</FieldLabel>
       <div className="flex gap-2">
-        <input
-          type="color"
-          value={value.startsWith('#') && value.length >= 7 ? value : '#888888'}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-[34px] w-[44px] rounded-xl border border-white/[0.06] bg-transparent cursor-pointer"
-        />
+        {/* 拾色器 + 透明棋盘格预览叠加 */}
+        <div className="relative h-[34px] w-[44px]">
+          {/* 棋盘格底（表示透明） */}
+          <div
+            aria-hidden
+            className="absolute inset-0 rounded-xl border border-white/[0.06]"
+            style={{
+              backgroundImage:
+                'linear-gradient(45deg, #555 25%, transparent 25%), linear-gradient(-45deg, #555 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #555 75%), linear-gradient(-45deg, transparent 75%, #555 75%)',
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+              backgroundColor: '#222',
+            }}
+          />
+          <input
+            type="color"
+            value={hexValue}
+            onChange={(e) => onChange(e.target.value)}
+            className={`absolute inset-0 h-[34px] w-[44px] rounded-xl cursor-pointer ${
+              isTransparent ? 'opacity-0' : 'bg-transparent border border-white/[0.06]'
+            }`}
+            title={isTransparent ? '点击选择颜色（当前为透明）' : '点击选择颜色'}
+          />
+        </div>
         <input
           type="text"
           value={value}
@@ -955,6 +980,17 @@ function ColorField({ label, value, onChange }:
           placeholder="#RRGGBB / rgba(...) / transparent"
           className="flex-1 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white/85 text-xs focus:outline-none focus:border-white/20 font-mono"
         />
+        <button
+          type="button"
+          onClick={() => onChange('transparent')}
+          className={`shrink-0 px-2.5 h-[34px] rounded-xl text-[11px] font-bold transition-colors border ${
+            isTransparent
+              ? 'bg-red-500/15 border-red-500/40 text-red-400'
+              : 'bg-white/[0.04] border-white/[0.06] text-white/55 hover:text-white/80 hover:bg-white/[0.08]'
+          }`}
+        >
+          透明
+        </button>
       </div>
     </div>
   );
