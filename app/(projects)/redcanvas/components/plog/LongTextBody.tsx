@@ -97,17 +97,12 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
             '[&_pre]:rounded-xl [&_pre]:p-3 [&_pre]:text-xs [&_pre]:bg-white/10 [&_pre]:overflow-auto',
             // 链接：accent（高饱和强调，仅留给超链接）
             '[&_a]:underline [&_a]:decoration-[var(--lt-primary-muted)] [&_a]:underline-offset-2 [&_a]:text-[var(--lt-accent)] [&_a:hover]:decoration-[var(--lt-accent)]',
-            // 引用块：左边框 primaryMuted（主色弱化），文字降饱和 italic
-            '[&_blockquote]:border-l-4 [&_blockquote]:border-[var(--lt-primary-muted)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-3 [&_blockquote]:opacity-85',
             // 加粗强调：用 emphasis（primary 派生的可读版，像杂志正文的高亮关键词）
             '[&_strong]:text-[var(--lt-emphasis)]',
             // 分隔线：primaryMuted（主色弱化）
             '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-primary-muted)]',
-            // 引用块：引号风格 —— 去掉左边框线条，改用大号引号字符做装饰
-            // 实现思路：blockquote 相对定位 + ::before 伪元素放大引号字符，正文缩进让出空间
-            // 引号字符的 content 在 globals.css 的 .prose-sm blockquote::before 定义（Tailwind 任意值不能传含引号字符串）
-            '[&_blockquote]:relative [&_blockquote]:border-0 [&_blockquote]:pl-8 [&_blockquote]:pr-2 [&_blockquote]:py-1 [&_blockquote]:my-3 [&_blockquote]:italic [&_blockquote]:opacity-90',
-            '[&_blockquote::before]:absolute [&_blockquote::before]:left-0 [&_blockquote::before]:top-[-6px] [&_blockquote::before]:text-4xl [&_blockquote::before]:leading-none [&_blockquote::before]:font-serif [&_blockquote::before]:text-[var(--lt-primary-muted)]',
+            // 引用块：左边框 + 斜体（样式在 globals.css 中定义）
+            '[&_blockquote]:border-0 [&_blockquote]:italic',
           ].join(' ')}
           dangerouslySetInnerHTML={{ __html: renderedMd }}
         />

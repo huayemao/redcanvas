@@ -61,10 +61,22 @@ body {
   transform: rotate(-1deg);
 }
 
-/* LongTextBody 引用块：大号引号字符做装饰（伪元素 content 无法用 Tailwind 任意值传含引号字符串） */
+/* Blockquote — 干净排版风格：左边框 + 斜体正文
+   全部使用 em 单位，随文字大小自适应缩放 */
+.prose-sm blockquote,
+.prose-base blockquote {
+  border: 0 !important;
+  padding: 0.5em 1em 0.5em 1em;
+  margin: 1.5em 0;
+  font-style: italic;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--lt-primary-muted, currentColor) 7%, transparent);
+  box-shadow: inset 0.24em 0 0 0 var(--lt-primary-muted, currentColor);
+}
+
 .prose-sm blockquote::before,
 .prose-base blockquote::before {
-  content: '\201C'; /* 左双引号 “ */
+  content: none;
 }
 
 /* 导出时隐藏编辑态元素：选中环、抓手、操作控件等 */

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useStudioStore, StudioConfigSnapshot } from '../store/useStudioStore';
+import { unpackConfigZip } from './configPack';
 
 // ============================================================================
 //  本地化持久化（IndexedDB）
@@ -16,6 +17,7 @@ const CONFIG_STORE = 'config';
 const ASSETS_STORE = 'assets';
 const CONFIG_KEY = 'current';
 const IDB_SCHEME = 'idb://';
+const DEFAULT_ZIP_URL = '/redcanvas/default-plog.zip';
 
 // 会话级缓存：原始 url → 资源 key。blob URL 在会话内稳定，命中缓存可避免重复 fetch/hash/写入。
 const urlToKeyCache = new Map<string, string>();
@@ -257,12 +259,30 @@ export function useStudioPersistence(): void {
 
   useEffect(() => {
     let cancelled = false;
-    // 1) 恢复（异步）
-    loadStudioConfig().then((snap) => {
-      if (cancelled) return;
-      if (snap) useStudioStore.getState().importConfig(snap);
-      hydratedRef.current = true;
-    });
+    // 1) 恢复（异步）：先尝试从 IndexedDB 读取，若无则加载默认 zip
+    loadStudioConfig()
+      .then(async (snap) => {
+        if (cancelled) return;
+        if (snap) {
+          useStudioStore.getState().importConfig(snap);
+          hydratedRef.current = true;
+          return;
+        }
+        // —— 无本地配置 → 加载默认 default-plog.zip ——
+        try {
+          const res = await fetch(DEFAULT_ZIP_URL);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          const defaultSnap = await unpackConfigZip(blob);
+          if (cancelled) return;
+          if (defaultSnap) {
+            useStudioStore.getState().importConfig(defaultSnap);
+          }
+        } catch {
+          /* 默认 zip 加载失败，保持初始空状态 */
+        }
+        hydratedRef.current = true;
+      });
 
     // 2) 订阅变化（防抖保存 + 无变化跳过）
     let timer: ReturnType<typeof setTimeout> | undefined;
