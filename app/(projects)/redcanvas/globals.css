@@ -29,10 +29,15 @@ body {
 .font-xiaowei { font-family: 'ZCOOL XiaoWei', serif; }
 .font-zhimang { font-family: 'Zhi Mang Xing', cursive; }
 .font-kuaile { font-family: 'ZCOOL KuaiLe', cursive; }
+.font-zkuaile { font-family: 'ZCOOL KuaiLe', cursive; }
 .font-serif-sc { font-family: 'Noto Serif SC', serif; }
-.font-wenkai { font-family: 'LXGW WenKai Mono SC', monospace; }
+.font-wenkai { font-family: 'LXGWenKai', 'LXGWWenKai', cursive; }
+.font-longcang { font-family: 'LongCang', 'Long Cang', cursive; }
 .font-yozai { font-family: 'Yozai', sans-serif; }
 .font-xiaolai { font-family: 'Xiaolai SC', 'Xiaolai', cursive; }
+.font-noto { font-family: 'Noto Sans SC', 'Noto Sans', sans-serif; }
+.font-inter { font-family: 'Inter', system-ui, sans-serif; }
+.font-system { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

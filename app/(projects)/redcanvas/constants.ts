@@ -57,12 +57,16 @@ export const PRESET_COLORS = [
 ];
 
 export const FONTS: FontOption[] = [
-  { id: 'kuaile', name: '快乐体 (推荐)', className: 'font-kuaile' },
-  { id: 'xiaowei', name: 'ZCOOL 小薇', className: 'font-xiaowei' },
   { id: 'xiaolai', name: '小赖字体', className: 'font-xiaolai' },
-  { id: 'yozai', name: '悠哉体', className: 'font-yozai' },
-  { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },
+  { id: 'xiaowei', name: 'ZCOOL 小薇', className: 'font-xiaowei' },
   { id: 'serif', name: '优雅宋', className: 'font-serif-sc font-black' },
+  { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },
+  { id: 'kuaile', name: '快乐体', className: 'font-kuaile' },
+  { id: 'yozai', name: '悠哉体', className: 'font-yozai' },
+  { id: 'longcang', name: '龙仓', className: 'font-longcang' },
   { id: 'mashan', name: '书法行草', className: 'font-mashan' },
   { id: 'zhimang', name: '随性手写', className: 'font-zhimang' },
+  { id: 'noto', name: 'Noto Sans', className: 'font-noto' },
+  { id: 'inter', name: 'Inter', className: 'font-inter' },
+  { id: 'system', name: '系统默认', className: 'font-system' },
 ];

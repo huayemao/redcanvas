@@ -43,10 +43,25 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.loli.net" />
         <link rel="preconnect" href="https://fonts.loli.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://gstatic.loli.net" crossOrigin="anonymous" />
-        <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700;900&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=ZCOOL+KuaiLe&family=LXGW+WenKai+Mono+SC&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" crossOrigin="anonymous" />
+        <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700;900&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=ZCOOL+KuaiLe&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        {/* 霞鹜文楷 — 使用图片中的 CDN */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/satouriko/LxgwWenKai_Webfonts@v1.101/dist/LXGWWenKai-Regular.css" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/satouriko/LxgwWenKai_Webfonts@v1.101/dist/LXGWWenKai-Bold.css" crossOrigin="anonymous" />
+        {/* 小赖字体 */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/xiaolai@3.0.0/dist/Xiaolai/result.min.css" crossOrigin="anonymous" />
+        {/* 悠哉体 */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/yozai@3.0.0/dist/Yozai-Regular/result.min.css" crossOrigin="anonymous" />
+        {/* 龙藏 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/long-cang/index.css" crossOrigin="anonymous" />
+        {/* ZCOOL KuaiLe (fontsource) */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-kuaile/index.css" crossOrigin="anonymous" />
+        {/* Noto Sans SC 500 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@500.css" crossOrigin="anonymous" />
+        {/* Inter 400/500/700 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@400.css" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@500.css" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@700.css" crossOrigin="anonymous" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
