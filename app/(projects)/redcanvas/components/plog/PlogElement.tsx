@@ -141,7 +141,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   }
 
   const selectedClass = isSelected
-    ? 'ring-2 ring-red-500 ring-offset-2 rounded-xl shadow-2xl'
+    ? 'ring-2 ring-red-500'
     : '';
 
   // ========== 文字公共（text/longtext 通用） inline style ==========
