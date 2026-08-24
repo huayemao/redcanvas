@@ -509,7 +509,7 @@ export const ElementPropertyPanel: React.FC = () => {
               className="w-full min-h-[108px] p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white/85 text-xs focus:outline-none focus:border-white/20 resize-y font-mono leading-relaxed"
               value={selected.content}
               onChange={(e) => update({ content: e.target.value })}
-              placeholder="支持 Markdown：## 标题 / **粗体** / - 列表 / > 引用"
+              placeholder="支持 Markdown：## 标题 / **粗体** / - 列表 / > 引用 / $$公式$$"
             />
             <CheckboxField
               label="启用 Markdown 渲染"

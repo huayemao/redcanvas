@@ -98,6 +98,24 @@ body {
   mask-repeat: no-repeat;
 }
 
+/* KaTeX 数学公式容器：块级公式可横向滚动避免撑破画布；行内公式内联 */
+.math-block {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+.math-block .katex-display {
+  margin: 0;
+}
+.math-inline {
+  display: inline;
+}
+.math-pending {
+  opacity: 0.6;
+  font-style: italic;
+}
+
 /* 导出时隐藏编辑态元素：选中环、抓手、操作控件等 */
 .exporting .ring-2,
 .exporting .ring-offset-2,
