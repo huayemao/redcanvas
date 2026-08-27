@@ -1,21 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Loader2, ChevronDown, FileText } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText } from 'lucide-react';
 import { useConfigTransfer } from './useConfigTransfer';
+import { useStudioStore } from '../../store/useStudioStore';
 
 /**
  * 存档 / 读档工具栏（侧栏 / 抽屉内使用）
- * - 导出下拉：导出配置（ZIP/JSON） + 导出图片（PNG，可选）
+ * - 导出下拉：导出配置（ZIP/JSON） + 导出当前页图片（PNG） + 导出全部页面（多页时，ZIP 打包）
  * - 导入：按文件扩展名 / MIME 分派（.zip → ZIP；.json → JSON）
  * 实际导入/导出逻辑见 useConfigTransfer。
  */
 interface ConfigToolbarProps {
   onExportPng?: () => void;
   isPngExporting?: boolean;
+  onExportAllPng?: () => void;
 }
 
-export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPngExporting }) => {
+export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPngExporting, onExportAllPng }) => {
   const {
     fileRef,
     toast,
@@ -26,6 +28,7 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
     handleFileChange,
   } = useConfigTransfer();
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const pageCount = useStudioStore((s) => s.pages.length);
 
   return (
     <>
@@ -69,8 +72,20 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
                   >
                     <ImageIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-bold text-white/80">导出图片</div>
+                      <div className="text-[11px] font-bold text-white/80">导出当前页图片</div>
                       <div className="text-[9px] text-white/30 font-medium">高清 PNG · 2.5x</div>
+                    </div>
+                  </button>
+                )}
+                {onExportAllPng && pageCount > 1 && (
+                  <button
+                    onClick={() => { setExportMenuOpen(false); onExportAllPng(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"
+                  >
+                    <Images className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-bold text-white/80">导出全部页面（{pageCount} 页）</div>
+                      <div className="text-[9px] text-white/30 font-medium">逐页高清 PNG · 打包 ZIP</div>
                     </div>
                   </button>
                 )}

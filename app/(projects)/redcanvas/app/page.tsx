@@ -5,9 +5,11 @@ import { StudioEditor } from '../components/studio/StudioEditor';
 import { StudioCanvas } from '../components/studio/StudioCanvas';
 import { ElementPropertyPanel } from '../components/studio/ElementsControlTab';
 import { MobileConfigBar } from '../components/studio/MobileConfigBar';
+import { PageNavigator } from '../components/studio/PageNavigator';
 import { useStudioStore } from '../store/useStudioStore';
 import { useStudioPersistence } from '../lib/studioPersistence';
-import { exportElementToImage } from '../lib/exportUtils';
+import { exportElementToImage, exportElementToBlob, waitForCanvasReady } from '../lib/exportUtils';
+import { packImageBlobsZip } from '../lib/configPack';
 import { ExportSize } from '../types';
 import { Loader2, Info, Sparkles, X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -114,6 +116,62 @@ const AppPage: React.FC = () => {
     }
   }, []);
 
+  /** 批量导出：逐页切换渲染 → 逐页 PNG → 多页打包 ZIP。单页时退化为普通导出。 */
+  const handleExportAllPages = useCallback(async () => {
+    const el = previewRef.current;
+    if (!el) return;
+    const store = useStudioStore.getState();
+    if (store.pages.length <= 1) {
+      await handleExport();
+      return;
+    }
+
+    setIsExporting(true);
+    const originalPageId = store.currentPageId;
+    try {
+      // 先把当前镜像写回当前页，保证导出包含最新编辑
+      store.captureCurrentPage();
+      const pageIds = useStudioStore.getState().pages.map((p) => p.id);
+      const blobs: { name: string; blob: Blob }[] = [];
+
+      for (let i = 0; i < pageIds.length; i++) {
+        setExportMessage(`正在导出第 ${i + 1} / ${pageIds.length} 页...`);
+        useStudioStore.getState().switchPage(pageIds[i]);
+        // 等待切页后的重渲染 + 图片加载完成
+        await waitForCanvasReady(el);
+
+        // 导出前隐藏选中环、抓手等编辑态元素
+        const prevClass = el.className;
+        el.classList.add('exporting');
+        try {
+          const blob = await exportElementToBlob(el, {
+            scale: 2.5,
+            backgroundColor: '#ffffff',
+          });
+          blobs.push({ name: `page-${String(i + 1).padStart(2, '0')}.png`, blob });
+        } finally {
+          el.className = prevClass;
+        }
+      }
+
+      setExportMessage('正在打包 ZIP...');
+      const zipBlob = await packImageBlobsZip(blobs);
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.download = `redcanvas-pages-${Date.now()}.zip`;
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      console.error('Export all error:', err);
+      alert('批量导出遇到安全限制或加载超时，请重试。建议使用 Chrome 或 Edge 浏览器。');
+    } finally {
+      // 恢复到导出前的页面
+      useStudioStore.getState().switchPage(originalPageId);
+      setIsExporting(false);
+    }
+  }, [handleExport]);
+
   const ratios: { size: ExportSize; label: string; w: string; h: string }[] = [
     { size: '3:4', label: '3 : 4', w: 'w-8', h: 'h-10' },
     { size: '1:1', label: '1 : 1', w: 'w-9', h: 'h-9' },
@@ -156,7 +214,7 @@ const AppPage: React.FC = () => {
             </header>
 
             {/* Editor */}
-            <StudioEditor onExportPng={handleExport} isExporting={isExporting} />
+            <StudioEditor onExportPng={handleExport} isExporting={isExporting} onExportAllPng={handleExportAllPages} />
 
             {/* Tip Card */}
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 flex items-center gap-3">
@@ -192,7 +250,11 @@ const AppPage: React.FC = () => {
               <SlidersHorizontal className="w-3.5 h-3.5" />
               编辑
             </button>
-            <MobileConfigBar onExportPng={handleExport} isPngExporting={isExporting} />
+            <MobileConfigBar
+              onExportPng={handleExport}
+              isPngExporting={isExporting}
+              onExportAllPng={handleExportAllPages}
+            />
           </div>
           {/* Ambient glow */}
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-500/[0.04] rounded-full blur-[120px] pointer-events-none" />
@@ -256,6 +318,9 @@ const AppPage: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {/* 多页导航（PPT 式页面条） */}
+                <PageNavigator />
               </div>
 
               {/* 桌面端属性面板（画布右侧，lg 以上显示） */}
@@ -328,7 +393,7 @@ const AppPage: React.FC = () => {
                   <X className="w-4 h-4 text-white/60" />
                 </button>
               </div>
-              <StudioEditor onExportPng={handleExport} isExporting={isExporting} />
+              <StudioEditor onExportPng={handleExport} isExporting={isExporting} onExportAllPng={handleExportAllPages} />
             </motion.div>
           </motion.div>
         )}

@@ -135,6 +135,10 @@ interface StudioState {
   floatingElements: PlogElement[];
   selectedElementId: string | null;
 
+  // —— 多页（PPT 式）项目 ——
+  pages: StudioPageData[];
+  currentPageId: string;
+
   // Actions
   setActiveTab: (tab: StudioTab) => void;
   setTemplateId: (id: StudioTemplateId) => void;
@@ -189,10 +193,28 @@ interface StudioState {
   /** 快速新增一个元素（自动分配 zIndex/id），用于"添加元素"的工具栏按钮 */
   addElementByType: (type: PlogElement['type']) => void;
 
-  /** 导出当前完整配置为可序列化对象（用于存档） */
-  exportConfig: () => StudioConfigSnapshot;
-  /** 从导出快照恢复配置（用于读档）。返回是否成功 */
+  /** 导出当前完整项目为可序列化对象（v2 多页格式，用于存档） */
+  exportConfig: () => StudioProjectSnapshot;
+  /** 从导出快照恢复配置（v2 多页 / v1 单页均兼容）。返回是否成功 */
   importConfig: (snapshot: unknown) => boolean;
+
+  // —— 多页（PPT 式）项目 actions ——
+  /** 把当前镜像字段写回 pages 里的当前页（切页/导出/存档前调用） */
+  captureCurrentPage: () => void;
+  /** 内部：把一页的字段应用到根级镜像（并重测图片比例） */
+  _applyPageFields: (data: Partial<StudioPageFields>) => void;
+  /** 切换到指定页（自动写回当前页） */
+  switchPage: (id: string) => void;
+  /** 新建空白页（沿用当前页的尺寸/背景/字体），插入当前页之后并切换 */
+  addPage: () => void;
+  /** 深拷贝指定页，插入其之后并切换 */
+  duplicatePage: (id: string) => void;
+  /** 删除指定页（至少保留一页；删除当前页时自动切到相邻页） */
+  deletePage: (id: string) => void;
+  /** 页面排序：dir = -1 左移 / 1 右移 */
+  movePage: (id: string, dir: -1 | 1) => void;
+  /** 重命名页面 */
+  renamePage: (id: string, name: string) => void;
 }
 
 /** 导出快照结构 —— 只含"用户可配置"字段，actions/derived 不导出 */
@@ -227,15 +249,141 @@ export interface StudioConfigSnapshot {
   floatingElements: PlogElement[];
 }
 
-export const useStudioStore = create<StudioState>((set, get) => ({
-  activeTab: 'templates',
-  templateId: 'showcase',
-  templateCategory: 'all',
+// ============================================================
+//  多页（PPT 式）项目支持
+//  - pages[] 保存每一页的完整画布字段；根级字段是"当前页"的镜像
+//  - 切页 = captureCurrentPage() 写回当前页 + _applyPageFields() 读出目标页
+//  - 这样所有现有编辑 action 都无需感知"页"的存在
+// ============================================================
 
+/** 每一页需要隔离的字段（其余字段为项目级/会话级，跨页共享） */
+const PAGE_FIELDS = [
+  'templateId', 'aspectRatio', 'customWidth', 'customHeight',
+  'bgType', 'bgColor', 'gradientStart', 'gradientEnd',
+  'autoColorEnabled', 'extractedColors', 'paletteCandidates',
+  'selectedCandidateId', 'selectedStyleId',
+  'images', 'imageAspectRatio', 'imageScale', 'showDeviceFrame', 'deviceType',
+  'title', 'subtitle', 'seriesNumber', 'fontFamily', 'accentColor',
+  'highlights', 'floatingElements',
+] as const;
+
+export type PageFieldKey = (typeof PAGE_FIELDS)[number];
+export type StudioPageFields = Pick<StudioState, PageFieldKey>;
+
+/** 单页数据：元信息 + 该页全部画布字段 */
+export interface StudioPageData {
+  id: string;
+  name: string;
+  data: StudioPageFields;
+}
+
+/** v2 项目快照：多页打包（config.json / IndexedDB 顶层结构） */
+export interface StudioProjectSnapshot {
+  __type: 'redcanvas-studio-project';
+  version: 2;
+  exportedAt: string;
+  currentPageId: string;
+  pages: StudioPageData[];
+}
+
+const pickPageFields = (s: StudioState): StudioPageFields => {
+  const out = {} as Record<PageFieldKey, unknown>;
+  for (const f of PAGE_FIELDS) out[f] = s[f];
+  return out as unknown as StudioPageFields;
+};
+
+const pageFieldsShallowEqual = (a: StudioPageFields, b: StudioPageFields): boolean => {
+  for (const f of PAGE_FIELDS) {
+    if ((a as unknown as Record<string, unknown>)[f] !== (b as unknown as Record<string, unknown>)[f]) return false;
+  }
+  return true;
+};
+
+/** 从字段集合构造背景元素（保证每页都有一层可选中的背景） */
+const makeBgElement = (
+  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images'>
+): PlogElement => ({
+  id: `el-bg-${UID()}`,
+  type: 'background',
+  content: '画布背景',
+  x: 0, y: 0,
+  zIndex: 0,
+  widthPct: 100, heightPct: 100,
+  bgVariant: f.bgType,
+  bgColor: f.bgColor,
+  gradientStart: f.gradientStart,
+  gradientEnd: f.gradientEnd,
+  imageUrl: f.images[0]?.url || '',
+});
+
+/** 读入一页数据时兜底：floatingElements 缺背景层则补建 */
+const withPageBackground = (data: StudioPageFields): PlogElement[] =>
+  data.floatingElements.some((e) => e.type === 'background')
+    ? data.floatingElements
+    : [makeBgElement(data), ...data.floatingElements];
+
+/** 字段类型粗校验：仅放行基本类型/数组/null，缺字段用 fallback 兜底，避免脏数据炸渲染 */
+function sanitizePageData(raw: unknown, fb: StudioPageFields): StudioPageFields {
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const pick = <T,>(key: PageFieldKey, fallback: T): T => {
+    const v = s[key];
+    return v === undefined ? fallback : (v as T);
+  };
+  const asString = (key: PageFieldKey, fbv: string) => {
+    const v = s[key];
+    return typeof v === 'string' ? v : fbv;
+  };
+  const asNumber = (key: PageFieldKey, fbv: number) => {
+    const v = s[key];
+    return typeof v === 'number' && Number.isFinite(v) ? v : fbv;
+  };
+  const asBool = (key: PageFieldKey, fbv: boolean) => {
+    const v = s[key];
+    return typeof v === 'boolean' ? v : fbv;
+  };
+  const asArray = <T,>(key: PageFieldKey, fbv: T[]): T[] => {
+    const v = s[key];
+    return Array.isArray(v) ? (v as T[]) : fbv;
+  };
+  const asNullableObj = <T,>(key: PageFieldKey): T | null => {
+    const v = s[key];
+    return v && typeof v === 'object' ? (v as T) : null;
+  };
+  return {
+    templateId: pick<StudioTemplateId>('templateId', fb.templateId),
+    aspectRatio: pick<ExportSize>('aspectRatio', fb.aspectRatio),
+    customWidth: asNumber('customWidth', fb.customWidth),
+    customHeight: asNumber('customHeight', fb.customHeight),
+    bgType: pick<'gradient' | 'color' | 'blur'>('bgType', fb.bgType),
+    bgColor: asString('bgColor', fb.bgColor),
+    gradientStart: asString('gradientStart', fb.gradientStart),
+    gradientEnd: asString('gradientEnd', fb.gradientEnd),
+    autoColorEnabled: asBool('autoColorEnabled', fb.autoColorEnabled),
+    extractedColors: asNullableObj<ExtractedColors>('extractedColors'),
+    paletteCandidates: asArray('paletteCandidates', fb.paletteCandidates),
+    selectedCandidateId: typeof s.selectedCandidateId === 'string' ? s.selectedCandidateId : fb.selectedCandidateId,
+    selectedStyleId: asString('selectedStyleId', fb.selectedStyleId),
+    images: asArray<PlogImage>('images', fb.images),
+    imageAspectRatio: asString('imageAspectRatio', fb.imageAspectRatio),
+    imageScale: asNumber('imageScale', fb.imageScale),
+    showDeviceFrame: asBool('showDeviceFrame', fb.showDeviceFrame),
+    deviceType: pick<DeviceType>('deviceType', fb.deviceType),
+    title: asString('title', fb.title),
+    subtitle: asString('subtitle', fb.subtitle),
+    seriesNumber: asString('seriesNumber', fb.seriesNumber),
+    fontFamily: asString('fontFamily', fb.fontFamily),
+    accentColor: asString('accentColor', fb.accentColor),
+    highlights: asArray<Highlight>('highlights', fb.highlights),
+    floatingElements: asArray<PlogElement>('floatingElements', fb.floatingElements),
+  };
+}
+
+/** 首次使用的默认页面字段（与旧版单页默认值保持一致） */
+const INITIAL_PAGE_FIELDS: StudioPageFields = {
+  templateId: 'showcase',
   aspectRatio: '3:4',
   customWidth: 1080,
   customHeight: 1440,
-
   bgType: 'gradient',
   bgColor: '#c9d1d9',
   gradientStart: '#cbd5e1',
@@ -244,30 +392,34 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   extractedColors: null,
   paletteCandidates: [],
   selectedCandidateId: null,
-  paletteStyles: PALETTE_STYLES,
   selectedStyleId: 'balanced',
-
-  images: [
-    {
-      id: 'img-1',
-      url: '/screenshot.png',
-      title: '主图界面',
-    },
-  ],
-  showDeviceFrame: false,
-  deviceType: 'none',
+  images: [{ id: 'img-1', url: '/screenshot.png', title: '主图界面' }],
   imageAspectRatio: '4:5',
   imageScale: 1,
-
+  showDeviceFrame: false,
+  deviceType: 'none',
   title: '极简设计\n高级感',
   subtitle: '',
   seriesNumber: '',
   fontFamily: 'kuaile',
   accentColor: '#1a1a1a',
   highlights: [],
-
   floatingElements: [],
+};
+
+export const useStudioStore = create<StudioState>((set, get) => ({
+  activeTab: 'templates',
+  templateCategory: 'all',
+  paletteStyles: PALETTE_STYLES,
+
+  // —— 当前页镜像字段（与 pages[0].data 同源引用） ——
+  ...INITIAL_PAGE_FIELDS,
+
   selectedElementId: null,
+
+  // —— 多页（PPT 式）项目 ——
+  pages: [{ id: 'page-1', name: '第 1 页', data: INITIAL_PAGE_FIELDS }],
+  currentPageId: 'page-1',
 
   setActiveTab: (activeTab) => set({ activeTab }),
   setTemplateId: (templateId) => {
@@ -1228,127 +1380,29 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 
-  // ========== 存档 / 读档 ==========
-  exportConfig: () => {
+  // ========== 多页：写回 / 读出 / 切换 / 增删 / 排序 ==========
+  captureCurrentPage: () => {
     const s = get();
-    return {
-      __type: 'redcanvas-studio-config' as const,
-      version: 1 as const,
-      exportedAt: new Date().toISOString(),
-      templateId: s.templateId,
-      aspectRatio: s.aspectRatio,
-      customWidth: s.customWidth,
-      customHeight: s.customHeight,
-      bgType: s.bgType,
-      bgColor: s.bgColor,
-      gradientStart: s.gradientStart,
-      gradientEnd: s.gradientEnd,
-      autoColorEnabled: s.autoColorEnabled,
-      extractedColors: s.extractedColors,
-      paletteCandidates: s.paletteCandidates,
-      selectedCandidateId: s.selectedCandidateId,
-      selectedStyleId: s.selectedStyleId,
-      images: s.images,
-      imageAspectRatio: s.imageAspectRatio,
-      imageScale: s.imageScale,
-      showDeviceFrame: s.showDeviceFrame,
-      deviceType: s.deviceType,
-      title: s.title,
-      subtitle: s.subtitle,
-      seriesNumber: s.seriesNumber,
-      fontFamily: s.fontFamily,
-      accentColor: s.accentColor,
-      highlights: s.highlights,
-      floatingElements: s.floatingElements,
-    };
+    const data = pickPageFields(s);
+    const curPage = s.pages.find((p) => p.id === s.currentPageId);
+    // 未变化则跳过，避免无意义的 set 引发重渲染
+    if (curPage && pageFieldsShallowEqual(curPage.data, data)) return;
+    set((state) => ({
+      pages: state.pages.map((p) => (p.id === state.currentPageId ? { ...p, data } : p)),
+    }));
   },
 
-  importConfig: (snapshot: unknown) => {
-    // —— 容错校验：必须是 plain object 且带 __type 标记 ——
-    if (!snapshot || typeof snapshot !== 'object') return false;
-    const s = snapshot as Record<string, unknown>;
-    if (s.__type !== 'redcanvas-studio-config') return false;
-    if (typeof s.version !== 'number') return false;
-    // 用 get() 取当前默认值兜底，缺字段不崩
+  _applyPageFields: (data) => {
     const cur = get();
-    const pick = <T,>(key: keyof StudioConfigSnapshot, fallback: T): T => {
-      const v = s[key as string];
-      return (v === undefined ? fallback : (v as T));
-    };
-    // 字段类型粗校验：仅放行基本类型/数组/null，避免脏数据炸渲染
-    const asString = (key: keyof StudioConfigSnapshot, fb: string) => {
-      const v = s[key as string];
-      return typeof v === 'string' ? v : fb;
-    };
-    const asNumber = (key: keyof StudioConfigSnapshot, fb: number) => {
-      const v = s[key as string];
-      return typeof v === 'number' && Number.isFinite(v) ? v : fb;
-    };
-    const asBool = (key: keyof StudioConfigSnapshot, fb: boolean) => {
-      const v = s[key as string];
-      return typeof v === 'boolean' ? v : fb;
-    };
-    const asArray = <T,>(key: keyof StudioConfigSnapshot, fb: T[]): T[] => {
-      const v = s[key as string];
-      return Array.isArray(v) ? (v as T[]) : fb;
-    };
-    const asNullableObj = <T,>(key: keyof StudioConfigSnapshot): T | null => {
-      const v = s[key as string];
-      return (v && typeof v === 'object') ? (v as T) : null;
-    };
-
-    const next = {
-      templateId: pick('templateId', cur.templateId),
-      aspectRatio: pick('aspectRatio', cur.aspectRatio),
-      customWidth: asNumber('customWidth', cur.customWidth),
-      customHeight: asNumber('customHeight', cur.customHeight),
-      bgType: pick('bgType', cur.bgType),
-      bgColor: asString('bgColor', cur.bgColor),
-      gradientStart: asString('gradientStart', cur.gradientStart),
-      gradientEnd: asString('gradientEnd', cur.gradientEnd),
-      autoColorEnabled: asBool('autoColorEnabled', cur.autoColorEnabled),
-      extractedColors: asNullableObj<ExtractedColors>('extractedColors'),
-      paletteCandidates: asArray('paletteCandidates', cur.paletteCandidates),
-      selectedCandidateId: typeof s.selectedCandidateId === 'string' ? s.selectedCandidateId : (cur.selectedCandidateId),
-      selectedStyleId: asString('selectedStyleId', cur.selectedStyleId),
-      images: asArray<PlogImage>('images', cur.images),
-      imageAspectRatio: asString('imageAspectRatio', cur.imageAspectRatio),
-      imageScale: asNumber('imageScale', cur.imageScale),
-      showDeviceFrame: asBool('showDeviceFrame', cur.showDeviceFrame),
-      deviceType: pick('deviceType', cur.deviceType),
-      title: asString('title', cur.title),
-      subtitle: asString('subtitle', cur.subtitle),
-      seriesNumber: asString('seriesNumber', cur.seriesNumber),
-      fontFamily: asString('fontFamily', cur.fontFamily),
-      accentColor: asString('accentColor', cur.accentColor),
-      highlights: asArray<Highlight>('highlights', cur.highlights),
-      floatingElements: asArray<PlogElement>('floatingElements', cur.floatingElements),
-      selectedElementId: null as string | null,
-    };
-    // —— 导入前的最终兜底：如果读入的 floatingElements 不含背景元素 → 用快照里的 bg 字段补建一个
-    //    背景元素是"点空白可选"体验的核心，缺失就等于用户无法调背景属性
-    const hasBg = next.floatingElements.some((e: PlogElement) => e.type === 'background');
-    if (!hasBg) {
-      next.floatingElements = [
-        {
-          id: `el-${UID()}`,
-          type: 'background',
-          content: '画布背景',
-          x: 0, y: 0,
-          zIndex: 0,
-          widthPct: 100, heightPct: 100,
-          bgVariant: next.bgType,
-          bgColor: next.bgColor,
-          gradientStart: next.gradientStart,
-          gradientEnd: next.gradientEnd,
-          imageUrl: next.images[0]?.url || '',
-        },
-        ...next.floatingElements,
-      ];
+    const patch: Record<string, unknown> = {};
+    const curRec = cur as unknown as Record<string, unknown>;
+    const dataRec = data as Record<string, unknown>;
+    for (const f of PAGE_FIELDS) {
+      patch[f] = dataRec[f] !== undefined ? dataRec[f] : curRec[f];
     }
-
-    set(next);
-    // 读档后：图片/素材元素按 imageUrl 重测宽高比例（避免导出端没存 aspectRatio 时比例错乱）
+    patch.selectedElementId = null;
+    set(patch as Partial<StudioState>);
+    // 读页后：图片/素材元素按 imageUrl 重测宽高比例（避免比例错乱）
     requestAnimationFrame(() => {
       for (const el of get().floatingElements) {
         if ((el.type === 'image' || el.type === 'asset') && el.imageUrl) {
@@ -1356,6 +1410,172 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
       }
     });
+  },
+
+  switchPage: (id) => {
+    const s = get();
+    if (id === s.currentPageId || !s.pages.some((p) => p.id === id)) return;
+    // 1) 当前镜像写回当前页  2) 目标页字段应用到镜像
+    s.captureCurrentPage();
+    const target = get().pages.find((p) => p.id === id);
+    if (!target) return;
+    set({ currentPageId: id });
+    get()._applyPageFields(target.data);
+  },
+
+  addPage: () => {
+    get().captureCurrentPage();
+    const pages = get().pages;
+    const curPage = pages.find((p) => p.id === get().currentPageId);
+    const base = curPage?.data;
+    // 新页：沿用当前页的画布尺寸/背景/字体设置，内容清空（PPT 式"新建幻灯片"）
+    const data: StudioPageFields = {
+      templateId: base?.templateId ?? 'showcase',
+      aspectRatio: base?.aspectRatio ?? '3:4',
+      customWidth: base?.customWidth ?? 1080,
+      customHeight: base?.customHeight ?? 1440,
+      bgType: base?.bgType ?? 'gradient',
+      bgColor: base?.bgColor ?? '#c9d1d9',
+      gradientStart: base?.gradientStart ?? '#cbd5e1',
+      gradientEnd: base?.gradientEnd ?? '#94a3b8',
+      autoColorEnabled: base?.autoColorEnabled ?? true,
+      extractedColors: null,
+      paletteCandidates: [],
+      selectedCandidateId: null,
+      selectedStyleId: base?.selectedStyleId ?? 'balanced',
+      images: [],
+      imageAspectRatio: '4:5',
+      imageScale: 1,
+      showDeviceFrame: false,
+      deviceType: 'none',
+      title: '',
+      subtitle: '',
+      seriesNumber: '',
+      fontFamily: base?.fontFamily ?? 'kuaile',
+      accentColor: base?.accentColor ?? '#1a1a1a',
+      highlights: [],
+      floatingElements: [],
+    };
+    data.floatingElements = [makeBgElement(data)];
+    const page: StudioPageData = {
+      id: `page-${UID()}`,
+      name: `第 ${pages.length + 1} 页`,
+      data,
+    };
+    set((state) => {
+      const idx = state.pages.findIndex((p) => p.id === state.currentPageId);
+      const next = [...state.pages];
+      next.splice(idx + 1, 0, page);
+      return { pages: next, currentPageId: page.id };
+    });
+    get()._applyPageFields(page.data);
+  },
+
+  duplicatePage: (id) => {
+    get().captureCurrentPage();
+    const src = get().pages.find((p) => p.id === id);
+    if (!src) return;
+    const copy: StudioPageData = {
+      id: `page-${UID()}`,
+      name: `${src.name} 副本`,
+      // 深拷贝：元素 id 跨页无需唯一，直接克隆即可
+      data: JSON.parse(JSON.stringify(src.data)),
+    };
+    set((state) => {
+      const idx = state.pages.findIndex((p) => p.id === id);
+      const next = [...state.pages];
+      next.splice(idx + 1, 0, copy);
+      return { pages: next, currentPageId: copy.id };
+    });
+    get()._applyPageFields(copy.data);
+  },
+
+  deletePage: (id) => {
+    const s = get();
+    if (s.pages.length <= 1) return; // 至少保留一页
+    const idx = s.pages.findIndex((p) => p.id === id);
+    if (idx < 0) return;
+    const isActive = s.currentPageId === id;
+    const nextActiveId = (s.pages[idx + 1] ?? s.pages[idx - 1]).id;
+    set((state) => ({
+      pages: state.pages.filter((p) => p.id !== id),
+      currentPageId: isActive ? nextActiveId : state.currentPageId,
+    }));
+    if (isActive) {
+      const target = get().pages.find((p) => p.id === nextActiveId);
+      if (target) get()._applyPageFields(target.data);
+    }
+  },
+
+  movePage: (id, dir) => {
+    get().captureCurrentPage();
+    set((state) => {
+      const idx = state.pages.findIndex((p) => p.id === id);
+      const to = idx + dir;
+      if (idx < 0 || to < 0 || to >= state.pages.length) return state;
+      const next = [...state.pages];
+      const [item] = next.splice(idx, 1);
+      next.splice(to, 0, item);
+      return { pages: next };
+    });
+  },
+
+  renamePage: (id, name) =>
+    set((state) => ({
+      pages: state.pages.map((p) => (p.id === id ? { ...p, name: name.trim() || p.name } : p)),
+    })),
+
+  // ========== 存档 / 读档 ==========
+  exportConfig: () => {
+    // 先把当前镜像写回当前页，保证导出包含最新编辑
+    get().captureCurrentPage();
+    const s = get();
+    return {
+      __type: 'redcanvas-studio-project' as const,
+      version: 2 as const,
+      exportedAt: new Date().toISOString(),
+      currentPageId: s.currentPageId,
+      pages: s.pages,
+    };
+  },
+
+  importConfig: (snapshot: unknown) => {
+    if (!snapshot || typeof snapshot !== 'object') return false;
+    const s = snapshot as Record<string, unknown>;
+    const cur = get();
+
+    // —— v2：多页项目 ——
+    if (s.__type === 'redcanvas-studio-project') {
+      if (typeof s.version !== 'number') return false;
+      const rawPages = Array.isArray(s.pages) ? s.pages : [];
+      if (rawPages.length === 0) return false;
+      const fallback = pickPageFields(cur);
+      const pages: StudioPageData[] = rawPages.map((rp, i) => {
+        const rec = (rp && typeof rp === 'object' ? rp : {}) as Record<string, unknown>;
+        const id = typeof rec.id === 'string' && rec.id ? rec.id : `page-${UID()}`;
+        const name = typeof rec.name === 'string' && rec.name ? rec.name : `第 ${i + 1} 页`;
+        const data = sanitizePageData(rec.data, fallback);
+        data.floatingElements = withPageBackground(data);
+        return { id, name, data };
+      });
+      const currentPageId = pages.some((p) => p.id === s.currentPageId)
+        ? (s.currentPageId as string)
+        : pages[0].id;
+      set({ pages, currentPageId });
+      const active = pages.find((p) => p.id === currentPageId)!;
+      get()._applyPageFields(active.data);
+      return true;
+    }
+
+    // —— v1：旧版单页格式（向后兼容旧 ZIP / JSON / IndexedDB） ——
+    if (s.__type !== 'redcanvas-studio-config') return false;
+    if (typeof s.version !== 'number') return false;
+    const fallback = pickPageFields(cur);
+    const data = sanitizePageData(s, fallback);
+    data.floatingElements = withPageBackground(data);
+    const page: StudioPageData = { id: `page-${UID()}`, name: '第 1 页', data };
+    set({ pages: [page], currentPageId: page.id });
+    get()._applyPageFields(data);
     return true;
   },
 }));

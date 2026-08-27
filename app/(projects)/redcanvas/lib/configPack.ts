@@ -1,22 +1,33 @@
 import JSZip from 'jszip';
-import { StudioConfigSnapshot } from '../store/useStudioStore';
+import { StudioConfigSnapshot, StudioProjectSnapshot } from '../store/useStudioStore';
 
 // ============================================================================
 //  配置 ZIP 打包 / 解包
 //  - 导出：snapshot + 图片资源 → ZIP（含 config.json + assets/*）
 //  - 导入：ZIP → snapshot（图片资源转 blob URL 注回 imageUrl）
+//  兼容 v1 单页（redcanvas-studio-config）与 v2 多页项目（redcanvas-studio-project）：
+//  url/imageUrl 收集与改写均递归遍历，无需感知具体层级。
 //  设计原则：远程 URL fetch 失败时保留原值，避免阻塞导出
 // ============================================================================
 
-/** 收集 snapshot 里所有"图片资源 URL"（仅 url / imageUrl 字段），去重后返回 */
-function collectAssetUrls(snapshot: StudioConfigSnapshot): string[] {
+/** 递归收集对象里所有"图片资源 URL"（仅 url / imageUrl 字段），去重后返回 */
+function collectAssetUrls(root: unknown): string[] {
   const urls = new Set<string>();
-  for (const img of snapshot.images ?? []) {
-    if (typeof img.url === 'string' && img.url) urls.add(img.url);
-  }
-  for (const el of snapshot.floatingElements ?? []) {
-    if (typeof el.imageUrl === 'string' && el.imageUrl) urls.add(el.imageUrl);
-  }
+  const walk = (obj: unknown): void => {
+    if (!obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) {
+      obj.forEach(walk);
+      return;
+    }
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if ((k === 'url' || k === 'imageUrl') && typeof v === 'string' && v) {
+        urls.add(v);
+      } else {
+        walk(v);
+      }
+    }
+  };
+  walk(root);
   return Array.from(urls);
 }
 
@@ -61,7 +72,7 @@ function extFromBlob(blob: Blob): string {
  * - fetch 失败的资源保留原 URL（不阻塞导出）
  */
 export async function packConfigZip(
-  snapshot: StudioConfigSnapshot,
+  snapshot: StudioProjectSnapshot | StudioConfigSnapshot,
 ): Promise<{ blob: Blob; assetsCount: number; skipped: string[] }> {
   const zip = new JSZip();
   const urls = collectAssetUrls(snapshot);
@@ -102,24 +113,29 @@ export async function packConfigZip(
 
 /**
  * 从 ZIP Blob 解出 snapshot。
- * - 读 config.json
+ * - 读 config.json（v1 单页 / v2 多页项目均支持）
  * - 把 assets/* 资源转成 blob URL，回填到 snapshot 的 url/imageUrl
- * - 找不到 config.json → 返回 null
+ * - 找不到 config.json 或 __type 不合法 → 返回 null
  */
 export async function unpackConfigZip(
   blob: Blob,
-): Promise<StudioConfigSnapshot | null> {
+): Promise<StudioProjectSnapshot | StudioConfigSnapshot | null> {
   const zip = await JSZip.loadAsync(blob);
   const configFile = zip.file('config.json');
   if (!configFile) return null;
   const text = await configFile.async('string');
-  let snapshot: StudioConfigSnapshot;
+  let snapshot: StudioProjectSnapshot | StudioConfigSnapshot;
   try {
-    snapshot = JSON.parse(text) as StudioConfigSnapshot;
+    snapshot = JSON.parse(text) as StudioProjectSnapshot | StudioConfigSnapshot;
   } catch {
     return null;
   }
-  if (!snapshot || snapshot.__type !== 'redcanvas-studio-config') return null;
+  if (
+    !snapshot ||
+    (snapshot.__type !== 'redcanvas-studio-config' && snapshot.__type !== 'redcanvas-studio-project')
+  ) {
+    return null;
+  }
 
   // 收集所有 assets/* 文件，建立 zipPath → blobUrl
   const zipPathToBlobUrl = new Map<string, string>();
@@ -139,4 +155,21 @@ export async function unpackConfigZip(
   // 把 snapshot 里所有以 assets/ 开头的 url/imageUrl 替换为 blobUrl
   const remapped = remapAssetFields(snapshot, zipPathToBlobUrl);
   return remapped;
+}
+
+/**
+ * 把多页导出的 PNG Blob 打包成一个 ZIP（批量导出用）。items 顺序即页面顺序。
+ */
+export async function packImageBlobsZip(
+  items: { name: string; blob: Blob }[],
+): Promise<Blob> {
+  const zip = new JSZip();
+  for (const item of items) {
+    zip.file(item.name, item.blob);
+  }
+  return zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 3 },
+  });
 }

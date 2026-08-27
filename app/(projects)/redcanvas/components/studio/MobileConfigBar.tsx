@@ -1,23 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Loader2, ChevronDown, FileText } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText } from 'lucide-react';
 import { useConfigTransfer } from './useConfigTransfer';
+import { useStudioStore } from '../../store/useStudioStore';
 
 /**
  * 移动端顶栏的紧凑存档/读档条（lg 以下显示，放在"编辑"按钮旁边，抽屉外）。
- * 与"编辑"按钮同款 pill 样式：导出下拉（导出配置 / 导出图片）+ 导入。
+ * 与"编辑"按钮同款 pill 样式：导出下拉（导出配置 / 导出当前页 / 导出全部页面）+ 导入。
  * 逻辑复用 useConfigTransfer；与抽屉内的 ConfigToolbar 共享同一 store。
  */
 interface MobileConfigBarProps {
   onExportPng?: () => void;
   isPngExporting?: boolean;
+  onExportAllPng?: () => void;
 }
 
 const pillBtn =
   'flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/50 backdrop-blur-md text-white/80 text-[11px] font-black border border-white/10 hover:bg-black/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
-export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, isPngExporting }) => {
+export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, isPngExporting, onExportAllPng }) => {
   const {
     fileRef,
     toast,
@@ -28,6 +30,7 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
     handleFileChange,
   } = useConfigTransfer();
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const pageCount = useStudioStore((s) => s.pages.length);
   const anyBusy = busy || !!isPngExporting;
 
   return (
@@ -68,8 +71,20 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
                   >
                     <ImageIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-bold text-white/80">导出图片</div>
+                      <div className="text-[11px] font-bold text-white/80">导出当前页图片</div>
                       <div className="text-[9px] text-white/30 font-medium">高清 PNG · 2.5x</div>
+                    </div>
+                  </button>
+                )}
+                {onExportAllPng && pageCount > 1 && (
+                  <button
+                    onClick={() => { setExportMenuOpen(false); onExportAllPng(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"
+                  >
+                    <Images className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-bold text-white/80">导出全部页面（{pageCount} 页）</div>
+                      <div className="text-[9px] text-white/30 font-medium">逐页高清 PNG · 打包 ZIP</div>
                     </div>
                   </button>
                 )}

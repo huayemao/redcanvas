@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { useStudioStore, StudioConfigSnapshot } from '../store/useStudioStore';
+import { useStudioStore, StudioConfigSnapshot, StudioProjectSnapshot } from '../store/useStudioStore';
 import { unpackConfigZip } from './configPack';
+
+type PersistSnapshot = StudioProjectSnapshot | StudioConfigSnapshot;
 
 // ============================================================================
 //  本地化持久化（IndexedDB）
@@ -121,17 +123,30 @@ function remapUrls<T>(obj: T, map: Map<string, string>): T {
   return obj;
 }
 
-/** 收集快照里所有"本地资源 URL"（blob:/data:），去重 */
-function collectLocalAssetUrls(snapshot: StudioConfigSnapshot): string[] {
+/** 递归收集快照里所有"本地资源 URL"（url/imageUrl 字段，blob:/data:），去重。
+ *  兼容 v1 单页与 v2 多页嵌套结构，无需感知具体层级。 */
+function collectLocalAssetUrls(root: unknown): string[] {
   const set = new Set<string>();
-  for (const img of snapshot.images ?? []) if (isLocalAssetUrl(img.url)) set.add(img.url);
-  for (const el of snapshot.floatingElements ?? [])
-    if (isLocalAssetUrl(el.imageUrl)) set.add(el.imageUrl);
+  const walk = (obj: unknown): void => {
+    if (!obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) {
+      obj.forEach(walk);
+      return;
+    }
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if ((k === 'url' || k === 'imageUrl') && isLocalAssetUrl(v)) {
+        set.add(v);
+      } else {
+        walk(v);
+      }
+    }
+  };
+  walk(root);
   return Array.from(set);
 }
 
-/** 收集快照里所有 idb:// 引用（读取时用） */
-function collectIdbRefs(snapshot: StudioConfigSnapshot): string[] {
+/** 递归收集快照里所有 idb:// 引用（读取时用） */
+function collectIdbRefs(root: unknown): string[] {
   const set = new Set<string>();
   const walk = (obj: unknown): void => {
     if (!obj || typeof obj !== 'object') return;
@@ -147,12 +162,12 @@ function collectIdbRefs(snapshot: StudioConfigSnapshot): string[] {
       }
     }
   };
-  walk(snapshot);
+  walk(root);
   return Array.from(set);
 }
 
 // ---------------- 持久化：保存 ----------------
-export async function saveStudioConfig(snapshot: StudioConfigSnapshot): Promise<void> {
+export async function saveStudioConfig(snapshot: PersistSnapshot): Promise<void> {
   if (typeof window === 'undefined' || !('indexedDB' in window)) return;
   try {
     const db = await getDb();
@@ -209,12 +224,17 @@ async function gcAssets(db: IDBDatabase, usedKeys: Set<string>): Promise<void> {
 }
 
 // ---------------- 持久化：读取 ----------------
-export async function loadStudioConfig(): Promise<StudioConfigSnapshot | null> {
+export async function loadStudioConfig(): Promise<PersistSnapshot | null> {
   if (typeof window === 'undefined' || !('indexedDB' in window)) return null;
   try {
     const db = await getDb();
-    const persistable = await idbGet<StudioConfigSnapshot>(db, CONFIG_STORE, CONFIG_KEY);
-    if (!persistable || persistable.__type !== 'redcanvas-studio-config') return null;
+    const persistable = await idbGet<PersistSnapshot>(db, CONFIG_STORE, CONFIG_KEY);
+    if (
+      !persistable ||
+      (persistable.__type !== 'redcanvas-studio-config' && persistable.__type !== 'redcanvas-studio-project')
+    ) {
+      return null;
+    }
 
     // 收集所有 idb:// 引用，读 Blob → 创建新 blob URL 回填
     const idbRefs = collectIdbRefs(persistable);
