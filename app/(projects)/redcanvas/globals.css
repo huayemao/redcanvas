@@ -104,12 +104,33 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.25rem 0;
+  text-align: center;
 }
 .math-block .katex-display {
   margin: 0;
+  display: block;
+  text-align: center;
 }
 .math-inline {
   display: inline;
+}
+
+/* ---- 公式超长自动换行（KaTeX 0.18 结构）----
+ * KaTeX 默认 .katex-base{white-space:nowrap;display:inline-block} 会让
+ * 公式整段撑破文本框；放开 nowrap 后可在顶层 base 块边界（运算符处被
+ * KaTeX 切开的片段间）自然折行，overflow-wrap:anywhere 兜住无空格的
+ * 连续片段，max-width:100% 保证不横向溢出容器。
+ */
+.math-block .katex,
+.math-inline .katex {
+  max-width: 100%;
+}
+.math-block .katex .katex-base,
+.math-inline .katex .katex-base {
+  white-space: normal;
+  width: auto;              /* 中和 KaTeX 的 width:min-content 收缩 */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .math-pending {
   opacity: 0.6;
