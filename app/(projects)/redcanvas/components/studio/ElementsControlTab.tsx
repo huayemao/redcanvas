@@ -47,6 +47,13 @@ const FONT_WEIGHTS: Array<{ value: PlogElement['fontWeight']; label: string }> =
   { value: 900, label: '黑' },
 ];
 
+/** 判断图片地址是否为 SVG（data:image/svg 开头或路径以 .svg 结尾），用于显示前景色控件 */
+function isSvgUrl(url?: string | null): boolean {
+  if (!url) return false;
+  if (/^data:image\/svg/i.test(url)) return true;
+  return /\.svg([?#].*)?$/i.test(url);
+}
+
 export const ElementsControlTab: React.FC = () => {
   const {
     floatingElements,
@@ -497,6 +504,18 @@ export const ElementPropertyPanel: React.FC = () => {
               value={selected.bgColor || 'transparent'}
               onChange={(v) => update({ bgColor: v })}
             />
+            {isSvgUrl(selected.imageUrl) && (
+              <>
+                <ColorField
+                  label="前景色(SVG)"
+                  value={selected.fgColor || 'transparent'}
+                  onChange={(v) => update({ fgColor: v })}
+                />
+                <p className="mt-1 text-[10px] text-white/40 font-medium leading-relaxed">
+                  将整张 SVG 染为单色前景；设为透明则保持原图配色。
+                </p>
+              </>
+            )}
           </Section>
         </>
       )}
@@ -780,6 +799,17 @@ function ImagePickerField({
 
   const readFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
+    // SVG 转存为 data URL：刷新后仍有效（blob URL 会失效），且便于识别并支持前景色染色
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = String(reader.result || '');
+        onChange(url);
+        onFileLoaded?.(url);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
     const url = URL.createObjectURL(file);
     onChange(url);
     // 文件加载成功 → 通知父组件（用于触发提色）

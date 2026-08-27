@@ -67,6 +67,54 @@ function escapeHtml(s: string): string {
   );
 }
 
+// ============================================================================
+// SVG 前景色染色（CSS mask 方案）
+// - 用 SVG 图源作为遮罩，backgroundColor 即为前景色，整图单色染色
+// - fgColor 未设置 / transparent = 保持原色，走普通 <img> 渲染
+// ============================================================================
+/** 判断图源地址是否为 SVG：data:image/svg 开头，或路径以 .svg 结尾 */
+function isSvgSource(url?: string | null): boolean {
+  if (!url) return false;
+  if (/^data:image\/svg/i.test(url)) return true;
+  return /\.svg([?#].*)?$/i.test(url);
+}
+
+/** 取元素的前景染色色值；不满足条件返回 null（保持原色） */
+function svgTintOf(el: PlogElementType): string | null {
+  if (!el.fgColor || el.fgColor === 'transparent') return null;
+  // asset 的 vector 分支用 content 内嵌 SVG，此处仅处理 imageUrl 渲染路径
+  return isSvgSource(el.imageUrl) ? el.fgColor : null;
+}
+
+/** objectFit → CSS mask-size 映射 */
+function maskSizeOf(fit?: PlogElementType['objectFit']): string {
+  switch (fit) {
+    case 'cover': return 'cover';
+    case 'fill': return '100% 100%';
+    case 'none': return 'auto';
+    default: return 'contain';   // contain 及默认
+  }
+}
+
+/** 用图源做遮罩、以指定颜色填充的染色层（替代 <img>） */
+function TintedSvgLayer({ url, color, fit }: { url: string; color: string; fit?: PlogElementType['objectFit'] }) {
+  const size = maskSizeOf(fit);
+  const style: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    backgroundColor: color,
+    WebkitMaskImage: `url("${url}")`,
+    maskImage: `url("${url}")`,
+    WebkitMaskSize: size,
+    maskSize: size,
+    WebkitMaskRepeat: 'no-repeat',
+    maskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center',
+    maskPosition: 'center',
+  };
+  return <div className="w-full h-full block" style={style} />;
+}
+
 // 用 katex 把 TeX 渲染成 HTML；若 katex 尚未就绪则输出占位（待就绪后由 katexReady 触发重算）
 function renderKatex(tex: string, displayMode: boolean): string {
   const w = typeof window !== 'undefined' ? (window as unknown as { katex?: { renderToString: (t: string, o?: object) => string } }) : undefined;
@@ -332,6 +380,10 @@ export const PlogElement: React.FC<PlogElementProps> = ({
           }}
         >
           {element.imageUrl ? (
+            svgTintOf(element) ? (
+              // SVG 前景染色：以图源为遮罩、fgColor 填充（原 <img> 的占位降级不适用，mask 加载失败仅显示底色）
+              <TintedSvgLayer url={element.imageUrl!} color={svgTintOf(element)!} fit={element.objectFit} />
+            ) : (
             <img
               src={element.imageUrl}
               crossOrigin="anonymous"
@@ -353,6 +405,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
                 }
               }}
             />
+            )
           ) : (
             <div
               className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[10px] font-black tracking-widest"
@@ -419,6 +472,10 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               </div>
             )
           ) : element.imageUrl ? (
+            svgTintOf(element) ? (
+              // SVG 前景染色（asset 位图/矢量路径同样支持）
+              <TintedSvgLayer url={element.imageUrl} color={svgTintOf(element)!} fit={element.objectFit || 'contain'} />
+            ) : (
             <img
               src={element.imageUrl}
               crossOrigin="anonymous"
@@ -427,6 +484,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               style={{ objectFit: element.objectFit || 'contain' }}
               draggable={false}
             />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[10px] font-black opacity-60 tracking-widest"
               style={{ color: '#a21caf' }}>
