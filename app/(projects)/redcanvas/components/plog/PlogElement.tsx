@@ -2,7 +2,6 @@
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { motion, useMotionValue, useDragControls } from 'framer-motion';
-import { Marked } from 'marked';
 import {
   PlogElement as PlogElementType,
   ExtractedColors,
@@ -12,77 +11,7 @@ import { shadowOf, resolveFontClass, mixColorAlpha } from './elementUtils';
 import { LongTextBody } from './LongTextBody';
 import { TimestampBlock } from './TimestampBlock';
 import { ElementToolbar } from './ElementToolbar';
-
-// ============================================================================
-//  Markdown 数学公式支持（KaTeX，按需从 CDN 懒加载）
-//  - GFM 已在下方 mdRenderer 构造时启用（gfm: true, breaks: true）
-//  - 块级公式：$$ ... $$（独占段落）；行内公式：$ ... $
-//  - KaTeX 的 CSS + JS 仅在首次渲染含公式的文本框时注入 <head>，避免全局加载
-// ============================================================================
-const KATEX_CDN = 'https://cdn.jsdelivr.net/npm/katex@0.18.4/dist';
-
-let katexLoadPromise: Promise<void> | null = null;
-function ensureKatexLoaded(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.resolve();
-  const w = window as unknown as { katex?: unknown };
-  if (w.katex) return Promise.resolve();
-  if (katexLoadPromise) return katexLoadPromise;
-  katexLoadPromise = new Promise<void>((resolve) => {
-    // 1) 注入 KaTeX 样式（公式排版 + 字体），仅一次
-    if (!document.getElementById('katex-css')) {
-      const link = document.createElement('link');
-      link.id = 'katex-css';
-      link.rel = 'stylesheet';
-      link.href = `${KATEX_CDN}/katex.min.css`;
-      link.crossOrigin = 'anonymous';
-      document.head.appendChild(link);
-      // KaTeX 默认 .katex-base{white-space:nowrap} 会让长公式撑破文本框。
-      // 这份 override 必须随 katex.css 同期注入且排在其后（动态 link 永远在
-      // 构建期的 globals.css 之后，层级上直接压住 KaTeX 自身规则），保证超长公式自动换行。
-      const wrapFix = document.createElement('style');
-      wrapFix.id = 'katex-wrap-fix';
-      wrapFix.textContent = `
-.math-block, .math-inline { overflow-x: auto; overflow-y: hidden; text-align: center; }
-.math-block .katex-display { margin: 0; display: block; text-align: center; }
-.math-block .katex, .math-inline .katex { max-width: 100%; }
-.math-block .katex .katex-base,
-.math-inline .katex .katex-base {
-  white-space: normal !important;
-  width: auto !important;
-  max-width: 100% !important;
-  overflow-wrap: anywhere !important;
-}`;
-      document.head.appendChild(wrapFix);
-    }
-    const w2 = window as unknown as { katex?: unknown };
-    if (w2.katex) return resolve();
-    // 2) 注入 KaTeX 脚本，加载完成后 resolve
-    const existing = document.getElementById('katex-script') as HTMLScriptElement | null;
-    if (existing) {
-      const w3 = window as unknown as { katex?: unknown };
-      if (w3.katex) return resolve();
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => resolve(), { once: true });
-      return;
-    }
-    const s = document.createElement('script');
-    s.id = 'katex-script';
-    s.src = `${KATEX_CDN}/katex.min.js`;
-    s.crossOrigin = 'anonymous';
-    s.defer = true;
-    s.onload = () => resolve();
-    // 失败也 resolve：渲染时检测不到 katex 会回退为原文，避免永久等待
-    s.onerror = () => resolve();
-    document.head.appendChild(s);
-  });
-  return katexLoadPromise;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"]/g, (c) =>
-    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;',
-  );
-}
+import { mdRenderer, ensureMathBlockParagraph } from './mathRender';
 
 // ============================================================================
 // SVG 前景色染色（CSS mask 方案）
@@ -130,95 +59,6 @@ function TintedSvgLayer({ url, color, fit }: { url: string; color: string; fit?:
     maskPosition: 'center',
   };
   return <div className="w-full h-full block" style={style} />;
-}
-
-// 用 katex 把 TeX 渲染成 HTML；若 katex 尚未就绪则输出占位（待就绪后由 katexReady 触发重算）
-function renderKatex(tex: string, displayMode: boolean): string {
-  const w = typeof window !== 'undefined' ? (window as unknown as { katex?: { renderToString: (t: string, o?: object) => string } }) : undefined;
-  const katex = w?.katex;
-  if (!katex) {
-    return displayMode
-      ? `<div class="math-block math-pending">${escapeHtml(tex)}</div>`
-      : `<span class="math-inline math-pending">${escapeHtml(tex)}</span>`;
-  }
-  try {
-    return katex.renderToString(tex, { displayMode, throwOnError: false });
-  } catch {
-    return escapeHtml(tex);
-  }
-}
-
-// 专用 Marked 实例：启用 GFM + 软换行，并注册数学公式扩展
-const mdRenderer = new Marked({ gfm: true, breaks: true });
-mdRenderer.use({
-  extensions: [
-    {
-      name: 'blockMath',
-      level: 'block',
-      // start：告诉 marked 块公式最早可能出现在哪里（辅助段落中断判断）
-      start(src: string) {
-        return src.indexOf('$$');
-      },
-      tokenizer(src: string) {
-        const m = /^\s*\$\$([\s\S]+?)\$\$\s*(?:\n+|$)/.exec(src);
-        if (!m) return undefined;
-        return { type: 'blockMath', raw: m[0], text: m[1].trim() };
-      },
-      renderer(token) {
-        return renderKatex((token as unknown as { text: string }).text, true);
-      },
-    },
-    {
-      name: 'inlineMath',
-      level: 'inline',
-      start(src: string) {
-        return src.indexOf('$');
-      },
-      tokenizer(src: string) {
-        const m = /^\$([^\$\n]+?)\$(?!\d)/.exec(src);
-        if (!m) return undefined;
-        return { type: 'inlineMath', raw: m[0], text: m[1].trim() };
-      },
-      renderer(token) {
-        return renderKatex((token as unknown as { text: string }).text, false);
-      },
-    },
-  ],
-});
-
-/**
- * 保证块级公式 $$...$$ 前后有空行（独立成段）。
- * marked 的段落会一路吞文本直到空行，若 $$ 紧跟在普通文字行后（中间无空行），
- * 块级公式的自定义 tokenizer 根本没机会执行，导致整个公式被当纯文本逐行渲染。
- */
-function ensureMathBlockParagraph(src: string): string {
-  const lines = src.split('\n');
-  const out: string[] = [];
-  let inMath = false; // 当前是否处于 $$ 块内部
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const t = line.trim();
-    if (!inMath && t.startsWith('$$')) {
-      // 块开始：上一行非空则补空行隔断前面的文字
-      if (out.length > 0 && out[out.length - 1].trim() !== '') out.push('');
-      out.push(line);
-      // 同一行成对闭合（$$...$$）：下一行非空则补空行
-      const closedSameLine = t.length > 2 && t.endsWith('$$');
-      if (closedSameLine) inMath = false;
-      else inMath = true;
-      if (!inMath && i + 1 < lines.length && lines[i + 1].trim() !== '') out.push('');
-      continue;
-    }
-    if (inMath && t.endsWith('$$')) {
-      // 块结束：下一行非空则补空行，防止公式块吞掉后续文字
-      out.push(line);
-      inMath = false;
-      if (i + 1 < lines.length && lines[i + 1].trim() !== '') out.push('');
-      continue;
-    }
-    out.push(line);
-  }
-  return out.join('\n');
 }
 
 interface ElementActions {
@@ -291,20 +131,6 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   // dragControls：让抓手通过 onPointerDown → dragControls.start 发起拖拽
   const dragControls = useDragControls();
 
-  // KaTeX 按需加载：仅在启用 Markdown 的文本框触发；加载完成后 katexReady 翻 true，
-  // renderedMd 重算一次，把占位公式替换成真实渲染结果。
-  const [katexReady, setKatexReady] = useState(false);
-  useEffect(() => {
-    if (!(element.markdownEnabled ?? true)) return;
-    let active = true;
-    ensureKatexLoaded().then(() => {
-      if (active) setKatexReady(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, [element.markdownEnabled]);
-
   const handleDragStart = (_: any, info: any) => {
     dragStartRef.current = { x: info.point.x, y: info.point.y };
   };
@@ -375,8 +201,11 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   if (element.lineHeight) textInlines.lineHeight = element.lineHeight;
   if (element.textAlign) textInlines.textAlign = element.textAlign;
 
-  // ========== Markdown 渲染（text 与旧 longtext 统一；支持 GFM + KaTeX 数学公式） ==========
-  // katexReady 进依赖：KaTeX 脚本就绪后重算，把首次占位替换成真实公式
+  // ========== Markdown 渲染（text 与旧 longtext 统一；支持 GFM + MathJax 数学公式） ==========
+  // 注意：公式走"先生成 <script type='math/tex'> 占位 → DOM 挂载后 LongTextBody 的 effect
+  // 调 typesetMathInElement 后排版"，所以此处 mdRenderer.parse 输出不依赖 MathJax 是否就绪。
+  // useMemo 依赖仅保留真正影响渲染结果的字段，避免拖拽/选中态等重渲染触发字符串变化 →
+  // → React dangerouslySetInnerHTML 重置 innerHTML → 炸掉已排版的 mjx-container 造成闪烁。
   const renderedMd = useMemo(() => {
     if (element.type !== 'text' && element.type !== 'longtext') return '';
     if (!(element.markdownEnabled ?? true)) return '';
@@ -386,8 +215,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
     } catch {
       return element.content || '';
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [element.type, element.content, element.markdownEnabled, katexReady]);
+  }, [element.type, element.content, element.markdownEnabled]);
 
   return (
     <motion.div

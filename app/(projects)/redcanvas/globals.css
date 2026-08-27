@@ -98,39 +98,30 @@ body {
   mask-repeat: no-repeat;
 }
 
-/* KaTeX 数学公式容器：块级公式可横向滚动避免撑破画布；行内公式内联 */
+/* ---- MathJax 公式渲染（.math-block / .math-inline 由 renderMath 输出）----
+ * v4 开启 displayOverflow:'linebreak' 后长公式按容器宽自动折行；
+ * 禁止出现水平滚动条（overflow-x:hidden），超长公式必须通过 MathJax 原生 linebreak 折行；
+ * 兜底样式由 mathRender.ts 动态注入 #mathjax-wrap-fix，此处保留一份静态等价规则。 */
 .math-block {
   display: block;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   padding: 0.25rem 0;
-  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
-.math-block .katex-display {
+.math-block mjx-container[display="true"] {
   margin: 0;
-  display: block;
-  text-align: center;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.math-block mjx-container {
+  max-width: 100% !important;
 }
 .math-inline {
   display: inline;
-}
-
-/* ---- 公式超长自动换行（KaTeX 0.18 结构）----
- * KaTeX 默认 .katex-base{white-space:nowrap;display:inline-block} 会让
- * 公式整段撑破文本框；放开 nowrap 后可在顶层 base 块边界（运算符处被
- * KaTeX 切开的片段间）自然折行，overflow-wrap:anywhere 兜住无空格的
- * 连续片段，max-width:100% 保证不横向溢出容器。
- */
-.math-block .katex,
-.math-inline .katex {
-  max-width: 100%;
-}
-.math-block .katex .katex-base,
-.math-inline .katex .katex-base {
-  white-space: normal;
-  width: auto;              /* 中和 KaTeX 的 width:min-content 收缩 */
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  text-align: center;
 }
 .math-pending {
   opacity: 0.6;
