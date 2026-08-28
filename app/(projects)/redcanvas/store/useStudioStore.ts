@@ -203,6 +203,8 @@ interface StudioState {
   captureCurrentPage: () => void;
   /** 内部：把一页的字段应用到根级镜像（并重测图片比例） */
   _applyPageFields: (data: Partial<StudioPageFields>) => void;
+  /** 内部：切入指定页（存量无配色页自动跟随来源页的配色方案），镜像应用该页字段 */
+  _applyPageWithFallback: (id: string) => void;
   /** 切换到指定页（自动写回当前页） */
   switchPage: (id: string) => void;
   /** 新建空白页（沿用当前页的尺寸/背景/字体），插入当前页之后并切换 */
@@ -1412,6 +1414,33 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     });
   },
 
+  _applyPageWithFallback: (id) => {
+    const st = get();
+    const target = st.pages.find((p) => p.id === id);
+    if (!target) return;
+    // 存量页迁移兜底：修复前创建的页没有配色上下文（extractedColors=null 且
+    // paletteCandidates 为空），导致配色面板空白、新增元素退化为兜底色。
+    // 切入这类页时自动跟随来源页的配色方案（四件套），背景/内容保持该页原样。
+    const noPalette =
+      !target.data.extractedColors && target.data.paletteCandidates.length === 0;
+    const hasSourcePalette = !!st.extractedColors || st.paletteCandidates.length > 0;
+    if (noPalette && hasSourcePalette) {
+      const merged: StudioPageFields = {
+        ...target.data,
+        extractedColors: st.extractedColors,
+        paletteCandidates: st.paletteCandidates,
+        selectedCandidateId: st.selectedCandidateId,
+        selectedStyleId: st.selectedStyleId,
+      };
+      set((state) => ({
+        pages: state.pages.map((p) => (p.id === id ? { ...p, data: merged } : p)),
+      }));
+      get()._applyPageFields(merged);
+      return;
+    }
+    get()._applyPageFields(target.data);
+  },
+
   switchPage: (id) => {
     const s = get();
     if (id === s.currentPageId || !s.pages.some((p) => p.id === id)) return;
@@ -1420,7 +1449,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const target = get().pages.find((p) => p.id === id);
     if (!target) return;
     set({ currentPageId: id });
-    get()._applyPageFields(target.data);
+    get()._applyPageWithFallback(id);
   },
 
   addPage: () => {
@@ -1428,7 +1457,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const pages = get().pages;
     const curPage = pages.find((p) => p.id === get().currentPageId);
     const base = curPage?.data;
-    // 新页：沿用当前页的画布尺寸/背景/字体设置，内容清空（PPT 式"新建幻灯片"）
+    // 新页：沿用当前页的画布尺寸/背景/字体/**配色方案**，内容清空（PPT 式"新建幻灯片"）
+    // 配色方案（extractedColors/paletteCandidates/选中项）必须继承：否则新页上
+    // 新增的元素会退化为"背景亮度估算"的兜底色，且配色 UI 不显示 → "配色不生效"
     const data: StudioPageFields = {
       templateId: base?.templateId ?? 'showcase',
       aspectRatio: base?.aspectRatio ?? '3:4',
@@ -1439,9 +1470,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       gradientStart: base?.gradientStart ?? '#cbd5e1',
       gradientEnd: base?.gradientEnd ?? '#94a3b8',
       autoColorEnabled: base?.autoColorEnabled ?? true,
-      extractedColors: null,
-      paletteCandidates: [],
-      selectedCandidateId: null,
+      extractedColors: base?.extractedColors ?? null,
+      paletteCandidates: base?.paletteCandidates ?? [],
+      selectedCandidateId: base?.selectedCandidateId ?? null,
       selectedStyleId: base?.selectedStyleId ?? 'balanced',
       images: [],
       imageAspectRatio: '4:5',
@@ -1502,8 +1533,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       currentPageId: isActive ? nextActiveId : state.currentPageId,
     }));
     if (isActive) {
-      const target = get().pages.find((p) => p.id === nextActiveId);
-      if (target) get()._applyPageFields(target.data);
+      get()._applyPageWithFallback(nextActiveId);
     }
   },
 
