@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { motion, useMotionValue, useDragControls } from 'framer-motion';
 import {
   PlogElement as PlogElementType,
@@ -108,13 +108,17 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   const isSelected = effSelectedId === element.id;
 
   // ========== 拖拽 ==========
-  // 用外部 motion value 控制 drag 的 x/y，便于释放后手动归零。
-  // 原因：dragMomentum={false} 时，释放后的 inertia 动画 velocity=0，不会把 x/y 拉回 0，
-  // 导致 transform 残留在释放位置；而 handleDragEnd 又把位移写进 left/top，造成「双重叠加」，
-  // 元素最终落地位置比拖拽时看到的位置更远，越拖越明显。
+  // 使用 motion value 绑定 style.x 和 style.y，实现拖拽过程中的随手 1:1 线性移动。
   const dragX = useMotionValue(0);
   const dragY = useMotionValue(0);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartRectRef = useRef<DOMRect | null>(null);
+
+  // 当 store 中的 element.x / element.y 更新时，在 layout 时同步重置 motion value 为 0
+  // 确保 DOM left/top 更新与 transform x/y 清零在同一帧完成，杜绝一帧闪烁/弹跳
+  useLayoutEffect(() => {
+    dragX.set(0);
+    dragY.set(0);
+  }, [element.x, element.y, dragX, dragY]);
 
   // 移动端检测：移动端仅允许通过抓手（ElementToolbar 里的 Move 图标）拖动，避免误触。
   // 桌面端保持"抓任意位置即可拖动"的体验。lg 断点（1024px）与项目其它 lg:hidden 对齐。
@@ -131,26 +135,32 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   // dragControls：让抓手通过 onPointerDown → dragControls.start 发起拖拽
   const dragControls = useDragControls();
 
-  const handleDragStart = (_: any, info: any) => {
-    dragStartRef.current = { x: info.point.x, y: info.point.y };
+  const handleDragStart = () => {
+    if (containerRef.current) {
+      dragStartRectRef.current = containerRef.current.getBoundingClientRect();
+    }
   };
 
   const handleDragEnd = (_: any, info: any) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    // 用实际的 drag translate（已受 dragConstraints 约束的值），而非 info.offset（原始指针位移）。
-    // 这样释放后落地位置 = 拖拽时看到的位置（包含边界约束）。
-    const dxv = dragX.get();
-    const dyv = dragY.get();
-    const deltaXPercent = (dxv / rect.width) * 100;
-    const deltaYPercent = (dyv / rect.height) * 100;
-    const newX = Math.min(98, Math.max(-5, element.x + deltaXPercent));
-    const newY = Math.min(98, Math.max(-5, element.y + deltaYPercent));
-    updateElement(element.id, { x: newX, y: newY });
-    // 关键：把 drag 的 x/y 归零，位移已转移到 left/top，避免残留 transform 与新位置叠加。
-    dragX.set(0);
-    dragY.set(0);
-    console.log('[dragEnd]', { id: element.id, dxv, dyv, newX, newY, afterSet: { x: dragX.get(), y: dragY.get() } });
+    const rect = containerRef.current?.getBoundingClientRect() ?? dragStartRectRef.current;
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+    // info.offset 包含从拖拽开始到结束累积的像素位移 (x, y)，由 Framer Motion 官方精确提供
+    const offsetX = info?.offset?.x ?? dragX.get();
+    const offsetY = info?.offset?.y ?? dragY.get();
+
+    const deltaXPercent = (offsetX / rect.width) * 100;
+    const deltaYPercent = (offsetY / rect.height) * 100;
+
+    // 只有真的位移了才更新（避免无意义 set 触发重渲染/持久化）
+    if (Math.abs(deltaXPercent) >= 0.01 || Math.abs(deltaYPercent) >= 0.01) {
+      const newX = Math.min(98, Math.max(-5, element.x + deltaXPercent));
+      const newY = Math.min(98, Math.max(-5, element.y + deltaYPercent));
+      updateElement(element.id, { x: newX, y: newY });
+    } else {
+      dragX.set(0);
+      dragY.set(0);
+    }
   };
 
   // ========== 通用 wrapper 样式 ==========
@@ -162,9 +172,6 @@ export const PlogElement: React.FC<PlogElementProps> = ({
     left: `${element.x}%`,
     top: `${element.y}%`,
     zIndex: element.zIndex,
-    // scale / rotate / x / y 都以 motion value 形式传入（见下方 style 合并），
-    // 不能写成 transform 字符串：否则 framer-motion 拖拽时 buildTransform 不会合成 x/y，
-    // 元素拖拽过程中不随手移动，只有释放后才跳到新位置。
     minWidth:
       isImageLike ? '80px' :
       element.type === 'longtext' ? '120px' :
@@ -178,13 +185,11 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   };
   if (element.widthPct !== undefined) wrapperStyle.width = `${element.widthPct}%`;
   if (element.heightPct !== undefined) {
-    // 图片类：有 aspectRatio 时以 CSS 属性严格锁比例（不再依赖强行写 height%，避免累积精度误差破坏比例）
     if (!hasRatio) {
       wrapperStyle.height = `${element.heightPct}%`;
     }
   }
   if (hasRatio) {
-    // 关键：width + aspect-ratio = 浏览器按原图比例自动给 height，保证永远不拉伸变形
     wrapperStyle.aspectRatio = `${element.aspectRatio}`;
   }
 
@@ -202,15 +207,10 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   if (element.textAlign) textInlines.textAlign = element.textAlign;
 
   // ========== Markdown 渲染（text 与旧 longtext 统一；支持 GFM + MathJax 数学公式） ==========
-  // 注意：公式走"先生成 <script type='math/tex'> 占位 → DOM 挂载后 LongTextBody 的 effect
-  // 调 typesetMathInElement 后排版"，所以此处 mdRenderer.parse 输出不依赖 MathJax 是否就绪。
-  // useMemo 依赖仅保留真正影响渲染结果的字段，避免拖拽/选中态等重渲染触发字符串变化 →
-  // → React dangerouslySetInnerHTML 重置 innerHTML → 炸掉已排版的 mjx-container 造成闪烁。
   const renderedMd = useMemo(() => {
     if (element.type !== 'text' && element.type !== 'longtext') return '';
     if (!(element.markdownEnabled ?? true)) return '';
     try {
-      // 先把 $$ 块公式隔离成独立段落（前后补空行），再交给 marked 解析
       return mdRenderer.parse(ensureMathBlockParagraph(element.content || ''), { async: false }) as string;
     } catch {
       return element.content || '';
@@ -223,13 +223,9 @@ export const PlogElement: React.FC<PlogElementProps> = ({
       // 移动端关闭默认 drag listener，仅允许抓手发起拖拽；桌面端保持整元素可拖
       dragListener={!isMobile}
       dragControls={dragControls}
-      dragConstraints={containerRef}
-      dragElastic={0.05}
       dragMomentum={false}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      _dragX={dragX}
-      _dragY={dragY}
       onClick={(e) => {
         e.stopPropagation();
         setSelectedElementId(element.id);

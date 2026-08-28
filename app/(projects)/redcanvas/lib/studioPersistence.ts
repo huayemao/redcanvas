@@ -304,24 +304,43 @@ export function useStudioPersistence(): void {
         hydratedRef.current = true;
       });
 
-    // 2) 订阅变化（防抖保存 + 无变化跳过）
+    const flushSave = () => {
+      if (!hydratedRef.current) return;
+      const snapshot = useStudioStore.getState().exportConfig();
+      const json = JSON.stringify(snapshot);
+      if (json === lastSavedRef.current) return; // 跳过无变化
+      lastSavedRef.current = json;
+      void saveStudioConfig(snapshot);
+    };
+
+    // 2) 订阅变化（防抖 600ms 保存）
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = useStudioStore.subscribe(() => {
       if (!hydratedRef.current) return;
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        const snapshot = useStudioStore.getState().exportConfig();
-        const json = JSON.stringify(snapshot);
-        if (json === lastSavedRef.current) return; // 跳过无变化
-        lastSavedRef.current = json;
-        void saveStudioConfig(snapshot);
-      }, 600);
+      timer = setTimeout(flushSave, 600);
     });
+
+    // 3) 页面刷新 (F5/Reload) 或关闭/切台时，立即触发同步落盘，避免 600ms 防抖导致最后一次拖拽修改丢失
+    const handleUnloadOrHide = () => {
+      clearTimeout(timer);
+      flushSave();
+    };
+
+    window.addEventListener('beforeunload', handleUnloadOrHide);
+    window.addEventListener('pagehide', handleUnloadOrHide);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') handleUnloadOrHide();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       cancelled = true;
       unsubscribe();
       if (timer) clearTimeout(timer);
+      window.removeEventListener('beforeunload', handleUnloadOrHide);
+      window.removeEventListener('pagehide', handleUnloadOrHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 }

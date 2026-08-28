@@ -725,6 +725,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   addFloatingElement: (element) => {
     set((state) => ({ floatingElements: [...state.floatingElements, element] }));
+    get().captureCurrentPage();
     if ((element.type === 'image' || element.type === 'asset') && element.imageUrl) {
       requestAnimationFrame(() => get().ensureImageAspectRatio(element.id));
     }
@@ -787,16 +788,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       }
     }
 
+    // 关键：实时写回当前页镜像，确保 pages[] 与根级镜像完全同步，刷新/切页时不丢失拖拽位置
+    get().captureCurrentPage();
+
     // 换了图 → 重新测量原图比例
     if (patch.imageUrl !== undefined && patch.imageUrl !== (el.imageUrl || '')) {
       requestAnimationFrame(() => get().ensureImageAspectRatio(id));
     }
   },
-  removeFloatingElement: (id) =>
+  removeFloatingElement: (id) => {
     set((state) => ({
       floatingElements: state.floatingElements.filter((el) => el.id !== id),
-    })),
-  reorderFloatingElementLayer: (id, direction) =>
+    }));
+    get().captureCurrentPage();
+  },
+  reorderFloatingElementLayer: (id, direction) => {
     set((state) => {
       const elements = state.floatingElements;
       const target = elements.find((e) => e.id === id);
@@ -839,7 +845,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           ids.includes(e.id) ? { ...e, zIndex: updates[e.id] } : e
         ),
       };
-    }),
+    });
+    get().captureCurrentPage();
+  },
   setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
 
   ensureImageAspectRatio: (id) => {
@@ -1609,3 +1617,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     return true;
   },
 }));
+
+// DEBUG: 临时暴露 store 到 window 用于浏览器诊断
+if (typeof window !== 'undefined') {
+  (window as unknown as { __store: typeof useStudioStore }).__store = useStudioStore;
+}
