@@ -1,96 +1,93 @@
 /**
- * Font inline Helper for robust image export.
- * Browser SVG/Canvas rendering sandboxes external font resources.
- * This helper preloads loaded fonts, converts external font rules to Base64 Data URIs,
- * and embeds an inline style block inside the capture target.
+ * RedCanvas 核心 Web 字体家族列表
  */
+const KNOWN_FONT_FAMILIES = [
+  'Xiaolai SC', 'Xiaolai',
+  'ZCOOL XiaoWei',
+  'Noto Serif SC',
+  'LXGWWenKai', 'LXGWWenKai-Bold', 'LXGWWenKai-Regular',
+  'ZCOOL KuaiLe',
+  'Yozai',
+  'LongCang', 'Long Cang',
+  'Ma Shan Zheng',
+  'Zhi Mang Xing',
+  'Noto Sans SC',
+  'Inter',
+  'Playfair Display',
+];
 
-const fontBase64Cache = new Map<string, string>();
+/**
+ * 确保目标画布内使用的所有自定义 Web 字体（涵盖所有文本框的真实 fontWeight / fontSize / fontStyle / fontFamily 组合）已经被浏览器完全装载落地。
+ * 
+ * 核心破解：
+ * W3C Font Loading 规范要求 document.fonts.check(fontSpec, text) 中的 fontSpec 必须精准匹配节点的真实 CSS 字体描述符。
+ * 如果硬编码 16px normal，会导致加粗 (fontWeight: 700/bold) 或不同字号 (fontSize) 的字体切片无法被命中所导致的字重/字符回退问题。
+ * 
+ * 此方法遍历所有文本节点，精确读取 getComputedStyle(node) 中的 fontWeight / fontStyle / fontSize / fontFamily，
+ * 构造精准 fontSpec 并配合 text 文本采样进行全量校验与装载。
+ */
+export async function ensureCanvasFontsLoaded(
+  targetElement: HTMLElement,
+  options: { timeoutMs?: number; onProgress?: (msg: string) => void } = {}
+): Promise<void> {
+  const { timeoutMs = 8000, onProgress } = options;
+  if (typeof window === 'undefined' || !('fonts' in document)) return;
 
-async function fetchAsBase64(url: string): Promise<string> {
-  if (fontBase64Cache.has(url)) {
-    return fontBase64Cache.get(url)!;
-  }
   try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        fontBase64Cache.set(url, result);
-        resolve(result);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+    const fontLoadTasks: Promise<unknown>[] = [];
+    const checkedSpecs = new Set<string>();
+
+    const allNodes = Array.from(targetElement.querySelectorAll<HTMLElement>('*'));
+    allNodes.push(targetElement);
+
+    allNodes.forEach((node) => {
+      const text = node.textContent?.trim();
+      if (!text) return;
+
+      const computed = window.getComputedStyle(node);
+      const computedFont = computed.fontFamily;
+      if (!computedFont) return;
+
+      const weight = computed.fontWeight || 'normal';
+      const style = computed.fontStyle || 'normal';
+      const size = computed.fontSize || '16px';
+
+      const families = computedFont.split(',').map((f) => f.trim().replace(/^['"]|['"]$/g, ''));
+      families.forEach((family) => {
+        if (KNOWN_FONT_FAMILIES.some((k) => k.toLowerCase() === family.toLowerCase())) {
+          // 构造精准匹配该节点的完整 CSS font 描述符：[style] [weight] [size] "[family]"
+          const stylePrefix = style !== 'normal' ? `${style} ` : '';
+          const weightPrefix = weight !== 'normal' ? `${weight} ` : '';
+          const fontSpec = `${stylePrefix}${weightPrefix}${size} "${family}"`;
+
+          // 防止重复产生相同的加载任务
+          const specKey = `${fontSpec}|||${text}`;
+          if (checkedSpecs.has(specKey)) return;
+          checkedSpecs.add(specKey);
+
+          // 传入精准 fontSpec + 文本采样校验对应字重、字号与中文字符切片
+          const isReady = document.fonts.check(fontSpec, text);
+          if (!isReady) {
+            fontLoadTasks.push(document.fonts.load(fontSpec, text));
+          }
+        }
+      });
     });
+
+    if (fontLoadTasks.length > 0) {
+      onProgress?.('正在精准装载各文本框字重与字体切片...');
+      await Promise.race([
+        Promise.all(fontLoadTasks).then(() => document.fonts.ready),
+        new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+      ]);
+    } else {
+      // 全部通过也确认一遍 document.fonts.ready
+      await Promise.race([
+        document.fonts.ready,
+        new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    }
   } catch (err) {
-    console.warn(`[FontLoader] Failed to inline font resource at ${url}:`, err);
-    return url;
+    console.warn('[FontLoader] ensureCanvasFontsLoaded error:', err);
   }
-}
-
-export async function prepareFontsForExport(targetElement: HTMLElement): Promise<() => void> {
-  // 1. Wait for document fonts to complete loading
-  if ('fonts' in document) {
-    try {
-      await document.fonts.ready;
-    } catch {}
-  }
-
-  // 2. Collect custom @font-face rules from style sheets
-  const fontRules: string[] = [];
-
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      if (!sheet.cssRules) continue;
-      for (const rule of Array.from(sheet.cssRules)) {
-        if (rule instanceof CSSFontFaceRule) {
-          fontRules.push(rule.cssText);
-        }
-      }
-    } catch {
-      // CORS protected sheet, skip direct access
-    }
-  }
-
-  // If no font rules found or extracted, return no-op cleanup
-  if (fontRules.length === 0) {
-    return () => {};
-  }
-
-  // 3. Process URLs in @font-face rules to inline data URIs if needed
-  const processedRules: string[] = [];
-  for (const rule of fontRules) {
-    const urlMatches = Array.from(rule.matchAll(/url\((['"]?)(.*?)\1\)/g));
-    let updatedRule = rule;
-
-    for (const match of urlMatches) {
-      const originalUrl = match[2];
-      if (originalUrl.startsWith('data:')) continue;
-      
-      try {
-        const base64Url = await fetchAsBase64(originalUrl);
-        if (base64Url && base64Url !== originalUrl) {
-          updatedRule = updatedRule.replace(match[0], `url("${base64Url}")`);
-        }
-      } catch {
-        // Fallback to original URL
-      }
-    }
-    processedRules.push(updatedRule);
-  }
-
-  // 4. Inject temporary style element into target
-  const styleEl = document.createElement('style');
-  styleEl.setAttribute('data-export-fonts', 'true');
-  styleEl.textContent = processedRules.join('\n');
-  targetElement.appendChild(styleEl);
-
-  // Return cleanup callback to remove injected style
-  return () => {
-    if (styleEl.parentNode) {
-      styleEl.parentNode.removeChild(styleEl);
-    }
-  };
 }

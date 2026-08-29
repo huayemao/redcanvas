@@ -1,10 +1,58 @@
 import { snapdom } from '@zumer/snapdom';
+import { waitForMathInElement } from '../components/plog/mathRender';
+import { ensureCanvasFontsLoaded } from './fontHelper';
 
 export interface ExportOptions {
   fileName?: string;
   scale?: number;
   backgroundColor?: string;
   onProgress?: (msg: string) => void;
+}
+
+/**
+ * 等待画布就绪：切页/改配置/导出前调用。
+ * 1. 等待 React 切页重渲染落地（3 帧确保新页面 DOM 挂载）
+ * 2. 确保画布所用 Web 字体已装载落地（内存已有 0ms 跳过；第一页未就绪则显式触发 load）
+ * 3. 等待 MathJax 数学公式排版完成（无公式自动 0ms 秒过；有公式则等待全部转换为 HTML/SVG）
+ * 4. 等待 <img> 图片加载完成
+ */
+export async function waitForCanvasReady(
+  el: HTMLElement,
+  options: { timeoutMs?: number; onProgress?: (msg: string) => void } = {}
+): Promise<void> {
+  const { timeoutMs = 8000, onProgress } = options;
+
+  // 1. 等待 React 切页重渲染落地（3 帧确保新页面 DOM 挂载）
+  await new Promise<void>((r) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
+  );
+
+  // 2. 确认并强制装载画布所用的 Web 字体（内存中已有的字体 0ms 跳过；未完成的字体给予 8 秒充分下载时间）
+  await ensureCanvasFontsLoaded(el, { timeoutMs: 8000, onProgress });
+
+  // 3. 等待 MathJax 数学公式排版完成（无公式自动 0ms 秒过；有公式则等待全部转换为 HTML/SVG）
+  onProgress?.('正在排版数学公式...');
+  await waitForMathInElement(el, timeoutMs);
+
+  // 4. 等待 <img> 图片加载完成
+  const imgs = Array.from(el.querySelectorAll('img'));
+  if (imgs.some((img) => !img.complete)) {
+    onProgress?.('正在确认图片资源...');
+    const allLoaded = Promise.all(
+      imgs.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise<void>((res) => {
+              img.addEventListener('load', () => res(), { once: true });
+              img.addEventListener('error', () => res(), { once: true });
+            }),
+      ),
+    );
+    await Promise.race([allLoaded, new Promise<void>((r) => setTimeout(r, timeoutMs))]);
+  }
+
+  // 5. 再次确认布局稳定
+  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
 
 /** 把元素渲染为 PNG Blob（不触发下载；批量导出/自定义下载流程用） */
@@ -14,7 +62,9 @@ export async function exportElementToBlob(
 ): Promise<Blob> {
   const { scale = 2.5, backgroundColor = '#ffffff', onProgress } = options;
 
-  onProgress?.('正在生成图片...');
+  await waitForCanvasReady(element, { onProgress });
+
+  onProgress?.('正在生成高清图片...');
   const blob = await snapdom.toBlob(element, {
     scale,
     backgroundColor,
@@ -26,29 +76,6 @@ export async function exportElementToBlob(
     throw new Error('图片生成失败，未返回有效的 Data Blob');
   }
   return blob;
-}
-
-/**
- * 等待画布就绪：切页/改配置后调用。
- * - 等两帧让 React 重渲染落地
- * - 等所有 <img> 加载完成（带超时兜底，坏图不卡死导出）
- */
-export async function waitForCanvasReady(el: HTMLElement, timeoutMs = 8000): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-  const imgs = Array.from(el.querySelectorAll('img'));
-  const allLoaded = Promise.all(
-    imgs.map((img) =>
-      img.complete
-        ? Promise.resolve()
-        : new Promise<void>((res) => {
-            img.addEventListener('load', () => res(), { once: true });
-            img.addEventListener('error', () => res(), { once: true });
-          }),
-    ),
-  );
-  await Promise.race([allLoaded, new Promise<void>((r) => setTimeout(r, timeoutMs))]);
-  // 再等一帧，确保布局稳定后再截取
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
 export async function exportElementToImage(

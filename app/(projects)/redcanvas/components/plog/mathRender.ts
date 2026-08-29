@@ -117,8 +117,8 @@ function renderMath(tex: string, displayMode: boolean): string {
   );
 }
 
-/** 正在排版中的 root 容器，防止同一容器并发调用（MathJax 非线程安全） */
-const _typesettingRoots = new WeakSet<HTMLElement>();
+/** 正在排版中的 root 容器 Promise 映射，让并发调用共享同一 Promise */
+const _typesettingPromises = new WeakMap<HTMLElement, Promise<void>>();
 
 // MathJax v4 全局对象的扩展类型（仅取本文件需要用到的字段，避免与真实 MathJax 类型冲突）
 type MathJaxAPI = {
@@ -135,104 +135,128 @@ type MathJaxAPI = {
 
 /**
  * 对 root 内所有 .math-block / .math-inline[data-mj-tex] 占位执行真实渲染。
- * —— MathJax v4 官方推荐：直接调用 tex2chtmlPromise() 把 TeX 字符串转为
- * mjx-container HTMLElement；配合 getMetricsFor() 从已挂载到 DOM 中的 wrapper
- * 读取实测容器宽度 → displayOverflow:'linebreak' 折行按真实宽度生效。
- *
- * 关键稳定性保障（与旧版 typesetPromise 方案语义对齐）：
- * 1) 同一容器并发调用直接返回，避免 MathJax 内部状态机冲突；
- * 2) 单个公式渲染失败不影响其它公式；
- * 3) 只有"确实渲染成功"的公式才会移除 .math-pending 原文占位；
- *    失败的公式保留 pending + data 属性，下次调用可重试。
+ * 共享 Promise 避免同一容器并发排版引发状态机冲突。
  */
 export async function typesetMathInElement(root: HTMLElement): Promise<void> {
   if (typeof window === 'undefined') return;
-  const wrappers = root.querySelectorAll<HTMLElement>(
-    '.math-block[data-mj-tex], .math-inline[data-mj-tex]',
-  );
-  if (wrappers.length === 0) return;
-  if (_typesettingRoots.has(root)) return; // 防并发
-  _typesettingRoots.add(root);
-
-  // 每个 wrapper 的待处理快照 + 回滚上下文
-  type Job = {
-    wrapper: HTMLElement;
-    tex: string;
-    display: boolean;
-    pending: Element | null;
-  };
-  const jobs: Job[] = [];
-  wrappers.forEach((w) => {
-    const tex = w.dataset.mjTex;
-    if (!tex) return;
-    const display = w.dataset.mjDisplay === 'true';
-    // 立即清除 data 属性，防止重复进入（失败时会恢复，允许下次重试）
-    delete w.dataset.mjTex;
-    delete w.dataset.mjDisplay;
-    const pending = w.querySelector('.math-pending');
-    jobs.push({ wrapper: w, tex, display, pending });
-  });
-  if (jobs.length === 0) {
-    _typesettingRoots.delete(root);
-    return;
+  if (_typesettingPromises.has(root)) {
+    return _typesettingPromises.get(root)!;
   }
 
-  try {
-    await ensureMathJaxLoaded();
-    const mj = (window as unknown as { MathJax?: MathJaxAPI }).MathJax;
-    if (!mj || typeof mj.tex2chtmlPromise !== 'function') {
-      // MathJax 加载完全失败：恢复 data 属性，保留 pending 原文占位
+  const promise = (async () => {
+    const wrappers = root.querySelectorAll<HTMLElement>(
+      '.math-block[data-mj-tex], .math-inline[data-mj-tex]',
+    );
+    if (wrappers.length === 0) return;
+
+    type Job = {
+      wrapper: HTMLElement;
+      tex: string;
+      display: boolean;
+      pending: Element | null;
+    };
+    const jobs: Job[] = [];
+    wrappers.forEach((w) => {
+      const tex = w.dataset.mjTex;
+      if (!tex) return;
+      const display = w.dataset.mjDisplay === 'true';
+      delete w.dataset.mjTex;
+      delete w.dataset.mjDisplay;
+      const pending = w.querySelector('.math-pending');
+      jobs.push({ wrapper: w, tex, display, pending });
+    });
+    if (jobs.length === 0) return;
+
+    try {
+      await ensureMathJaxLoaded();
+      const mj = (window as unknown as { MathJax?: MathJaxAPI }).MathJax;
+      if (!mj || typeof mj.tex2chtmlPromise !== 'function') {
+        jobs.forEach(({ wrapper, tex, display }) => {
+          wrapper.dataset.mjTex = tex;
+          wrapper.dataset.mjDisplay = display ? 'true' : 'false';
+        });
+        return;
+      }
+
+      for (const job of jobs) {
+        try {
+          const metrics =
+            typeof mj.getMetricsFor === 'function'
+              ? mj.getMetricsFor(job.wrapper, job.display)
+              : {};
+          const mjx = await mj.tex2chtmlPromise(job.tex, {
+            ...metrics,
+            display: job.display,
+          });
+          if (job.pending && job.pending.parentNode === job.wrapper) {
+            job.wrapper.removeChild(job.pending);
+          } else if (job.pending) {
+            job.pending.remove();
+          }
+          job.wrapper.appendChild(mjx);
+          mj.startup.document?.clear();
+          mj.startup.document?.updateDocument();
+        } catch (err) {
+          job.wrapper.dataset.mjTex = job.tex;
+          job.wrapper.dataset.mjDisplay = job.display ? 'true' : 'false';
+          if (typeof console !== 'undefined' && 'debug' in console) {
+            // eslint-disable-next-line no-console
+            console.debug('[MathJax] 单条公式渲染失败：', job.tex, err);
+          }
+        }
+      }
+    } catch {
       jobs.forEach(({ wrapper, tex, display }) => {
         wrapper.dataset.mjTex = tex;
         wrapper.dataset.mjDisplay = display ? 'true' : 'false';
       });
-      return;
     }
+  })();
 
-    for (const job of jobs) {
-      try {
-        // —— 核心：容器已在 DOM 中，先取实测 metrics（包含宽度/em/ex 信息）
-        // 再把 metrics 传给 tex2chtmlPromise → 长公式按真实容器宽度折行
-        const metrics =
-          typeof mj.getMetricsFor === 'function'
-            ? mj.getMetricsFor(job.wrapper, job.display)
-            : {};
-        const mjx = await mj.tex2chtmlPromise(job.tex, {
-          ...metrics,
-          display: job.display,
-        });
-        // v4: tex2chtmlPromise 返回 HTMLElement（不是字符串），直接插入 DOM
-        if (job.pending && job.pending.parentNode === job.wrapper) {
-          job.wrapper.removeChild(job.pending);
-        } else if (job.pending) {
-          job.pending.remove();
-        }
-        job.wrapper.appendChild(mjx);
-        // 同步 MathJax 内部文档状态 & 全局 CHTML CSS（避免首次渲染后某些
-        // 符号字体缺失，需 clear + updateDocument 把新增节点纳入样式同步）
-        mj.startup.document?.clear();
-        mj.startup.document?.updateDocument();
-      } catch (err) {
-        // 单个公式失败：恢复 data-mj-tex / mjDisplay，下次可重试；
-        // .math-pending 未被删除 → 用户继续看到原文占位，不凭空消失
-        job.wrapper.dataset.mjTex = job.tex;
-        job.wrapper.dataset.mjDisplay = job.display ? 'true' : 'false';
-        // （用户可调高日志级别排查；默认不污染控制台）
-        if (typeof console !== 'undefined' && 'debug' in console) {
-          // eslint-disable-next-line no-console
-          console.debug('[MathJax] 单条公式渲染失败，已保留原文占位：', job.tex, err);
-        }
-      }
-    }
-  } catch {
-    // 顶层异常（MathJax 加载/排版流程级错误）：恢复所有 job 的 data 属性，保留 pending
-    jobs.forEach(({ wrapper, tex, display }) => {
-      wrapper.dataset.mjTex = tex;
-      wrapper.dataset.mjDisplay = display ? 'true' : 'false';
-    });
+  _typesettingPromises.set(root, promise);
+  try {
+    await promise;
   } finally {
-    _typesettingRoots.delete(root);
+    _typesettingPromises.delete(root);
   }
+}
+
+/**
+ * 等待 root 内的所有 MathJax 数学公式排版完毕（切页批量导出多页场景必备）
+ * 轮询 + Await 确保没有一个公式处于 .math-pending 或未渲染状态，且排版后 DOM 布局稳定落地。
+ */
+export async function waitForMathInElement(root: HTMLElement, timeoutMs = 10000): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const runTypeset = async () => {
+    const pendingWrappers = root.querySelectorAll<HTMLElement>(
+      '.math-block[data-mj-tex], .math-inline[data-mj-tex], .math-pending'
+    );
+    if (pendingWrappers.length === 0) return;
+
+    const targets = new Set<HTMLElement>();
+    pendingWrappers.forEach((w) => {
+      const parent = w.closest<HTMLElement>('.prose-sm, .prose-base') || w.parentElement || w;
+      targets.add(parent);
+    });
+
+    const tasks = Array.from(targets).map((t) => typesetMathInElement(t));
+    await Promise.all(tasks);
+  };
+
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    await runTypeset();
+
+    const remaining = root.querySelectorAll('.math-block[data-mj-tex], .math-inline[data-mj-tex], .math-pending');
+    if (remaining.length === 0) {
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+
+  // 渲染完成后额外等待两帧，确保 DOM 布局与 MathJax 字体结构完全稳定落地
+  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
 
 // 专用 Marked 实例：启用 GFM + 软换行，并注册数学公式扩展
