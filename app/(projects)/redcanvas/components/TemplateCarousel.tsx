@@ -69,9 +69,10 @@ const SAMPLE_SLIDES: SampleSlide[] = [
 
 interface TemplateCarouselProps {
   onSelectTemplate: (templateId: TemplateId, orientation: Orientation, exportSize: ExportSize) => void;
+  compact?: boolean;
 }
 
-export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemplate }) => {
+export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemplate, compact = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -102,25 +103,25 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
   }, [emblaApi]);
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl">
+    <div className={`relative mx-auto w-full ${compact ? 'max-w-sm md:max-w-md lg:max-w-[360px] xl:max-w-[400px]' : 'max-w-xl lg:max-w-2xl'}`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
       >
-        <div className="relative rounded-[28px] overflow-hidden shadow-2xl shadow-red-500/10 ring-1 ring-white/10 bg-black/40">
+        <div className="relative rounded-[24px] overflow-hidden shadow-2xl shadow-red-500/10 ring-1 ring-white/15 bg-black/60 backdrop-blur-sm">
           <div ref={emblaRef} className="overflow-hidden">
             <div className="flex">
               {SAMPLE_SLIDES.map((slide) => (
                 <div key={slide.image} className="min-w-full shrink-0 grow-0 basis-full">
-                  {/* 3:4 竖版封面容器，position:relative 保证子元素尺寸锚定 */}
+                  {/* 3:4 竖版封面容器，控制桌面端最大高度，避免在 Desktop 占用过大面积 */}
                   <button
                     type="button"
                     onClick={() => handleSelectSlide(slide.templateId)}
-                    className="group relative block w-full aspect-[3/4] overflow-hidden bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    className="group relative block w-full aspect-[3/4] max-h-[460px] overflow-hidden bg-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                     aria-label={`使用模板：${slide.label ?? slide.templateId}`}
                   >
-                    {/* 实际封面图 —— object-cover 保证不同比例图片都能铺满且不变形 */}
+                    {/* 实际封面图 */}
                     <img
                       src={slide.image}
                       alt={slide.alt}
@@ -129,23 +130,23 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
                       draggable={false}
                     />
 
-                    {/* 顶/底渐变遮罩：增强文字可读性 + 承接指示点/按钮 */}
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent" />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    {/* 顶/底渐变遮罩：增强文字可读性 */}
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/60 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
                     {/* 左上角推荐角标 */}
                     {slide.label && (
-                      <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1 backdrop-blur-md">
+                      <div className="absolute top-3.5 left-3.5 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3 py-1 backdrop-blur-md">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-[11px] font-black tracking-wider text-white/90 uppercase">
+                        <span className="text-[10px] font-black tracking-wider text-white/90 uppercase">
                           {slide.label}
                         </span>
                       </div>
                     )}
 
                     {/* 右下角 CTA 角标 */}
-                    <div className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-red-500 px-3.5 py-1.5 text-white font-black text-xs shadow-lg shadow-red-500/30 transition-colors group-hover:bg-red-400">
-                      使用此模板
+                    <div className="absolute bottom-3.5 right-3.5 inline-flex items-center gap-1.5 rounded-full bg-red-500 px-3.5 py-1.5 text-white font-black text-xs shadow-lg shadow-red-500/30 transition-transform group-hover:scale-105 group-hover:bg-red-400">
+                      一键套用模板
                       <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   </button>
@@ -159,17 +160,17 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
             type="button"
             onClick={prevSlide}
             aria-label="上一张"
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/70 transition-all z-10"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={nextSlide}
             aria-label="下一张"
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/70 transition-all z-10"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
 
           {/* 底部指示点 */}
@@ -181,7 +182,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
                 onClick={() => scrollToIndex(idx)}
                 aria-label={`跳到第 ${idx + 1} 张`}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === currentIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/50'
+                  idx === currentIndex ? 'w-5 bg-red-500' : 'w-1.5 bg-white/40 hover:bg-white/70'
                 }`}
               />
             ))}
@@ -193,3 +194,4 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ onSelectTemp
 };
 
 export default TemplateCarousel;
+
