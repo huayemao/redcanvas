@@ -102,8 +102,8 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   // 选中判定：显式 selectedId prop > 外部注入了 actions（由外部 selectedId 负责）> 内部 usePlogStore
   const effSelectedId =
     selectedId !== undefined ? selectedId :
-    actions?.setSelectedElementId !== undefined ? null :
-    plogStore.selectedElementId;
+      actions?.setSelectedElementId !== undefined ? null :
+        plogStore.selectedElementId;
 
   const isSelected = effSelectedId === element.id;
 
@@ -174,14 +174,14 @@ export const PlogElement: React.FC<PlogElementProps> = ({
     zIndex: element.zIndex,
     minWidth:
       isImageLike ? '80px' :
-      element.type === 'longtext' ? '120px' :
-      element.type === 'annotation' ? '100px' :
-      element.type === 'timestamp' ? '120px' : '48px',
+        element.type === 'longtext' ? '120px' :
+          element.type === 'annotation' ? '100px' :
+            element.type === 'timestamp' ? '120px' : '48px',
     minHeight:
       isImageLike ? '60px' :
-      element.type === 'longtext' ? '80px' :
-      element.type === 'annotation' ? '56px' :
-      element.type === 'timestamp' ? '60px' : '20px',
+        element.type === 'longtext' ? '80px' :
+          element.type === 'annotation' ? '56px' :
+            element.type === 'timestamp' ? '60px' : '20px',
   };
   if (element.widthPct !== undefined) wrapperStyle.width = `${element.widthPct}%`;
   if (element.heightPct !== undefined) {
@@ -265,27 +265,27 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               // SVG 前景染色：以图源为遮罩、fgColor 填充（原 <img> 的占位降级不适用，mask 加载失败仅显示底色）
               <TintedSvgLayer url={element.imageUrl!} color={svgTintOf(element)!} fit={element.objectFit} />
             ) : (
-            <img
-              src={element.imageUrl}
-              crossOrigin="anonymous"
-              alt=""
-              className="w-full h-full block"
-              style={{ objectFit: element.objectFit || 'cover' }}
-              draggable={false}
-              onError={(e) => {
-                // 图片加载失败时降级为占位，避免完全空白/破图
-                const tgt = e.currentTarget;
-                tgt.style.display = 'none';
-                const parent = tgt.parentElement;
-                if (parent && !parent.querySelector('[data-plog-placeholder]')) {
-                  const holder = document.createElement('div');
-                  holder.setAttribute('data-plog-placeholder', 'true');
-                  holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:linear-gradient(135deg,#e5e7eb 0%,#cbd5e1 100%);color:#475569;font-family:inherit;';
-                  holder.innerHTML = '<div style="font-size:11px;font-weight:800;letter-spacing:0.1em;opacity:0.7">图片加载失败</div><div style="font-size:10px;opacity:0.5">请检查 URL</div>';
-                  parent.appendChild(holder);
-                }
-              }}
-            />
+              <img
+                src={element.imageUrl}
+                crossOrigin="anonymous"
+                alt=""
+                className="w-full h-full block"
+                style={{ objectFit: element.objectFit || 'cover' }}
+                draggable={false}
+                onError={(e) => {
+                  // 图片加载失败时降级为占位，避免完全空白/破图
+                  const tgt = e.currentTarget;
+                  tgt.style.display = 'none';
+                  const parent = tgt.parentElement;
+                  if (parent && !parent.querySelector('[data-plog-placeholder]')) {
+                    const holder = document.createElement('div');
+                    holder.setAttribute('data-plog-placeholder', 'true');
+                    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:linear-gradient(135deg,#e5e7eb 0%,#cbd5e1 100%);color:#475569;font-family:inherit;';
+                    holder.innerHTML = '<div style="font-size:11px;font-weight:800;letter-spacing:0.1em;opacity:0.7">图片加载失败</div><div style="font-size:10px;opacity:0.5">请检查 URL</div>';
+                    parent.appendChild(holder);
+                  }
+                }}
+              />
             )
           ) : (
             <div
@@ -357,14 +357,14 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               // SVG 前景染色（asset 位图/矢量路径同样支持）
               <TintedSvgLayer url={element.imageUrl} color={svgTintOf(element)!} fit={element.objectFit || 'contain'} />
             ) : (
-            <img
-              src={element.imageUrl}
-              crossOrigin="anonymous"
-              alt=""
-              className="w-full h-full block"
-              style={{ objectFit: element.objectFit || 'contain' }}
-              draggable={false}
-            />
+              <img
+                src={element.imageUrl}
+                crossOrigin="anonymous"
+                alt=""
+                className="w-full h-full block"
+                style={{ objectFit: element.objectFit || 'contain' }}
+                draggable={false}
+              />
             )
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[10px] font-black opacity-60 tracking-widest"
@@ -396,32 +396,32 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         // 边框：与背景不同色 —— 用文字色 40% 透明度（亮文字 → 亮边框半透明，与深底对比明显）
         const badgeBorder = element.borderColor || mixColorAlpha(badgeColor, 0.4);
         return (
-        <div
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-black backdrop-blur-md border whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
-          style={{
-            backgroundColor: badgeBg,
-            color: badgeColor,
-            borderWidth: `${element.borderWidth ?? 2}px`,
-            borderColor: badgeBorder,
-            borderStyle: 'solid',
-            boxShadow: shadowOf(element.shadowLevel ?? 1),
-            whiteSpace: 'nowrap',
-            ...textInlines,
-          }}
-        >
-          {element.badgeNumber && (
-            <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
-              style={{
-                background: 'rgba(255,255,255,0.22)',
-                border: '1px solid rgba(255,255,255,0.35)',
-              }}
-            >
-              {element.badgeNumber}
-            </span>
-          )}
-          <span className="whitespace-nowrap">{element.content}</span>
-        </div>
+          <div
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-black backdrop-blur-md border whitespace-nowrap ${resolveFontClass(element.fontFamily, fontClassName)}`}
+            style={{
+              backgroundColor: badgeBg,
+              color: badgeColor,
+              borderWidth: `${element.borderWidth ?? 2}px`,
+              borderColor: badgeBorder,
+              borderStyle: 'solid',
+              boxShadow: shadowOf(element.shadowLevel ?? 1),
+              whiteSpace: 'nowrap',
+              ...textInlines,
+            }}
+          >
+            {element.badgeNumber && (
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+                style={{
+                  background: 'rgba(255,255,255,0.22)',
+                  border: '1px solid rgba(255,255,255,0.35)',
+                }}
+              >
+                {element.badgeNumber}
+              </span>
+            )}
+            <span className="whitespace-nowrap">{element.content}</span>
+          </div>
         );
       })()}
 

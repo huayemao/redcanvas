@@ -66,8 +66,9 @@ body {
   transform: rotate(-1deg);
 }
 
-/* Blockquote — SVG 引号装饰，随文字大小自适应缩放
-   用 mask-image + background-color 实现动态着色（跟随智能配色 --lt-primary-muted） */
+/* Blockquote — 精美衬线体引号装饰（Playfair Display / Georgia 杂志风），随文字大小自适应缩放
+   使用纯文字伪元素 content: '“' + color 着色（跟随智能配色 --lt-primary-muted），
+   兼具极高颜值与 100% 完美的 canvas 导出 (@zumer/snapdom) 兼容性 */
 .prose-sm blockquote,
 .prose-base blockquote {
   position: relative;
@@ -79,23 +80,18 @@ body {
 
 .prose-sm blockquote::before,
 .prose-base blockquote::before {
-  content: '';
+  content: '“';
   position: absolute;
-  left: 0.1em;
-  top: -0.15em;
-  width: 1.6em;
-  height: 1.6em;
-  background-color: var(--lt-primary-muted, currentColor);
-  opacity: 0.55;
-  transform: rotate(-180deg);
-  transform-origin: center center;
+  left: 0;
+  top: -0.25em;
+  font-family: 'Playfair Display', Georgia, 'Baskerville', 'Times New Roman', serif;
+  font-size: 3.6em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--lt-primary-muted, currentColor);
+  opacity: 0.5;
   pointer-events: none;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z' fill='black'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z' fill='black'/%3E%3C/svg%3E");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
+  user-select: none;
 }
 
 /* ---- MathJax 公式渲染（.math-block / .math-inline 由 renderMath 输出）----
