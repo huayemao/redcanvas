@@ -18,34 +18,31 @@ interface SampleSlide {
   label?: string;
 }
 
-// 安利轮播图：使用实际成品图片，sample1.png 作为其中一张
+// 安利轮播图：使用实际成品图片
 const SAMPLE_SLIDES: SampleSlide[] = [
   {
-    image: '/redcanvas/sample1.png',
+    image: '/redcanvas/花野猫的Plog制作工具-物理空间与专注力.png',
     templateId: 'classic',
-    alt: 'RedCanvas 成品示例 - 经典爆款风格封面',
-    label: '推荐 · 经典爆款',
+    alt: '花野猫的Plog制作工具 成品示例 - 物理空间与专注力',
+    label: '推荐 · 简笔画金句',
   },
   {
-    image:
-      'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=xiaohongshu%20style%20cover%20image%20minimal%20elegant%20portrait%20social%20media%20poster%20magazine%20layout%20green%20gradient%20background%20chinese%20typography%20clean&image_size=portrait_4_3',
-    templateId: 'magazine',
-    alt: 'RedCanvas 成品示例 - 时尚杂志风格封面',
-    label: '时尚杂志',
-  },
-  {
-    image:
-      'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=xiaohongshu%20cover%20minimal%20breathable%20white%20space%20elegant%20pastel%20color%20portrait%20poster%20soft%20aesthetic%20chinese%20headline%20clean%20simple%20layout&image_size=portrait_4_3',
-    templateId: 'minimal',
-    alt: 'RedCanvas 成品示例 - 呼吸极简风格封面',
-    label: '呼吸极简',
-  },
-  {
-    image:
-      'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=xiaohongshu%20cover%20bold%20typography%20black%20background%20large%20chinese%20title%20text%20high%20contrast%20impactful%20visual%20pop%20art%20red%20accent%20portrait%20poster&image_size=portrait_4_3',
+    image: '/redcanvas/花野猫的Plog制作工具-黑客与画家-深色.webp',
     templateId: 'bold',
-    alt: 'RedCanvas 成品示例 - 视觉冲击风格封面',
-    label: '视觉冲击',
+    alt: '花野猫的Plog制作工具 成品示例 - 黑客与画家 (深色卡片)',
+    label: '暗黑金句',
+  },
+  {
+    image: '/redcanvas/花野猫的Plog制作工具-黑客与画家-浅色.webp',
+    templateId: 'minimal',
+    alt: '花野猫的Plog制作工具 成品示例 - 黑客与画家 (浅色卡片)',
+    label: '极简金句',
+  },
+  {
+    image: '/redcanvas/花野猫的Plog制作工具-基本初等函数的导数公式.webp',
+    templateId: 'magazine',
+    alt: '花野猫的Plog制作工具 成品示例 - 基本初等函数的导数公式',
+    label: '知识干货',
   },
   {
     image:
