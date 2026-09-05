@@ -25,10 +25,16 @@ function isSvgSource(url?: string | null): boolean {
   return /\.svg([?#].*)?$/i.test(url);
 }
 
+/** 仅远程 http(s) URL 需要 crossOrigin="anonymous"，避免对 data: / blob: 施加无意义且容易触发报错的 CORS 限制 */
+function isRemoteUrl(url?: string | null): boolean {
+  return typeof url === 'string' && /^https?:\/\//i.test(url);
+}
+
 /** 取元素的前景染色色值；不满足条件返回 null（保持原色） */
 function svgTintOf(el: PlogElementType): string | null {
   if (!el.fgColor || el.fgColor === 'transparent') return null;
-  // asset 的 vector 分支用 content 内嵌 SVG，此处仅处理 imageUrl 渲染路径
+  if (el.assetKind === 'vector') return el.fgColor;
+  // asset 的 vector 分支用 content 内嵌 SVG，此处处理 imageUrl 渲染路径
   return isSvgSource(el.imageUrl) ? el.fgColor : null;
 }
 
@@ -267,22 +273,51 @@ export const PlogElement: React.FC<PlogElementProps> = ({
             ) : (
               <img
                 src={element.imageUrl}
-                crossOrigin="anonymous"
+                crossOrigin={isRemoteUrl(element.imageUrl) ? 'anonymous' : undefined}
                 alt=""
                 className="w-full h-full block"
                 style={{ objectFit: element.objectFit || 'cover' }}
                 draggable={false}
                 onError={(e) => {
-                  // 图片加载失败时降级为占位，避免完全空白/破图
                   const tgt = e.currentTarget;
-                  tgt.style.display = 'none';
-                  const parent = tgt.parentElement;
-                  if (parent && !parent.querySelector('[data-plog-placeholder]')) {
-                    const holder = document.createElement('div');
-                    holder.setAttribute('data-plog-placeholder', 'true');
-                    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:linear-gradient(135deg,#e5e7eb 0%,#cbd5e1 100%);color:#475569;font-family:inherit;';
-                    holder.innerHTML = '<div style="font-size:11px;font-weight:800;letter-spacing:0.1em;opacity:0.7">图片加载失败</div><div style="font-size:10px;opacity:0.5">请检查 URL</div>';
-                    parent.appendChild(holder);
+                  const src = element.imageUrl;
+                  // 自愈机制：若加载失败的图源为 blob: URL 且其实是 SVG（如旧快照导入或缺少 MIME），
+                  // 尝试读取并转为标准的 data:image/svg+xml Data URL，自动恢复渲染并写回 store
+                  if (src && src.startsWith('blob:')) {
+                    fetch(src)
+                      .then((res) => res.blob())
+                      .then(async (blob) => {
+                        const text = await blob.slice(0, 300).text();
+                        if (text.includes('<svg') || text.includes('<?xml')) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = String(reader.result || '');
+                            if (dataUrl) {
+                              updateElement(element.id, { imageUrl: dataUrl });
+                            }
+                          };
+                          reader.readAsDataURL(blob);
+                          return;
+                        }
+                        showPlaceholder();
+                      })
+                      .catch(() => showPlaceholder());
+                    return;
+                  }
+                  showPlaceholder();
+
+                  function showPlaceholder() {
+                    tgt.style.display = 'none';
+                    const parent = tgt.parentElement;
+                    if (parent && !parent.querySelector('[data-plog-placeholder]')) {
+                      const holder = document.createElement('div');
+                      holder.setAttribute('data-plog-placeholder', 'true');
+                      holder.style.cssText =
+                        'width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:linear-gradient(135deg,#e5e7eb 0%,#cbd5e1 100%);color:#475569;font-family:inherit;';
+                      holder.innerHTML =
+                        '<div style="font-size:11px;font-weight:800;letter-spacing:0.1em;opacity:0.7">图片加载失败</div><div style="font-size:10px;opacity:0.5">请检查 URL</div>';
+                      parent.appendChild(holder);
+                    }
                   }
                 }}
               />
@@ -359,11 +394,32 @@ export const PlogElement: React.FC<PlogElementProps> = ({
             ) : (
               <img
                 src={element.imageUrl}
-                crossOrigin="anonymous"
+                crossOrigin={isRemoteUrl(element.imageUrl) ? 'anonymous' : undefined}
                 alt=""
                 className="w-full h-full block"
                 style={{ objectFit: element.objectFit || 'contain' }}
                 draggable={false}
+                onError={() => {
+                  const src = element.imageUrl;
+                  if (src && src.startsWith('blob:')) {
+                    fetch(src)
+                      .then((res) => res.blob())
+                      .then(async (blob) => {
+                        const text = await blob.slice(0, 300).text();
+                        if (text.includes('<svg') || text.includes('<?xml')) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = String(reader.result || '');
+                            if (dataUrl) {
+                              updateElement(element.id, { imageUrl: dataUrl });
+                            }
+                          };
+                          reader.readAsDataURL(blob);
+                        }
+                      })
+                      .catch(() => {});
+                  }
+                }}
               />
             )
           ) : (

@@ -245,10 +245,34 @@ export async function loadStudioConfig(): Promise<PersistSnapshot | null> {
       const key = ref.slice(IDB_SCHEME.length);
       const blob = await idbGet<Blob>(db, ASSETS_STORE, key);
       if (blob) {
-        const blobUrl = URL.createObjectURL(blob);
-        refToBlobUrl.set(ref, blobUrl);
-        // 缓存：新 blob URL → 原 key（下次保存时复用，避免重复 fetch/hash）
-        urlToKeyCache.set(blobUrl, key);
+        let isSvg = blob.type === 'image/svg+xml' || key.endsWith('.svg');
+        if (!isSvg && blob.size < 500000) {
+          try {
+            const head = await blob.slice(0, 200).text();
+            if (head.includes('<svg') || head.includes('<?xml')) {
+              isSvg = true;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+
+        if (isSvg) {
+          // SVG 恢复为 Data URL，使 isSvgSource / isSvgUrl / CSS mask 能识别并正常渲染
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => resolve(URL.createObjectURL(blob));
+            reader.readAsDataURL(blob);
+          });
+          refToBlobUrl.set(ref, dataUrl);
+          urlToKeyCache.set(dataUrl, key);
+        } else {
+          const blobUrl = URL.createObjectURL(blob);
+          refToBlobUrl.set(ref, blobUrl);
+          // 缓存：新 blob URL → 原 key（下次保存时复用，避免重复 fetch/hash）
+          urlToKeyCache.set(blobUrl, key);
+        }
       }
     }
 

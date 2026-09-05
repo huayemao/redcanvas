@@ -643,7 +643,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   detectImageRatio: (url) => {
     if (!url || typeof window === 'undefined') return;
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (/^https?:\/\//i.test(url)) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       const w = img.naturalWidth;
       const h = img.naturalHeight;
@@ -860,7 +862,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (!url) return;
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (/^https?:\/\//i.test(url)) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       const w = img.naturalWidth;
       const h = img.naturalHeight;

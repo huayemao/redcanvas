@@ -31,6 +31,10 @@ function collectAssetUrls(root: unknown): string[] {
   return Array.from(urls);
 }
 
+function normalizeAssetPath(p: string): string {
+  return p.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
 /** 递归把对象里名为 url/imageUrl 的字符串字段，按 map 替换 */
 function remapAssetFields<T>(obj: T, map: Map<string, string>): T {
   if (obj === null || obj === undefined) return obj;
@@ -40,8 +44,15 @@ function remapAssetFields<T>(obj: T, map: Map<string, string>): T {
   if (typeof obj === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      if ((k === 'url' || k === 'imageUrl') && typeof v === 'string' && map.has(v)) {
-        out[k] = map.get(v);
+      if ((k === 'url' || k === 'imageUrl') && typeof v === 'string') {
+        const norm = normalizeAssetPath(v);
+        if (map.has(v)) {
+          out[k] = map.get(v);
+        } else if (map.has(norm)) {
+          out[k] = map.get(norm);
+        } else {
+          out[k] = v;
+        }
       } else {
         out[k] = remapAssetFields(v, map);
       }
@@ -51,17 +62,43 @@ function remapAssetFields<T>(obj: T, map: Map<string, string>): T {
   return obj;
 }
 
-/** 从 Blob 的 mime 推断扩展名；未知时回退 png */
-function extFromBlob(blob: Blob): string {
+/** 从 Blob 的 mime 或 URL 推断扩展名；未知时回退 png */
+function extFromBlob(blob: Blob, url?: string): string {
+  if (url && (/^data:image\/svg/i.test(url) || /\.svg([?#].*)?$/i.test(url))) {
+    return 'svg';
+  }
   const t = blob.type.toLowerCase();
   if (t === 'image/jpeg' || t === 'image/jpg') return 'jpg';
   if (t === 'image/png') return 'png';
   if (t === 'image/gif') return 'gif';
   if (t === 'image/webp') return 'webp';
-  if (t === 'image/svg+xml') return 'svg';
+  if (t === 'image/svg+xml' || t === 'text/xml+svg') return 'svg';
   if (t === 'image/avif') return 'avif';
+  if (url) {
+    const match = url.match(/\.([a-z0-9]+)(?:[?#]|$)/i);
+    if (match) {
+      const ext = match[1].toLowerCase();
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(ext)) {
+        return ext === 'jpeg' ? 'jpg' : ext;
+      }
+    }
+  }
   // 兜底
   return 'png';
+}
+
+function mimeFromPath(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'svg': return 'image/svg+xml';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'gif': return 'image/gif';
+    case 'webp': return 'image/webp';
+    case 'avif': return 'image/avif';
+    default: return 'application/octet-stream';
+  }
 }
 
 /**
@@ -88,7 +125,7 @@ export async function packConfigZip(
       const blob = await res.blob();
       // 跳过空 blob
       if (blob.size === 0) throw new Error('empty blob');
-      const ext = extFromBlob(blob);
+      const ext = extFromBlob(blob, url);
       const zipPath = `assets/img-${idx}.${ext}`;
       zip.file(zipPath, blob);
       urlToZipPath.set(url, zipPath);
@@ -114,7 +151,7 @@ export async function packConfigZip(
 /**
  * 从 ZIP Blob 解出 snapshot。
  * - 读 config.json（v1 单页 / v2 多页项目均支持）
- * - 把 assets/* 资源转成 blob URL，回填到 snapshot 的 url/imageUrl
+ * - 把 assets/* 资源转成 blob URL / data URL，回填到 snapshot 的 url/imageUrl
  * - 找不到 config.json 或 __type 不合法 → 返回 null
  */
 export async function unpackConfigZip(
@@ -137,22 +174,37 @@ export async function unpackConfigZip(
     return null;
   }
 
-  // 收集所有 assets/* 文件，建立 zipPath → blobUrl
+  // 收集所有 assets/* 文件，建立 zipPath → blobUrl / dataUrl
   const zipPathToBlobUrl = new Map<string, string>();
   const assetEntries = Object.entries(zip.files).filter(
-    ([path, f]) => !f.dir && path.startsWith('assets/'),
+    ([path, f]) => !f.dir && path.replace(/\\/g, '/').startsWith('assets/'),
   );
-  for (const [path, f] of assetEntries) {
+  for (const [rawPath, f] of assetEntries) {
+    const path = rawPath.replace(/\\/g, '/');
     try {
-      const ab = await f.async('blob');
-      const blobUrl = URL.createObjectURL(ab);
-      zipPathToBlobUrl.set(path, blobUrl);
+      if (path.toLowerCase().endsWith('.svg')) {
+        // SVG 特殊处理：转为标准 data:image/svg+xml Data URL
+        // 1. 规避 JSZip 默认 blob.type 为空导致浏览器 <img> 拒绝渲染 SVG（XML 需显式 MIME）
+        // 2. data:image/svg 前缀使 isSvgSource / isSvgUrl 能准确识别为 SVG，保留前景色染色与侧边栏控制项
+        // 3. 与用户手动上传 SVG 时的行为（ElementsControlTab 中转存为 data URL）保持完全一致
+        const base64 = await f.async('base64');
+        const dataUrl = `data:image/svg+xml;base64,${base64}`;
+        zipPathToBlobUrl.set(rawPath, dataUrl);
+        zipPathToBlobUrl.set(path, dataUrl);
+      } else {
+        const mime = mimeFromPath(path);
+        const ab = await f.async('blob');
+        const blob = ab.type === mime ? ab : ab.slice(0, ab.size, mime);
+        const blobUrl = URL.createObjectURL(blob);
+        zipPathToBlobUrl.set(rawPath, blobUrl);
+        zipPathToBlobUrl.set(path, blobUrl);
+      }
     } catch {
       // 单个资源失败跳过
     }
   }
 
-  // 把 snapshot 里所有以 assets/ 开头的 url/imageUrl 替换为 blobUrl
+  // 把 snapshot 里所有以 assets/ 开头的 url/imageUrl 替换为 blobUrl / dataUrl
   const remapped = remapAssetFields(snapshot, zipPathToBlobUrl);
   return remapped;
 }
