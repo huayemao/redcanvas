@@ -82,6 +82,16 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     extractedColors?.primaryMuted ||
     mixColorAlpha(accent, 0.35);
 
+  const tableBorder = effColor
+    ? mixColorAlpha(effColor, 0.28)
+    : 'rgba(128, 128, 128, 0.3)';
+  const tableHeaderBg = effColor
+    ? mixColorAlpha(effColor, 0.12)
+    : 'rgba(128, 128, 128, 0.12)';
+  const tableStripeBg = effColor
+    ? mixColorAlpha(effColor, 0.04)
+    : 'rgba(128, 128, 128, 0.04)';
+
   // —— 是否"卡片模式"：仅用户显式给了 bgColor 才算卡片（没给则融入背景，不画外壳）
   const isCardMode = !!element.bgColor;
 
@@ -102,6 +112,9 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '--lt-accent': accent,            // 链接
     '--lt-emphasis': emphasis,        // 加粗关键词
     '--lt-primary-muted': primaryMuted, // 引用边框 / 分隔线
+    '--lt-table-border': tableBorder,   // 表格网格框线
+    '--lt-table-header-bg': tableHeaderBg, // 表头背景微高亮
+    '--lt-table-stripe-bg': tableStripeBg, // 偶数行轻微斑马纹
     '--lt-line-height': element.lineHeight !== undefined ? String(element.lineHeight) : undefined,
   } as React.CSSProperties;
 
@@ -127,6 +140,12 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-primary-muted)]',
     // 引用块：SVG 引号装饰 + 斜体（样式在 globals.css 中定义，em 单位随文字自适应）
     '[&_blockquote]:border-0 [&_blockquote]:italic',
+    // 表格：清晰框线 + 表头区分 + 单元格边距 + 垂直居中
+    '[&_table]:w-full [&_table]:border-collapse [&_table]:my-3',
+    '[&_thead]:bg-[var(--lt-table-header-bg)]',
+    '[&_th]:border [&_th]:border-[var(--lt-table-border)] [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:align-middle',
+    '[&_td]:border [&_td]:border-[var(--lt-table-border)] [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle',
+    '[&_tbody_tr:nth-child(even)]:bg-[var(--lt-table-stripe-bg)]',
   ].join(' ');
 
   return (

@@ -20,6 +20,8 @@ export const resolveFontClass = (
 /** 给 6 位/8 位 hex 或 rgb(...) 色加 alpha；失败原样返回 */
 export function mixColorAlpha(color: string, alpha: number): string {
   try {
+    if (color === 'white') color = '#ffffff';
+    if (color === 'black') color = '#000000';
     if (color.startsWith('#')) {
       let hex = color.slice(1);
       if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');

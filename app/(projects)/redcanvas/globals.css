@@ -94,6 +94,63 @@ body {
   user-select: none;
 }
 
+/* ---- Markdown 表格增强（Plog 长文本 / Markdown 表格）----
+ * 单元格网格框线、表头区分、单元格间距与垂直居中，以及对齐属性兼容 */
+.prose-sm table,
+.prose-base table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  border: 1px solid var(--lt-table-border, rgba(128, 128, 128, 0.3));
+}
+
+.prose-sm thead,
+.prose-base thead {
+  background-color: var(--lt-table-header-bg, rgba(128, 128, 128, 0.12));
+}
+
+.prose-sm th,
+.prose-base th {
+  border: 1px solid var(--lt-table-border, rgba(128, 128, 128, 0.3));
+  border-bottom: 2px solid var(--lt-table-border, rgba(128, 128, 128, 0.45));
+  padding: 0.55em 0.85em;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.prose-sm td,
+.prose-base td {
+  border: 1px solid var(--lt-table-border, rgba(128, 128, 128, 0.25));
+  padding: 0.55em 0.85em;
+  vertical-align: middle;
+}
+
+.prose-sm tbody tr:nth-child(even),
+.prose-base tbody tr:nth-child(even) {
+  background-color: var(--lt-table-stripe-bg, rgba(128, 128, 128, 0.04));
+}
+
+.prose-sm th[align="center"],
+.prose-sm td[align="center"],
+.prose-base th[align="center"],
+.prose-base td[align="center"] {
+  text-align: center;
+}
+
+.prose-sm th[align="right"],
+.prose-sm td[align="right"],
+.prose-base th[align="right"],
+.prose-base td[align="right"] {
+  text-align: right;
+}
+
+.prose-sm th[align="left"],
+.prose-sm td[align="left"],
+.prose-base th[align="left"],
+.prose-base td[align="left"] {
+  text-align: left;
+}
+
 /* ---- MathJax 公式渲染（.math-block / .math-inline 由 renderMath 输出）----
  * v4 开启 displayOverflow:'linebreak' 后长公式按容器宽自动折行；
  * 禁止出现水平滚动条（overflow-x:hidden），超长公式必须通过 MathJax 原生 linebreak 折行；
