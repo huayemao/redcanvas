@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { PlogElement } from '../../types';
 import { FONTS, PRESET_COLORS } from '../../constants';
+import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
 
 type ShadowOption = { value: 0 | 1 | 2 | 3 | 4; label: string };
 const SHADOW_OPTIONS: ShadowOption[] = [
@@ -260,6 +261,13 @@ export const ElementPropertyPanel: React.FC = () => {
 
   const selected = floatingElements.find((e) => e.id === selectedElementId) || null;
   if (!selected) return null;
+
+  const bgElement = floatingElements.find((e) => e.type === 'background');
+  const canvasBgHex = bgElement?.bgColor || '#251817';
+  const isDarkCanvas = getColorLuminance(parseRgbColor(canvasBgHex) || [37, 24, 23]) < 0.45;
+  const canvasTextColor =
+    floatingElements.find((e) => (e.type === 'text' || e.type === 'longtext') && e.color)?.color ||
+    (isDarkCanvas ? '#F7F3EC' : '#111827');
 
   const update = (partial: Partial<PlogElement>) => {
     updateFloatingElement(selected.id, partial);
@@ -500,21 +508,122 @@ export const ElementPropertyPanel: React.FC = () => {
               />
             ) : null}
             <ColorField
-              label="背景色(无图时)"
-              value={selected.bgColor || 'transparent'}
+              label="图片底色"
+              value={selected.bgColor ?? 'transparent'}
               onChange={(v) => update({ bgColor: v })}
             />
-            {isSvgUrl(selected.imageUrl) && (
-              <>
+            <p className="text-[10px] text-white/40 font-medium -mt-1 mb-2 leading-relaxed">
+              默认为透明；如需为透明 SVG / PNG 添加衬底可在此选择底色。
+            </p>
+            {(isSvgUrl(selected.imageUrl) || (selected.type === 'asset' && selected.assetKind === 'vector')) && (
+              <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white/85">SVG 前景色染色</span>
+                  {selected.fgColor && selected.fgColor !== 'transparent' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-red-500/15 text-red-400 border border-red-500/30">
+                      {selected.fgColor === 'currentColor' ? '跟随正文' : selected.fgColor}
+                    </span>
+                  )}
+                </div>
+
+                {/* 快捷推荐预设色 */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { label: '跟随正文', val: 'currentColor', color: canvasTextColor },
+                    { label: '原色', val: 'transparent', color: 'transparent', isOriginal: true },
+                    { label: '纯白', val: '#ffffff', color: '#ffffff' },
+                    { label: '墨黑', val: '#000000', color: '#000000' },
+                    { label: '科技蓝', val: '#2563eb', color: '#2563eb' },
+                    { label: '典雅紫', val: '#7c3aed', color: '#7c3aed' },
+                    { label: '翡翠绿', val: '#059669', color: '#059669' },
+                    { label: '珊瑚红', val: '#e11d48', color: '#e11d48' },
+                    { label: '琥珀橙', val: '#d97706', color: '#d97706' },
+                  ].map((p) => {
+                    const isSelected = (selected.fgColor || 'transparent').toLowerCase() === p.val.toLowerCase();
+                    return (
+                      <button
+                        key={p.val}
+                        type="button"
+                        onClick={() => update({ fgColor: p.val })}
+                        className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${
+                          isSelected
+                            ? 'border-white/40 bg-white/15 text-white shadow-sm'
+                            : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.07]'
+                        }`}
+                        title={p.label}
+                      >
+                        {p.isOriginal ? (
+                          <span className="w-2.5 h-2.5 rounded-full border border-dashed border-white/40 inline-block" />
+                        ) : (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border border-black/20 inline-block shrink-0 shadow-sm"
+                            style={{ backgroundColor: p.color }}
+                          />
+                        )}
+                        <span>{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <ColorField
-                  label="前景色(SVG)"
-                  value={selected.fgColor || 'transparent'}
+                  label="自定义前景色"
+                  value={selected.fgColor === 'currentColor' ? canvasTextColor : (selected.fgColor || 'transparent')}
                   onChange={(v) => update({ fgColor: v })}
                 />
+
+                {selected.fgColor && selected.fgColor !== 'transparent' && (
+                  <>
+                    <SegmentField
+                      label="染色模式"
+                      value={(selected.svgColorMode ?? 'tonal') as 'tonal' | 'flat'}
+                      options={[
+                        { value: 'tonal', label: '层次调色 (保留阴影细节)' },
+                        { value: 'flat', label: '单色剪影 (扁平平涂)' },
+                      ]}
+                      onChange={(v) => update({ svgColorMode: v })}
+                    />
+
+                    {(selected.svgColorMode ?? 'tonal') === 'tonal' && (
+                      <>
+                        <SegmentField
+                          label="底色适配"
+                          value={selected.svgInvert === undefined ? 'auto' : selected.svgInvert ? 'dark' : 'light'}
+                          options={[
+                            { value: 'auto', label: '智能识别 (推荐)' },
+                            { value: 'dark', label: '深色卡片' },
+                            { value: 'light', label: '浅色卡片' },
+                          ]}
+                          onChange={(v) => {
+                            if (v === 'auto') update({ svgInvert: undefined });
+                            else if (v === 'dark') update({ svgInvert: true });
+                            else update({ svgInvert: false });
+                          }}
+                        />
+
+                        <SegmentField
+                          label="阴影与截面浓度"
+                          value={selected.svgShadingDepth ?? 1.15}
+                          options={[
+                            { value: 0.8, label: '柔和淡雅' },
+                            { value: 1.15, label: '标准适中' },
+                            { value: 1.5, label: '浓郁深沉' },
+                          ]}
+                          onChange={(v) => update({ svgShadingDepth: Number(v) })}
+                        />
+                      </>
+                    )}
+                  </>
+                )}
+
                 <p className="mt-1 text-[10px] text-white/40 font-medium leading-relaxed">
-                  将整张 SVG 染为单色前景；设为透明则保持原图配色。
+                  {selected.fgColor && selected.fgColor !== 'transparent'
+                    ? (selected.svgColorMode ?? 'tonal') === 'tonal'
+                      ? '智能分层调色：自适应保留 3D 切片、圆柱壳面与积分阴影的深色立体感，镂空中空部位自动与底色融合，不会泛白或压平为单一色块。'
+                      : '单色剪影会将整张 SVG 作为纯色遮罩平涂，适合极简单色扁平图标。'
+                    : '设为透明则保持原图配色；选择颜色可自定义前景色基调。'}
                 </p>
-              </>
+              </div>
             )}
           </Section>
         </>
@@ -611,6 +720,151 @@ export const ElementPropertyPanel: React.FC = () => {
                 />
               </div>
             )}
+          </Section>
+          <Section title="Markdown 插图 / SVG 染色">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white/85">插图矢量前景色</span>
+                {selected.fgColor && selected.fgColor !== 'transparent' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-red-500/15 text-red-400 border border-red-500/30">
+                    {selected.fgColor === 'currentColor' ? '跟随文字' : selected.fgColor}
+                  </span>
+                )}
+              </div>
+
+              {/* 快捷推荐预设色 */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { label: '跟随正文', val: 'currentColor', color: selected.color || '#ffffff' },
+                  { label: '原色保持', val: 'transparent', color: 'transparent', isOriginal: true },
+                  { label: '纯白', val: '#ffffff', color: '#ffffff' },
+                  { label: '墨黑', val: '#000000', color: '#000000' },
+                  { label: '科技蓝', val: '#2563eb', color: '#2563eb' },
+                  { label: '典雅紫', val: '#7c3aed', color: '#7c3aed' },
+                  { label: '翡翠绿', val: '#059669', color: '#059669' },
+                  { label: '珊瑚红', val: '#e11d48', color: '#e11d48' },
+                  { label: '琥珀橙', val: '#d97706', color: '#d97706' },
+                ].map((p) => {
+                  const currentVal = selected.fgColor || 'currentColor';
+                  const isSelected = currentVal.toLowerCase() === p.val.toLowerCase();
+                  return (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => update({ fgColor: p.val })}
+                      className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${
+                        isSelected
+                          ? 'border-white/40 bg-white/15 text-white shadow-sm'
+                          : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.07]'
+                      }`}
+                      title={p.label}
+                    >
+                      {p.isOriginal ? (
+                        <span className="w-2.5 h-2.5 rounded-full border border-dashed border-white/40 inline-block" />
+                      ) : (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-black/20 inline-block shrink-0 shadow-sm"
+                          style={{ backgroundColor: p.color }}
+                        />
+                      )}
+                      <span>{p.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <ColorField
+                label="自定义插图前景色"
+                value={selected.fgColor === 'currentColor' ? (selected.color || '#111827') : (selected.fgColor || 'transparent')}
+                onChange={(v) => update({ fgColor: v })}
+              />
+
+              {selected.fgColor !== 'transparent' && (
+                <>
+                  <SegmentField
+                    label="染色模式"
+                    value={(selected.svgColorMode ?? 'tonal') as 'tonal' | 'flat'}
+                    options={[
+                      { value: 'tonal', label: '层次调色 (保留阴影细节)' },
+                      { value: 'flat', label: '单色剪影 (扁平平涂)' },
+                    ]}
+                    onChange={(v) => update({ svgColorMode: v })}
+                  />
+
+                  {(selected.svgColorMode ?? 'tonal') === 'tonal' && (
+                    <>
+                      <SegmentField
+                        label="底色适配"
+                        value={selected.svgInvert === undefined ? 'auto' : selected.svgInvert ? 'dark' : 'light'}
+                        options={[
+                          { value: 'auto', label: '智能识别 (推荐)' },
+                          { value: 'dark', label: '深色卡片' },
+                          { value: 'light', label: '浅色卡片' },
+                        ]}
+                        onChange={(v) => {
+                          if (v === 'auto') update({ svgInvert: undefined });
+                          else if (v === 'dark') update({ svgInvert: true });
+                          else update({ svgInvert: false });
+                        }}
+                      />
+
+                      <SegmentField
+                        label="阴影与截面浓度"
+                        value={selected.svgShadingDepth ?? 1.15}
+                        options={[
+                          { value: 0.8, label: '柔和淡雅' },
+                          { value: 1.15, label: '标准适中' },
+                          { value: 1.5, label: '浓郁深沉' },
+                        ]}
+                        onChange={(v) => update({ svgShadingDepth: Number(v) })}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* 快捷插入 Markdown 图片语法 */}
+              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = selected.content || '';
+                    const addition = '\n\n![真题题解图](/真题题解图.svg)\n';
+                    update({ content: current + addition });
+                  }}
+                  className="px-2 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white border border-white/[0.08] text-[10px] font-bold transition-all"
+                >
+                  + 插入题解图示例
+                </button>
+
+                <label className="px-2 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white border border-white/[0.08] text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1">
+                  <Upload className="w-3 h-3" />
+                  <span>上传并插入图片</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const url = String(reader.result || '');
+                        const name = file.name.replace(/\.[^/.]+$/, '');
+                        const addition = `\n\n![${name}](${url})\n`;
+                        update({ content: (selected.content || '') + addition });
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+              </div>
+
+              <p className="mt-1 text-[10px] text-white/40 font-medium leading-relaxed">
+                正文可通过 <code className="text-white/60 bg-white/10 px-1 py-0.5 rounded">![说明](/路径.svg)</code> 插入任意矢量图，系统将自动应用上述调色配置。
+              </p>
+            </div>
           </Section>
         </>
       )}

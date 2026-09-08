@@ -5,6 +5,7 @@ import { useStudioStore } from '../../store/useStudioStore';
 import { FONTS } from '../../constants';
 import { PlogElement as PlogElementType } from '../../types';
 import { PlogElement } from '../plog/PlogElement';
+import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
 
 interface StudioCanvasProps {
   onEditElement?: () => void;
@@ -140,22 +141,33 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         {/* =============================================================
             画布 = 一组可拖拽的自由元素（background 除外，已作为容器底层渲染）
            ============================================================= */}
-        {floatingOnly.map((el) => (
-          <PlogElement
-            key={el.id}
-            element={el}
-            containerRef={containerRef}
-            fontClassName={fontConfig.className}
-            selectedId={selectedElementId}
-            extractedColors={extractedColors}
-            onEditElement={onEditElement}
-            actions={{
-              setSelectedElementId,
-              updateElement: updateFloatingElement,
-              removeElement: removeFloatingElement,
-            }}
-          />
-        ))}
+        {(() => {
+          const effCanvasBg = effBgType === 'color' ? effBgColor : effGradientStart;
+          const canvasTextColor =
+            floatingOnly.find((e) => (e.type === 'text' || e.type === 'longtext') && e.color)?.color ||
+            extractedColors?.textPrimary ||
+            extractedColors?.textSecondary ||
+            (getColorLuminance(parseRgbColor(effCanvasBg) || [15, 23, 42]) < 0.45 ? '#F7F3EC' : '#111827');
+
+          return floatingOnly.map((el) => (
+            <PlogElement
+              key={el.id}
+              element={el}
+              containerRef={containerRef}
+              canvasBg={effCanvasBg}
+              canvasTextColor={canvasTextColor}
+              fontClassName={fontConfig.className}
+              selectedId={selectedElementId}
+              extractedColors={extractedColors}
+              onEditElement={onEditElement}
+              actions={{
+                setSelectedElementId,
+                updateElement: updateFloatingElement,
+                removeElement: removeFloatingElement,
+              }}
+            />
+          ));
+        })()}
       </div>
     </div>
   );

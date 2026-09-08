@@ -109,7 +109,10 @@ export interface PlogElement {
   borderRadius?: number;             // 圆角 px（图片/卡片等）
   shadowLevel?: 0 | 1 | 2 | 3 | 4;   // 预设阴影等级（0=无，越大越重）
   objectFit?: 'cover' | 'contain' | 'fill' | 'none';
-  fgColor?: string;                  // 前景色：仅 SVG 图源生效，整图单色染色（mask）；未设置/transparent = 保持原色
+  fgColor?: string;                  // 前景色：仅 SVG 图源生效；未设置/transparent = 保持原色
+  svgColorMode?: 'tonal' | 'flat';   // SVG 染色模式：'tonal' 保持层次与明度梯度（默认），'flat' 单色剪影
+  svgInvert?: boolean;               // 暗底适配：将黑线白底反转为浅线深底（留空根据画布明暗自动判定）
+  svgShadingDepth?: number;          // 阴影与截面浓度倍率（默认 1.15，范围 0.5-2.0）
   borderWidth?: number;              // 边框 px（配合 borderColor）
   aspectRatio?: number;              // 原图自然宽高比（naturalWidth / naturalHeight）。有值时：宽高锁定比例，height=width/ratio
 

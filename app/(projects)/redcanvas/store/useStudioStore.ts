@@ -611,6 +611,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         borderRadius: 14,
         shadowLevel: 3,
         objectFit: 'contain',
+        bgColor: 'transparent',
       };
       set((state) => ({
         floatingElements: [...state.floatingElements, newImageEl],
@@ -1240,6 +1241,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           borderRadius: 0,
           shadowLevel: 0,
           objectFit: 'contain',
+          bgColor: 'transparent',
         };
         break;
       case 'longtext':
@@ -1284,6 +1286,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           borderRadius: 0,
           shadowLevel: 0,
           objectFit: 'contain',
+          bgColor: 'transparent',
         };
         break;
       case 'badge':

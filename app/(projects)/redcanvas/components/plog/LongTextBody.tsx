@@ -4,6 +4,11 @@ import React from 'react';
 import { PlogElement as PlogElementType, ExtractedColors } from '../../types';
 import { shadowOf, resolveFontClass, mixColorAlpha } from './elementUtils';
 import { typesetMathInElement } from './mathRender';
+import {
+  isSvgSource,
+  getRecoloredSvgDataUrl,
+  getCachedRecoloredSvgDataUrl,
+} from '../../lib/svgRecolor';
 
 // ============================================================================
 //  LongTextBody：负责"长文字 + Markdown + 智能配色 + 默认融入背景"
@@ -11,6 +16,7 @@ import { typesetMathInElement } from './mathRender';
 //  - 仅当用户显式设置 bgColor 时：渲染卡片外壳（背景 + 圆角 + 阴影）
 //  - 文字颜色：用户显式 element.color > 智能配色 palette.textSecondary > 中性色
 //  - 链接/引用/strong 强调色：智能配色 palette.accent
+//  - 支持 Markdown 内嵌 SVG 图片的自适应调色与阴影深度控制
 // ============================================================================
 interface LongTextBodyProps {
   element: PlogElementType;
@@ -18,6 +24,8 @@ interface LongTextBodyProps {
   textInlines: React.CSSProperties;
   extractedColors: ExtractedColors | null;
   renderedMd: string;
+  effectiveBg?: string;
+  canvasTextColor?: string;
 }
 
 export const LongTextBody: React.FC<LongTextBodyProps> = ({
@@ -26,6 +34,8 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
   textInlines,
   extractedColors,
   renderedMd,
+  effectiveBg,
+  canvasTextColor,
 }) => {
   const bodyRef = React.useRef<HTMLDivElement>(null);
   // 记录"上次写入 DOM 的 Markdown 内容"。
@@ -146,7 +156,73 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '[&_th]:border [&_th]:border-[var(--lt-table-border)] [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:align-middle',
     '[&_td]:border [&_td]:border-[var(--lt-table-border)] [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle',
     '[&_tbody_tr:nth-child(even)]:bg-[var(--lt-table-stripe-bg)]',
+    // 插图：最大宽度、圆角、居中
+    '[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-3 [&_img]:mx-auto [&_img]:block',
   ].join(' ');
+
+  // —— Markdown 内嵌 SVG 图片智能染色（支持与文字同色/自定义前景色、深浅底色适配与阴影深度）
+  React.useEffect(() => {
+    const root = bodyRef.current;
+    if (!root) return;
+
+    const imgs = root.querySelectorAll<HTMLImageElement>('img');
+    if (imgs.length === 0) return;
+
+    const shouldRecolor = !!element.fgColor && element.fgColor !== 'transparent';
+    const targetFg = element.fgColor === 'currentColor'
+      ? (canvasTextColor || effColor || '#ffffff')
+      : element.fgColor;
+
+    let cancelled = false;
+
+    imgs.forEach(async (img) => {
+      let rawSrc = img.getAttribute('data-raw-src');
+      if (!rawSrc) {
+        rawSrc = img.getAttribute('src') || '';
+        if (rawSrc) img.setAttribute('data-raw-src', rawSrc);
+      }
+      if (!rawSrc || !isSvgSource(rawSrc)) return;
+
+      if (!shouldRecolor || !targetFg) {
+        if (img.src !== rawSrc) img.src = rawSrc;
+        return;
+      }
+
+      const options = {
+        invert: element.svgInvert,
+        bgColor: effectiveBg,
+        shadingDepth: element.svgShadingDepth ?? 1.15,
+        colorMode: element.svgColorMode ?? 'tonal',
+      };
+
+      try {
+        const cached = getCachedRecoloredSvgDataUrl(rawSrc, targetFg, options);
+        if (cached) {
+          if (img.src !== cached) img.src = cached;
+          return;
+        }
+
+        const recolored = await getRecoloredSvgDataUrl(rawSrc, targetFg, options);
+        if (!cancelled && img.getAttribute('data-raw-src') === rawSrc) {
+          img.src = recolored;
+        }
+      } catch {
+        if (!cancelled && img.src !== rawSrc) img.src = rawSrc;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    renderedMd,
+    element.fgColor,
+    element.svgColorMode,
+    element.svgInvert,
+    element.svgShadingDepth,
+    effectiveBg,
+    effColor,
+  ]);
 
   return (
     <div

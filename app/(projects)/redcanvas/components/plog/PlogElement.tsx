@@ -13,29 +13,22 @@ import { TimestampBlock } from './TimestampBlock';
 import { ElementToolbar } from './ElementToolbar';
 import { mdRenderer, ensureMathBlockParagraph } from './mathRender';
 
-// ============================================================================
-// SVG 前景色染色（CSS mask 方案）
-// - 用 SVG 图源作为遮罩，backgroundColor 即为前景色，整图单色染色
-// - fgColor 未设置 / transparent = 保持原色，走普通 <img> 渲染
-// ============================================================================
-/** 判断图源地址是否为 SVG：data:image/svg 开头，或路径以 .svg 结尾 */
-function isSvgSource(url?: string | null): boolean {
-  if (!url) return false;
-  if (/^data:image\/svg/i.test(url)) return true;
-  return /\.svg([?#].*)?$/i.test(url);
-}
+import {
+  isSvgSource,
+  recolorMonochromeSvg,
+  useRecoloredSvg,
+  parseRgbColor,
+  getColorLuminance,
+} from '../../lib/svgRecolor';
 
+// ============================================================================
+// SVG 前景色染色方案：
+// 1. tonal 模式（默认）：智能保持灰度阶梯、阴影、截面与公式文字层次，映射为目标前景色
+// 2. flat 模式：单色剪影遮罩（原 CSS mask 方案，适合纯色扁平图标）
+// ============================================================================
 /** 仅远程 http(s) URL 需要 crossOrigin="anonymous"，避免对 data: / blob: 施加无意义且容易触发报错的 CORS 限制 */
 function isRemoteUrl(url?: string | null): boolean {
   return typeof url === 'string' && /^https?:\/\//i.test(url);
-}
-
-/** 取元素的前景染色色值；不满足条件返回 null（保持原色） */
-function svgTintOf(el: PlogElementType): string | null {
-  if (!el.fgColor || el.fgColor === 'transparent') return null;
-  if (el.assetKind === 'vector') return el.fgColor;
-  // asset 的 vector 分支用 content 内嵌 SVG，此处处理 imageUrl 渲染路径
-  return isSvgSource(el.imageUrl) ? el.fgColor : null;
 }
 
 /** objectFit → CSS mask-size 映射 */
@@ -48,7 +41,7 @@ function maskSizeOf(fit?: PlogElementType['objectFit']): string {
   }
 }
 
-/** 用图源做遮罩、以指定颜色填充的染色层（替代 <img>） */
+/** 用图源做遮罩、以指定颜色填充的单色剪影层（flat 模式下使用） */
 function TintedSvgLayer({ url, color, fit }: { url: string; color: string; fit?: PlogElementType['objectFit'] }) {
   const size = maskSizeOf(fit);
   const style: React.CSSProperties = {
@@ -67,6 +60,38 @@ function TintedSvgLayer({ url, color, fit }: { url: string; color: string; fit?:
   return <div className="w-full h-full block" style={style} />;
 }
 
+/** 智能分层调色 SVG 渲染层（tonal 默认模式，保留黑白灰度、阴影、虚线与公式细节） */
+function RecoloredSvgImage({
+  url,
+  fgColor,
+  invert,
+  bgColor,
+  shadingDepth,
+  fit,
+  onError,
+}: {
+  url: string;
+  fgColor?: string | null;
+  invert?: boolean;
+  bgColor?: string;
+  shadingDepth?: number;
+  fit?: PlogElementType['objectFit'];
+  onError?: React.ReactEventHandler<HTMLImageElement>;
+}) {
+  const { url: finalUrl } = useRecoloredSvg(url, fgColor, { invert, bgColor, shadingDepth });
+  return (
+    <img
+      src={finalUrl}
+      crossOrigin={isRemoteUrl(finalUrl) ? 'anonymous' : undefined}
+      alt=""
+      className="w-full h-full block"
+      style={{ objectFit: fit || 'contain' }}
+      draggable={false}
+      onError={onError}
+    />
+  );
+}
+
 interface ElementActions {
   setSelectedElementId?: (id: string | null) => void;
   updateElement?: (id: string, partial: Partial<PlogElementType>) => void;
@@ -77,6 +102,10 @@ interface PlogElementProps {
   element: PlogElementType;
   containerRef: React.RefObject<HTMLDivElement | null>;
   fontClassName?: string;
+  /** 画布底层真实颜色（用于透明 SVG 中空切片与阴影调色的衬底基色） */
+  canvasBg?: string;
+  /** 画布正文主文字颜色（用于 SVG 图片 'currentColor' 跟随正文模式） */
+  canvasTextColor?: string;
   /** 外部注入 actions（Studio 场景传 useStudioStore 的 actions；Plog 场景留空走内部 usePlogStore） */
   actions?: ElementActions;
   /** 外部指定当前选中的元素 id（Studio 场景）；优先级高于内部 usePlogStore.selectedElementId */
@@ -91,12 +120,29 @@ export const PlogElement: React.FC<PlogElementProps> = ({
   element,
   containerRef,
   fontClassName = '',
+  canvasBg,
+  canvasTextColor,
   actions,
   selectedId,
   extractedColors = null,
   onEditElement,
 }) => {
   const plogStore = usePlogStore();
+  const effectiveBg = element.bgColor && element.bgColor !== 'transparent'
+    ? element.bgColor
+    : (canvasBg || plogStore.bgColor || '#ffffff');
+
+  // 计算当前画布的正文基色（用于 SVG 图片 'currentColor' 跟随正文模式）
+  const fallbackTextColor =
+    extractedColors?.textPrimary ||
+    extractedColors?.textSecondary ||
+    (getColorLuminance(parseRgbColor(effectiveBg) || [15, 23, 42]) < 0.45 ? '#F7F3EC' : '#111827');
+  const resolvedTextColor = canvasTextColor || fallbackTextColor;
+
+  // 有效前景色：若设为 'currentColor' 则跟随正文文字颜色
+  const effectiveFg = element.fgColor === 'currentColor'
+    ? resolvedTextColor
+    : element.fgColor;
 
   const setSelectedElementId: NonNullable<ElementActions['setSelectedElementId']> =
     actions?.setSelectedElementId ?? plogStore.setSelectedElementId;
@@ -262,14 +308,27 @@ export const PlogElement: React.FC<PlogElementProps> = ({
             border: element.borderWidth
               ? `${element.borderWidth}px solid ${element.borderColor || 'rgba(0,0,0,0.08)'}`
               : undefined,
-            background: element.bgColor ||
-              'linear-gradient(135deg, rgba(148,163,184,0.18) 0%, rgba(100,116,139,0.28) 100%)',
+            background: element.bgColor !== undefined && element.bgColor !== ''
+              ? element.bgColor
+              : (element.imageUrl
+                ? 'transparent'
+                : 'linear-gradient(135deg, rgba(148,163,184,0.18) 0%, rgba(100,116,139,0.28) 100%)'),
           }}
         >
           {element.imageUrl ? (
-            svgTintOf(element) ? (
-              // SVG 前景染色：以图源为遮罩、fgColor 填充（原 <img> 的占位降级不适用，mask 加载失败仅显示底色）
-              <TintedSvgLayer url={element.imageUrl!} color={svgTintOf(element)!} fit={element.objectFit} />
+            isSvgSource(element.imageUrl) && effectiveFg && effectiveFg !== 'transparent' ? (
+              element.svgColorMode === 'flat' ? (
+                <TintedSvgLayer url={element.imageUrl!} color={effectiveFg} fit={element.objectFit} />
+              ) : (
+                <RecoloredSvgImage
+                  url={element.imageUrl!}
+                  fgColor={effectiveFg}
+                  invert={element.svgInvert}
+                  bgColor={effectiveBg}
+                  shadingDepth={element.svgShadingDepth ?? 1.15}
+                  fit={element.objectFit}
+                />
+              )
             ) : (
               <img
                 src={element.imageUrl}
@@ -359,8 +418,11 @@ export const PlogElement: React.FC<PlogElementProps> = ({
             border: element.borderWidth
               ? `${element.borderWidth}px solid ${element.borderColor || 'rgba(0,0,0,0.08)'}`
               : undefined,
-            background: element.bgColor ||
-              'linear-gradient(135deg, rgba(217,70,239,0.12), rgba(99,102,241,0.12))',
+            background: element.bgColor !== undefined && element.bgColor !== ''
+              ? element.bgColor
+              : ((element.content || element.imageUrl)
+                ? 'transparent'
+                : 'linear-gradient(135deg, rgba(217,70,239,0.12), rgba(99,102,241,0.12))'),
           }}
         >
           {element.assetKind === 'vector' ? (
@@ -368,7 +430,17 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               <div
                 className="w-full h-full"
                 // 允许 SVG 直接嵌入 content
-                dangerouslySetInnerHTML={{ __html: element.content }}
+                dangerouslySetInnerHTML={{
+                  __html:
+                    effectiveFg && effectiveFg !== 'transparent'
+                      ? recolorMonochromeSvg(element.content, effectiveFg, {
+                          invert: element.svgInvert,
+                          bgColor: effectiveBg,
+                          shadingDepth: element.svgShadingDepth ?? 1.15,
+                          colorMode: element.svgColorMode ?? 'tonal',
+                        })
+                      : element.content,
+                }}
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[10px] font-black tracking-widest"
@@ -388,9 +460,19 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               </div>
             )
           ) : element.imageUrl ? (
-            svgTintOf(element) ? (
-              // SVG 前景染色（asset 位图/矢量路径同样支持）
-              <TintedSvgLayer url={element.imageUrl} color={svgTintOf(element)!} fit={element.objectFit || 'contain'} />
+            isSvgSource(element.imageUrl) && effectiveFg && effectiveFg !== 'transparent' ? (
+              element.svgColorMode === 'flat' ? (
+                <TintedSvgLayer url={element.imageUrl} color={effectiveFg} fit={element.objectFit || 'contain'} />
+              ) : (
+                <RecoloredSvgImage
+                  url={element.imageUrl}
+                  fgColor={effectiveFg}
+                  invert={element.svgInvert}
+                  bgColor={effectiveBg}
+                  shadingDepth={element.svgShadingDepth ?? 1.15}
+                  fit={element.objectFit || 'contain'}
+                />
+              )
             ) : (
               <img
                 src={element.imageUrl}
@@ -439,6 +521,8 @@ export const PlogElement: React.FC<PlogElementProps> = ({
           textInlines={textInlines}
           extractedColors={extractedColors}
           renderedMd={renderedMd}
+          effectiveBg={effectiveBg}
+          canvasTextColor={resolvedTextColor}
         />
       )}
 
