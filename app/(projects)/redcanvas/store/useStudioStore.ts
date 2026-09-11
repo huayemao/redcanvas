@@ -142,9 +142,12 @@ export interface StudioState {
 
   /** 用户自定义导出文件名（留空时动态取第一张图最大字号文本命名） */
   customExportName: string;
+  /** 导出图片时是否一并导出项目配置备份（默认开启，防止工程丢失） */
+  autoExportConfig: boolean;
 
   // Actions
   setCustomExportName: (name: string) => void;
+  setAutoExportConfig: (enabled: boolean) => void;
   getExportName: () => string;
 
   setActiveTab: (tab: StudioTab) => void;
@@ -433,6 +436,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   customExportName: '',
   setCustomExportName: (customExportName) => set({ customExportName }),
+  autoExportConfig: true,
+  setAutoExportConfig: (autoExportConfig) => set({ autoExportConfig }),
   getExportName: () => getEffectiveExportName(get()),
 
   setActiveTab: (activeTab) => set({ activeTab }),

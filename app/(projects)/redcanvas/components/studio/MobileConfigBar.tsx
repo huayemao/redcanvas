@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText, PenLine, RotateCcw } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText, PenLine, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useConfigTransfer } from './useConfigTransfer';
 import { useStudioStore } from '../../store/useStudioStore';
 import { getDefaultExportName } from '../../lib/namingUtils';
@@ -34,6 +34,8 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
   const pageCount = useStudioStore((s) => s.pages.length);
   const customExportName = useStudioStore((s) => s.customExportName);
   const setCustomExportName = useStudioStore((s) => s.setCustomExportName);
+  const autoExportConfig = useStudioStore((s) => s.autoExportConfig);
+  const setAutoExportConfig = useStudioStore((s) => s.setAutoExportConfig);
   const getExportName = useStudioStore((s) => s.getExportName);
   const pages = useStudioStore((s) => s.pages);
   const currentPageId = useStudioStore((s) => s.currentPageId);
@@ -96,6 +98,22 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
                   </div>
                 </div>
 
+                {/* 一并导出配置开关 */}
+                <div className="px-3 py-2 bg-white/[0.02] border-b border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className={`w-3.5 h-3.5 ${autoExportConfig ? 'text-emerald-400' : 'text-white/30'}`} />
+                    <span className="text-[10px] font-bold text-white/70">一并导出配置</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutoExportConfig(!autoExportConfig)}
+                    className={`w-7 h-4 rounded-full transition-colors relative cursor-pointer ${autoExportConfig ? 'bg-emerald-500' : 'bg-white/20'}`}
+                    title={autoExportConfig ? '已开启：导出图片时自动备份配置，防止工程丢失' : '已关闭'}
+                  >
+                    <span className={`block w-3 h-3 rounded-full bg-white transition-transform absolute top-0.5 ${autoExportConfig ? 'left-3.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+
                 <button
                   onClick={() => { setExportMenuOpen(false); handleExportConfig(); }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"
@@ -114,7 +132,9 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
                     <ImageIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-bold text-white/80">导出当前页图片</div>
-                      <div className="text-[9px] text-white/30 font-medium">高清 PNG · 2.5x</div>
+                      <div className="text-[9px] text-white/30 font-medium">
+                        高清 PNG{autoExportConfig ? ' · 一并备份配置' : ' · 2.5x'}
+                      </div>
                     </div>
                   </button>
                 )}
@@ -126,7 +146,9 @@ export const MobileConfigBar: React.FC<MobileConfigBarProps> = ({ onExportPng, i
                     <Images className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-bold text-white/80">导出全部页面（{pageCount} 页）</div>
-                      <div className="text-[9px] text-white/30 font-medium">逐页高清 PNG · 打包 ZIP</div>
+                      <div className="text-[9px] text-white/30 font-medium">
+                        逐页高清 PNG{autoExportConfig ? ' + 项目配置' : ''} · 打包 ZIP
+                      </div>
                     </div>
                   </button>
                 )}

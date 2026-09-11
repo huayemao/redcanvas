@@ -9,7 +9,7 @@ import { PageNavigator } from '../components/studio/PageNavigator';
 import { useStudioStore } from '../store/useStudioStore';
 import { useStudioPersistence } from '../lib/studioPersistence';
 import { exportElementToImage, exportElementToBlob, waitForCanvasReady } from '../lib/exportUtils';
-import { packImageBlobsZip } from '../lib/configPack';
+import { packImagesAndConfigZip, generateConfigExportFile } from '../lib/configPack';
 import { ExportSize } from '../types';
 import { Loader2, Info, Sparkles, X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,6 +118,26 @@ const AppPage: React.FC = () => {
         backgroundColor: '#ffffff',
         onProgress: (msg) => setExportMessage(msg),
       });
+
+      // 导出图片时一并导出工程配置（默认开启，避免工程丢失）
+      if (store.autoExportConfig) {
+        setExportMessage('正在备份工程配置...');
+        try {
+          const configExport = await generateConfigExportFile(store.exportConfig(), baseName);
+          setTimeout(() => {
+            const cfgUrl = URL.createObjectURL(configExport.blob);
+            const cfgLink = document.createElement('a');
+            cfgLink.download = configExport.filename;
+            cfgLink.href = cfgUrl;
+            document.body.appendChild(cfgLink);
+            cfgLink.click();
+            document.body.removeChild(cfgLink);
+            setTimeout(() => URL.revokeObjectURL(cfgUrl), 1000);
+          }, 350);
+        } catch (cfgErr) {
+          console.warn('Auto export config failed:', cfgErr);
+        }
+      }
     } catch (err) {
       console.error('Export error:', err);
       alert('导出图片遇到安全限制或加载超时，请重试。建议使用 Chrome 或 Edge 浏览器。');
@@ -173,8 +193,13 @@ const AppPage: React.FC = () => {
         }
       }
 
-      setExportMessage('正在打包多页 ZIP 文件...');
-      const zipBlob = await packImageBlobsZip(blobs);
+      setExportMessage(
+        store.autoExportConfig
+          ? '正在将全部图片与工程配置一并打包 ZIP...'
+          : '正在打包多页 ZIP 文件...'
+      );
+      const snapshot = store.autoExportConfig ? store.exportConfig() : undefined;
+      const zipBlob = await packImagesAndConfigZip(blobs, snapshot);
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.download = `${baseName}.zip`;

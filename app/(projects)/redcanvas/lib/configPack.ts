@@ -155,9 +155,10 @@ export async function packConfigZip(
  * - 找不到 config.json 或 __type 不合法 → 返回 null
  */
 export async function unpackConfigZip(
-  blob: Blob,
+  blob: Blob | ArrayBuffer,
 ): Promise<StudioProjectSnapshot | StudioConfigSnapshot | null> {
-  const zip = await JSZip.loadAsync(blob);
+  const data = typeof (blob as Blob)?.arrayBuffer === 'function' ? await (blob as Blob).arrayBuffer() : blob;
+  const zip = await JSZip.loadAsync(data);
   const configFile = zip.file('config.json');
   if (!configFile) return null;
   const text = await configFile.async('string');
@@ -225,3 +226,98 @@ export async function packImageBlobsZip(
     compressionOptions: { level: 3 },
   });
 }
+
+/**
+ * 判断快照中是否包含需要离线保存的图片资源
+ */
+export function snapshotHasImageAssets(snapshot: unknown): boolean {
+  const urls = collectAssetUrls(snapshot);
+  return urls.length > 0;
+}
+
+/** 生成时间戳后缀：YYYYMMDD-HHmm */
+export function formatTimestampName(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+/**
+ * 将 snapshot 生成独立导出的文件 Blob（含文件名与类型）。
+ * - 若含图片资源，打包为 ZIP（含 config.json + assets/）
+ * - 若无图片资源，输出纯 JSON
+ */
+export async function generateConfigExportFile(
+  snapshot: StudioProjectSnapshot | StudioConfigSnapshot,
+  baseName: string = 'redcanvas'
+): Promise<{ blob: Blob; filename: string; isZip: boolean }> {
+  const hasAssets = snapshotHasImageAssets(snapshot);
+  const stamp = formatTimestampName();
+  if (hasAssets) {
+    const { blob } = await packConfigZip(snapshot);
+    return {
+      blob,
+      filename: `${baseName}-config-${stamp}.zip`,
+      isZip: true,
+    };
+  } else {
+    const json = JSON.stringify(snapshot, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    return {
+      blob,
+      filename: `${baseName}-config-${stamp}.json`,
+      isZip: false,
+    };
+  }
+}
+
+/**
+ * 把多页导出的 PNG Blob 与项目配置（snapshot）打包进同一个 ZIP。
+ * 既包含用户可直接查阅/发布的各页高清 PNG，
+ * 也包含 config.json（及相关 assets），支持直接导入回 RedCanvas。
+ */
+export async function packImagesAndConfigZip(
+  items: { name: string; blob: Blob }[],
+  snapshot?: StudioProjectSnapshot | StudioConfigSnapshot,
+): Promise<Blob> {
+  const zip = new JSZip();
+
+  // 1. 放入各页图片
+  for (const item of items) {
+    const data = typeof item.blob?.arrayBuffer === 'function' ? await item.blob.arrayBuffer() : item.blob;
+    zip.file(item.name, data);
+  }
+
+  // 2. 若传入 snapshot，一并打包工程配置
+  if (snapshot) {
+    const urls = collectAssetUrls(snapshot);
+    const urlToZipPath = new Map<string, string>();
+
+    let idx = 0;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        if (blob.size === 0) throw new Error('empty blob');
+        const ext = extFromBlob(blob, url);
+        const zipPath = `assets/img-${idx}.${ext}`;
+        zip.file(zipPath, blob);
+        urlToZipPath.set(url, zipPath);
+        idx++;
+      } catch {
+        // 单个失败保留原 URL
+      }
+    }
+
+    const remapped = remapAssetFields(snapshot, urlToZipPath);
+    zip.file('config.json', JSON.stringify(remapped, null, 2));
+  }
+
+  return zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 4 },
+  });
+}
+
