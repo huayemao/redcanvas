@@ -3,7 +3,8 @@
 import React from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
 import { FONTS } from '../../constants';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, RotateCcw } from 'lucide-react';
+import { getDefaultExportName } from '../../lib/namingUtils';
 
 export const TextControlTab: React.FC = () => {
   const {
@@ -19,7 +20,16 @@ export const TextControlTab: React.FC = () => {
     addHighlight,
     updateHighlight,
     removeHighlight,
+    customExportName,
+    setCustomExportName,
+    getExportName,
+    pages,
+    currentPageId,
+    floatingElements,
   } = useStudioStore();
+
+  const defaultExportName = getDefaultExportName({ pages, currentPageId, floatingElements, title, customExportName: '' });
+  const effectiveExportName = getExportName();
 
   return (
     <div className="space-y-6">
@@ -86,6 +96,44 @@ export const TextControlTab: React.FC = () => {
             />
           </div>
         </div>
+      </div>
+
+      {/* 作品导出命名 */}
+      <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/[0.06] space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">
+            作品导出命名 · Export Filename
+          </label>
+          {customExportName && (
+            <button
+              type="button"
+              onClick={() => setCustomExportName('')}
+              className="text-[10px] text-white/40 hover:text-red-400 transition-colors flex items-center gap-1 font-bold"
+              title="恢复为第一张图片最大字号文本命名"
+            >
+              <RotateCcw className="w-2.5 h-2.5" />
+              恢复默认
+            </button>
+          )}
+        </div>
+        <input
+          type="text"
+          value={customExportName}
+          onChange={(e) => setCustomExportName(e.target.value)}
+          placeholder={defaultExportName || 'redcanvas'}
+          className="w-full p-3 bg-white/[0.03] rounded-xl font-bold text-xs text-white border border-white/[0.06] placeholder-white/25 focus:outline-none focus:border-red-500/50 transition-colors"
+        />
+        <div className="flex items-center justify-between text-[10px] text-white/40">
+          <span className="truncate">
+            生效名称：<span className="text-white/80 font-mono font-bold">{effectiveExportName}.png</span>
+          </span>
+          <span className="text-red-400/80 font-medium shrink-0 ml-2">
+            {customExportName ? '已自定义' : '首图最大文本'}
+          </span>
+        </div>
+        <p className="text-[10px] text-white/30 leading-relaxed">
+          未自定义时，系统自动提取首张图片中字号最大的文本进行命名；亦可在顶部导出下拉菜单中随时调整。
+        </p>
       </div>
 
       {/* 高亮关键字标注 */}

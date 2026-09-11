@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText } from 'lucide-react';
+import { Download, Upload, Check, AlertCircle, Image as ImageIcon, Images, Loader2, ChevronDown, FileText, PenLine, RotateCcw } from 'lucide-react';
 import { useConfigTransfer } from './useConfigTransfer';
 import { useStudioStore } from '../../store/useStudioStore';
+import { getDefaultExportName } from '../../lib/namingUtils';
 
 /**
  * 存档 / 读档工具栏（侧栏 / 抽屉内使用）
@@ -29,6 +30,16 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
   } = useConfigTransfer();
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const pageCount = useStudioStore((s) => s.pages.length);
+  const customExportName = useStudioStore((s) => s.customExportName);
+  const setCustomExportName = useStudioStore((s) => s.setCustomExportName);
+  const getExportName = useStudioStore((s) => s.getExportName);
+  const pages = useStudioStore((s) => s.pages);
+  const currentPageId = useStudioStore((s) => s.currentPageId);
+  const floatingElements = useStudioStore((s) => s.floatingElements);
+  const title = useStudioStore((s) => s.title);
+
+  const defaultExportName = getDefaultExportName({ pages, currentPageId, floatingElements, title, customExportName: '' });
+  const effectiveExportName = getExportName();
 
   return (
     <>
@@ -54,7 +65,45 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
               {/* 点击外部关闭 */}
               <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
               {/* 下拉菜单 */}
-              <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-2xl overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-2xl bg-[#141414] border border-white/[0.1] shadow-2xl overflow-hidden backdrop-blur-2xl">
+                {/* 文件命名配置块 */}
+                <div className="p-3 bg-white/[0.03] border-b border-white/[0.08]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-black text-white/45 uppercase tracking-wider flex items-center gap-1.5">
+                      <PenLine className="w-3 h-3 text-red-400" />
+                      导出命名
+                    </span>
+                    {customExportName ? (
+                      <button
+                        type="button"
+                        onClick={() => setCustomExportName('')}
+                        className="text-[9px] text-white/40 hover:text-red-400 transition-colors flex items-center gap-0.5"
+                        title="恢复为第一张图片最大字号文本命名"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        恢复默认
+                      </button>
+                    ) : (
+                      <span className="text-[9px] text-white/30">默认取首图最大文本</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={customExportName}
+                    onChange={(e) => setCustomExportName(e.target.value)}
+                    placeholder={defaultExportName || 'redcanvas'}
+                    className="w-full px-2.5 py-1.5 text-xs font-bold bg-white/[0.05] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-red-500/50 transition-colors"
+                  />
+                  <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/35">
+                    <span className="truncate max-w-[200px]" title={`${effectiveExportName}.png`}>
+                      预览: <span className="text-white/60 font-mono font-medium">{effectiveExportName}.png</span>
+                    </span>
+                    <span className="text-red-400/80 shrink-0 font-medium">
+                      {customExportName ? '已自定义' : '首图最大文本'}
+                    </span>
+                  </div>
+                </div>
+
                 <button
                   onClick={() => { setExportMenuOpen(false); handleExportConfig(); }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.06] transition-colors text-left"

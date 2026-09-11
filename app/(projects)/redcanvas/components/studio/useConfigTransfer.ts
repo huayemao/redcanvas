@@ -58,17 +58,18 @@ export function useConfigTransfer() {
     setBusy(true);
     try {
       const snapshot = exportConfig();
+      const baseName = useStudioStore.getState().getExportName();
       if (hasImageAssets) {
         // —— ZIP 模式 ——
         const { blob, assetsCount, skipped } = await packConfigZip(snapshot);
-        triggerDownload(blob, `redcanvas-config-${stampName()}.zip`);
+        triggerDownload(blob, `${baseName}-config-${stampName()}.zip`);
         const skipNote = skipped.length > 0 ? ` · ${skipped.length} 张跳过` : '';
         flashToast('ok', `已导出 ZIP（含 ${assetsCount} 张图片${skipNote}）`);
       } else {
         // —— 纯 JSON 模式 ——
         const json = JSON.stringify(snapshot, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
-        triggerDownload(blob, `redcanvas-config-${stampName()}.json`);
+        triggerDownload(blob, `${baseName}-config-${stampName()}.json`);
         flashToast('ok', '配置已导出（无图片，纯 JSON）');
       }
     } catch (e) {

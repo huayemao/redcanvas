@@ -94,6 +94,18 @@ const AppPage: React.FC = () => {
     setIsExporting(true);
     setExportMessage('正在生成图片...');
 
+    const store = useStudioStore.getState();
+    store.setSelectedElementId(null);
+    store.captureCurrentPage();
+
+    const baseName = store.getExportName();
+    const currentPageIndex = store.pages.findIndex((p) => p.id === store.currentPageId);
+    let fileName = `${baseName}.png`;
+    if (store.pages.length > 1 && currentPageIndex > 0) {
+      const curPage = store.pages[currentPageIndex];
+      fileName = `${baseName}-${curPage?.name || `第${currentPageIndex + 1}页`}.png`;
+    }
+
     // 导出前：给画布容器加 exporting 类，隐藏选中环、抓手等编辑态元素
     const canvasEl = previewRef.current;
     const prevClass = canvasEl.className;
@@ -101,7 +113,7 @@ const AppPage: React.FC = () => {
 
     try {
       await exportElementToImage(canvasEl, {
-        fileName: `redcanvas-studio-${Date.now()}.png`,
+        fileName,
         scale: 2.5,
         backgroundColor: '#ffffff',
         onProgress: (msg) => setExportMessage(msg),
@@ -133,6 +145,8 @@ const AppPage: React.FC = () => {
       store.setSelectedElementId(null);
       // 先把当前镜像写回当前页，保证导出包含最新编辑
       store.captureCurrentPage();
+
+      const baseName = store.getExportName();
       const pageIds = useStudioStore.getState().pages.map((p) => p.id);
       const blobs: { name: string; blob: Blob }[] = [];
 
@@ -153,7 +167,7 @@ const AppPage: React.FC = () => {
             backgroundColor: '#ffffff',
             onProgress: (msg) => setExportMessage(`正在导出第 ${i + 1} / ${pageIds.length} 页 (${msg})`),
           });
-          blobs.push({ name: `page-${String(i + 1).padStart(2, '0')}.png`, blob });
+          blobs.push({ name: `${baseName}-${String(i + 1).padStart(2, '0')}.png`, blob });
         } finally {
           el.className = prevClass;
         }
@@ -163,7 +177,7 @@ const AppPage: React.FC = () => {
       const zipBlob = await packImageBlobsZip(blobs);
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
-      link.download = `redcanvas-pages-${Date.now()}.zip`;
+      link.download = `${baseName}.zip`;
       link.href = url;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);

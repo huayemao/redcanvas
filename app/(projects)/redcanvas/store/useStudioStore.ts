@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import {
-  ExportSize,
-  PlogImage,
-  PlogElement,
-  Highlight,
   DeviceType,
+  ExportSize,
   ExtractedColors,
+  Highlight,
+  PlogElement,
+  PlogImage,
 } from '../types';
+import { getEffectiveExportName } from '../lib/namingUtils';
 import { extractDominantColors, extractPaletteCandidates, buildPaletteStyled, PALETTE_STYLES, PaletteCandidate } from '../lib/colorExtractor';
 
 export type PaletteStyleDef = { styleId: string; styleName: string };
@@ -99,7 +100,7 @@ export const STUDIO_TEMPLATES: StudioTemplateConfig[] = [
   },
 ];
 
-interface StudioState {
+export interface StudioState {
   activeTab: StudioTab;
   templateId: StudioTemplateId;
   templateCategory: StudioTemplateCategory;
@@ -139,7 +140,13 @@ interface StudioState {
   pages: StudioPageData[];
   currentPageId: string;
 
+  /** 用户自定义导出文件名（留空时动态取第一张图最大字号文本命名） */
+  customExportName: string;
+
   // Actions
+  setCustomExportName: (name: string) => void;
+  getExportName: () => string;
+
   setActiveTab: (tab: StudioTab) => void;
   setTemplateId: (id: StudioTemplateId) => void;
   setTemplateCategory: (cat: StudioTemplateCategory) => void;
@@ -285,6 +292,7 @@ export interface StudioProjectSnapshot {
   version: 2;
   exportedAt: string;
   currentPageId: string;
+  customExportName?: string;
   pages: StudioPageData[];
 }
 
@@ -422,6 +430,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // —— 多页（PPT 式）项目 ——
   pages: [{ id: 'page-1', name: '第 1 页', data: INITIAL_PAGE_FIELDS }],
   currentPageId: 'page-1',
+
+  customExportName: '',
+  setCustomExportName: (customExportName) => set({ customExportName }),
+  getExportName: () => getEffectiveExportName(get()),
 
   setActiveTab: (activeTab) => set({ activeTab }),
   setTemplateId: (templateId) => {
@@ -1580,6 +1592,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       version: 2 as const,
       exportedAt: new Date().toISOString(),
       currentPageId: s.currentPageId,
+      customExportName: s.customExportName,
       pages: s.pages,
     };
   },
@@ -1606,7 +1619,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const currentPageId = pages.some((p) => p.id === s.currentPageId)
         ? (s.currentPageId as string)
         : pages[0].id;
-      set({ pages, currentPageId });
+      set({
+        pages,
+        currentPageId,
+        customExportName: typeof s.customExportName === 'string' ? s.customExportName : '',
+      });
       const active = pages.find((p) => p.id === currentPageId)!;
       get()._applyPageFields(active.data);
       return true;
