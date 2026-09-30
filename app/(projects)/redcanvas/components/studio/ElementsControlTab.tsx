@@ -25,9 +25,10 @@ import {
   ChevronsUp,
   ChevronsDown,
   Lock,
+  Film,
 } from 'lucide-react';
 import { PlogElement } from '../../types';
-import { FONTS, PRESET_COLORS } from '../../constants';
+import { FONTS, PRESET_COLORS, TEXTURE_PRESETS } from '../../constants';
 import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
 
 type ShadowOption = { value: 0 | 1 | 2 | 3 | 4; label: string };
@@ -259,6 +260,8 @@ export const ElementPropertyPanel: React.FC = () => {
     autoExtractColors,
   } = useStudioStore();
 
+  const [textureCategory, setTextureCategory] = useState<'all' | 'grain' | 'noise' | 'paper' | 'fabric'>('all');
+
   const selected = floatingElements.find((e) => e.id === selectedElementId) || null;
   if (!selected) return null;
 
@@ -388,7 +391,7 @@ export const ElementPropertyPanel: React.FC = () => {
         </Section>
       )}
 
-      {/* ===== 背景元素专属：风格 / 颜色 / 渐变 / 模糊图 ===== */}
+      {/* ===== 背景元素专属：风格 / 颜色 / 渐变 / 模糊图 / 胶片颗粒材质 ===== */}
       {selected.type === 'background' && (
         <>
           <Section title="背景风格">
@@ -459,6 +462,185 @@ export const ElementPropertyPanel: React.FC = () => {
               </p>
             </Section>
           )}
+
+          {/* ===== 胶片颗粒 · 材质噪点遮罩 ===== */}
+          <Section title="胶片颗粒 · 材质遮罩">
+            <div className="space-y-3">
+              <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] text-[11px] text-white/50 leading-relaxed">
+                全屏绝对定位的透明颗粒 PNG 遮罩，通过 <span className="font-mono text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">mix-blend-mode: overlay</span> 叠加在画布全部内容上层，不改动底层色彩，统一给画面赋予真实胶片与纸张质感。
+              </div>
+
+              {/* 材质分类过滤标签 */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-thin">
+                {[
+                  { id: 'all', label: '全部材质' },
+                  { id: 'grain', label: '胶片微粒' },
+                  { id: 'noise', label: '噪点磨砂' },
+                  { id: 'paper', label: '质感纸张' },
+                  { id: 'fabric', label: '布纹织物' },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setTextureCategory(cat.id as any)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all flex-shrink-0 ${
+                      textureCategory === cat.id
+                        ? 'bg-red-500 text-white shadow-sm'
+                        : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 预设材质卡片网格 */}
+              <div className="grid grid-cols-3 gap-2 max-h-[290px] overflow-y-auto pr-0.5 scrollbar-thin">
+                {TEXTURE_PRESETS.filter(
+                  (p) => textureCategory === 'all' || p.id === 'none' || p.category === textureCategory
+                ).map((preset) => {
+                  const active = (selected.textureUrl || '') === preset.url;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => {
+                        if (preset.id === 'none') {
+                          update({ textureUrl: '' });
+                        } else {
+                          update({
+                            textureUrl: preset.url,
+                            textureOpacity: selected.textureOpacity ?? preset.defaultOpacity,
+                            textureBlendMode: selected.textureBlendMode ?? (preset.defaultBlendMode || 'overlay'),
+                          });
+                        }
+                      }}
+                      className={`group relative flex flex-col items-center p-1.5 rounded-xl border text-center transition-all overflow-hidden ${
+                        active
+                          ? 'border-red-500 bg-red-500/10 ring-1 ring-red-500/30'
+                          : 'border-white/[0.06] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {/* 纹理预览方块 */}
+                      <div
+                        className="w-full h-11 rounded-lg relative overflow-hidden flex items-center justify-center border border-white/10 mb-1 shadow-inner"
+                        style={{
+                          backgroundColor: '#1e232d',
+                        }}
+                      >
+                        {preset.url ? (
+                          <>
+                            {/* 底色衬托颗粒 */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-zinc-900 opacity-90" />
+                            {/* 颗粒贴图 */}
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                backgroundImage: `url("${preset.url}")`,
+                                backgroundRepeat: 'repeat',
+                                mixBlendMode: 'overlay',
+                                opacity: 0.85,
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <span className="text-[11px] text-white/30 font-bold">无</span>
+                        )}
+                        {active && (
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
+                            <span className="text-[9px] font-black leading-none">✓</span>
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`text-[11px] font-black truncate w-full ${
+                          active ? 'text-red-400' : 'text-white/70 group-hover:text-white'
+                        }`}
+                      >
+                        {preset.name}
+                      </span>
+                      <span className="text-[9px] text-white/30 font-medium truncate w-full mt-0.5">
+                        {preset.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 材质微调控件（当启用材质时显示） */}
+              {selected.textureUrl ? (
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3 mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-white/80 flex items-center gap-1.5">
+                      <Film className="w-3.5 h-3.5 text-red-400" />
+                      胶片颗粒参数微调
+                    </span>
+                    <button
+                      onClick={() => update({ textureUrl: '' })}
+                      className="text-[10px] text-red-400 hover:text-red-300 font-bold hover:underline"
+                    >
+                      移除遮罩
+                    </button>
+                  </div>
+
+                  {/* 不透明度 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-white/60">颗粒浓度 (Opacity)</span>
+                      <span className="text-[11px] font-mono font-bold text-red-400">
+                        {Math.round((selected.textureOpacity ?? 0.6) * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      step={5}
+                      value={Math.round((selected.textureOpacity ?? 0.6) * 100)}
+                      onChange={(e) => update({ textureOpacity: Number(e.target.value) / 100 })}
+                      className="w-full accent-red-500 cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+                    />
+                  </div>
+
+                  {/* 混合模式 */}
+                  <div>
+                    <span className="text-[11px] font-bold text-white/60 block mb-1.5">混合模式 (Mix Blend Mode)</span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { value: 'overlay', name: '叠加', en: 'Overlay', desc: '推荐 · 保持底层通透色彩' },
+                        { value: 'soft-light', name: '柔光', en: 'Soft Light', desc: '细腻温和' },
+                        { value: 'multiply', name: '正片叠底', en: 'Multiply', desc: '浓郁复古' },
+                        { value: 'screen', name: '滤色', en: 'Screen', desc: '提亮星芒' },
+                        { value: 'normal', name: '正常', en: 'Normal', desc: '标准透明' },
+                      ].map((bm) => (
+                        <button
+                          key={bm.value}
+                          onClick={() => update({ textureBlendMode: bm.value as any })}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex flex-col items-center justify-center ${
+                            (selected.textureBlendMode ?? 'overlay') === bm.value
+                              ? 'bg-red-500 text-white shadow-sm'
+                              : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white'
+                          }`}
+                          title={bm.desc}
+                        >
+                          <span>{bm.name}</span>
+                          <span className="text-[8px] opacity-60 font-normal">{bm.en}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 自定义材质图片 URL */}
+                  <div className="pt-2 border-t border-white/[0.06]">
+                    <TextField
+                      label="自定义材质 PNG URL"
+                      value={selected.textureUrl || ''}
+                      placeholder="/redcanvas/textures/retina-dust.png 或 https://..."
+                      onChange={(v) => update({ textureUrl: v })}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </Section>
         </>
       )}
 

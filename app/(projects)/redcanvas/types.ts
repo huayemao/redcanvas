@@ -132,6 +132,11 @@ export interface PlogElement {
   // ---- background 专属 ----
   bgVariant?: 'color' | 'gradient' | 'blur'; // 背景风格（纯色 / 环境渐变 / 图片高斯模糊）
 
+  // ---- 噪点遮罩 / 材质颗粒 (background 专属或全屏遮罩) ----
+  textureUrl?: string;                       // 噪点/材质纹理 PNG URL（如 '/redcanvas/textures/retina-dust.png'），空为无
+  textureOpacity?: number;                   // 纹理不透明度（0-1，默认 0.6）
+  textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'; // 混合模式，默认 'overlay'
+
   // ---- asset 专属 ----
   assetKind?: 'bitmap' | 'vector';
 
@@ -194,6 +199,9 @@ export interface PlogState {
   bgColor: string;
   gradientStart: string;
   gradientEnd: string;
+  bgTexture?: string;
+  textureOpacity?: number;
+  textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
   autoColorEnabled: boolean;
 
   // Images
@@ -211,3 +219,14 @@ export interface PlogState {
   // Cover editor state integration
   coverState: EditorState;
 }
+
+export interface TexturePreset {
+  id: string;
+  name: string;
+  category: 'grain' | 'noise' | 'paper' | 'fabric';
+  url: string;
+  description: string;
+  defaultOpacity: number;
+  defaultBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
+}
+

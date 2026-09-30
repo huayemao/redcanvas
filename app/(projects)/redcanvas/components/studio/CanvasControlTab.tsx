@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Film } from 'lucide-react';
+import { TEXTURE_PRESETS } from '../../constants';
 
 export const CanvasControlTab: React.FC = () => {
   const {
@@ -16,6 +17,12 @@ export const CanvasControlTab: React.FC = () => {
     paletteStyles,
     selectedStyleId,
     applyPaletteStyle,
+    bgTexture,
+    textureOpacity,
+    textureBlendMode,
+    setBgTexture,
+    setTextureOpacity,
+    setTextureBlendMode,
   } = useStudioStore();
 
   const handleAutoColor = () => {
@@ -28,6 +35,11 @@ export const CanvasControlTab: React.FC = () => {
       autoExtractColors(url);
     }
   };
+
+  const bgElement = floatingElements.find((e) => e.type === 'background');
+  const currentTexture = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : bgTexture;
+  const currentOpacity = bgElement?.textureOpacity ?? textureOpacity ?? 0.6;
+  const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'overlay';
 
   return (
     <div className="space-y-6">
@@ -161,6 +173,105 @@ export const CanvasControlTab: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 胶片颗粒与质感遮罩快捷设置 */}
+      <div className="space-y-3 pt-2 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1.5">
+            <Film className="w-3.5 h-3.5 text-red-400" />
+            <span>胶片颗粒 · 材质遮罩</span>
+          </label>
+          {currentTexture && (
+            <button
+              onClick={() => setBgTexture('')}
+              className="text-[10px] text-red-400 hover:text-red-300 font-bold hover:underline"
+            >
+              清除材质
+            </button>
+          )}
+        </div>
+
+        <p className="text-[10px] text-white/40 leading-relaxed">
+          全屏 <code className="font-mono text-white/70">mix-blend-mode: overlay</code> 遮罩，不改变色彩，统一步调叠加颗粒与纸张质感。
+        </p>
+
+        <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 scrollbar-thin">
+          {TEXTURE_PRESETS.map((preset) => {
+            const active = (currentTexture || '') === preset.url;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  if (preset.id === 'none') {
+                    setBgTexture('');
+                  } else {
+                    setBgTexture(preset.url);
+                    if (preset.defaultOpacity) setTextureOpacity(preset.defaultOpacity);
+                    if (preset.defaultBlendMode) setTextureBlendMode(preset.defaultBlendMode);
+                  }
+                }}
+                className={`group flex-shrink-0 w-[84px] text-center p-1.5 rounded-xl border transition-all ${
+                  active
+                    ? 'border-red-500 bg-red-500/10 ring-1 ring-red-500/40 shadow-sm'
+                    : 'border-white/[0.06] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+                }`}
+              >
+                <div
+                  className="h-10 w-full rounded-lg relative overflow-hidden flex items-center justify-center border border-white/10 mb-1"
+                  style={{ backgroundColor: '#1e232d' }}
+                >
+                  {preset.url ? (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-zinc-900 opacity-90" />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: `url("${preset.url}")`,
+                          backgroundRepeat: 'repeat',
+                          mixBlendMode: 'overlay',
+                          opacity: 0.85,
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-white/30 font-bold">无</span>
+                  )}
+                  {active && (
+                    <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
+                      <span className="text-[8px] font-black leading-none">✓</span>
+                    </div>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] font-black truncate block ${
+                    active ? 'text-red-400' : 'text-white/60 group-hover:text-white/80'
+                  }`}
+                >
+                  {preset.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {currentTexture && (
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2.5">
+            <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
+              <span>颗粒浓度 (Opacity)</span>
+              <span className="font-mono text-red-400">{Math.round(currentOpacity * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={100}
+              step={5}
+              value={Math.round(currentOpacity * 100)}
+              onChange={(e) => setTextureOpacity(Number(e.target.value) / 100)}
+              className="w-full accent-red-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

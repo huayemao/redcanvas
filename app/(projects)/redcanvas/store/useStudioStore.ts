@@ -113,6 +113,9 @@ export interface StudioState {
   bgColor: string;
   gradientStart: string;
   gradientEnd: string;
+  bgTexture?: string;
+  textureOpacity?: number;
+  textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
   autoColorEnabled: boolean;
   extractedColors: ExtractedColors | null;
   paletteCandidates: PaletteCandidate[];
@@ -160,6 +163,9 @@ export interface StudioState {
   setBgType: (type: 'gradient' | 'color' | 'blur') => void;
   setBgColor: (color: string) => void;
   setGradient: (start: string, end: string) => void;
+  setBgTexture: (texture: string) => void;
+  setTextureOpacity: (opacity: number) => void;
+  setTextureBlendMode: (mode: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal') => void;
   setAutoColorEnabled: (enabled: boolean) => void;
   autoExtractColors: (imageSrc: string) => Promise<void>;
   /** 切换主色候选（主变体）—— 从图片提取的不同 dominant */
@@ -272,6 +278,7 @@ export interface StudioConfigSnapshot {
 const PAGE_FIELDS = [
   'templateId', 'aspectRatio', 'customWidth', 'customHeight',
   'bgType', 'bgColor', 'gradientStart', 'gradientEnd',
+  'bgTexture', 'textureOpacity', 'textureBlendMode',
   'autoColorEnabled', 'extractedColors', 'paletteCandidates',
   'selectedCandidateId', 'selectedStyleId',
   'images', 'imageAspectRatio', 'imageScale', 'showDeviceFrame', 'deviceType',
@@ -314,7 +321,7 @@ const pageFieldsShallowEqual = (a: StudioPageFields, b: StudioPageFields): boole
 
 /** 从字段集合构造背景元素（保证每页都有一层可选中的背景） */
 const makeBgElement = (
-  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images'>
+  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images' | 'bgTexture' | 'textureOpacity' | 'textureBlendMode'>
 ): PlogElement => ({
   id: `el-bg-${UID()}`,
   type: 'background',
@@ -327,6 +334,9 @@ const makeBgElement = (
   gradientStart: f.gradientStart,
   gradientEnd: f.gradientEnd,
   imageUrl: f.images[0]?.url || '',
+  textureUrl: f.bgTexture || '',
+  textureOpacity: f.textureOpacity ?? 0.6,
+  textureBlendMode: f.textureBlendMode ?? 'overlay',
 });
 
 /** 读入一页数据时兜底：floatingElements 缺背景层则补建 */
@@ -371,6 +381,9 @@ function sanitizePageData(raw: unknown, fb: StudioPageFields): StudioPageFields 
     bgColor: asString('bgColor', fb.bgColor),
     gradientStart: asString('gradientStart', fb.gradientStart),
     gradientEnd: asString('gradientEnd', fb.gradientEnd),
+    bgTexture: asString('bgTexture', fb.bgTexture || ''),
+    textureOpacity: asNumber('textureOpacity', fb.textureOpacity ?? 0.6),
+    textureBlendMode: pick<'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'>('textureBlendMode', fb.textureBlendMode ?? 'overlay'),
     autoColorEnabled: asBool('autoColorEnabled', fb.autoColorEnabled),
     extractedColors: asNullableObj<ExtractedColors>('extractedColors'),
     paletteCandidates: asArray('paletteCandidates', fb.paletteCandidates),
@@ -401,6 +414,9 @@ const INITIAL_PAGE_FIELDS: StudioPageFields = {
   bgColor: '#c9d1d9',
   gradientStart: '#cbd5e1',
   gradientEnd: '#94a3b8',
+  bgTexture: '',
+  textureOpacity: 0.6,
+  textureBlendMode: 'overlay',
   autoColorEnabled: true,
   extractedColors: null,
   paletteCandidates: [],
@@ -487,6 +503,45 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         ),
       });
     }
+  },
+  setBgTexture: (bgTexture) => {
+    const s = get();
+    set({ bgTexture });
+    const bgEl = s.floatingElements.find((e) => e.type === 'background');
+    if (bgEl && bgEl.textureUrl !== bgTexture) {
+      set({
+        floatingElements: s.floatingElements.map((e) =>
+          e.id === bgEl.id ? { ...e, textureUrl: bgTexture } : e
+        ),
+      });
+    }
+    get().captureCurrentPage();
+  },
+  setTextureOpacity: (textureOpacity) => {
+    const s = get();
+    set({ textureOpacity });
+    const bgEl = s.floatingElements.find((e) => e.type === 'background');
+    if (bgEl && bgEl.textureOpacity !== textureOpacity) {
+      set({
+        floatingElements: s.floatingElements.map((e) =>
+          e.id === bgEl.id ? { ...e, textureOpacity } : e
+        ),
+      });
+    }
+    get().captureCurrentPage();
+  },
+  setTextureBlendMode: (textureBlendMode) => {
+    const s = get();
+    set({ textureBlendMode });
+    const bgEl = s.floatingElements.find((e) => e.type === 'background');
+    if (bgEl && bgEl.textureBlendMode !== textureBlendMode) {
+      set({
+        floatingElements: s.floatingElements.map((e) =>
+          e.id === bgEl.id ? { ...e, textureBlendMode } : e
+        ),
+      });
+    }
+    get().captureCurrentPage();
   },
   setAutoColorEnabled: (autoColorEnabled) => set({ autoColorEnabled }),
 
@@ -792,7 +847,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     );
     set({ floatingElements: nextElements });
 
-    // —— 若是 background 元素：把变更同步回全局 bgType/bgColor/gradient 字段，让 CanvasControlTab UI 也同步 ——
+    // —— 若是 background 元素：把变更同步回全局 bgType/bgColor/gradient/bgTexture 字段，让 CanvasControlTab UI 也同步 ——
     if (el.type === 'background') {
       const patch2: any = {};
       if ('bgVariant' in patch && patch.bgVariant !== undefined) patch2.bgType = patch.bgVariant;
@@ -801,6 +856,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         patch2.gradientStart = patch.gradientStart ?? merged.gradientStart;
         patch2.gradientEnd = patch.gradientEnd ?? merged.gradientEnd;
       }
+      if ('textureUrl' in patch) patch2.bgTexture = patch.textureUrl;
+      if ('textureOpacity' in patch) patch2.textureOpacity = patch.textureOpacity;
+      if ('textureBlendMode' in patch) patch2.textureBlendMode = patch.textureBlendMode;
       if (Object.keys(patch2).length > 0) {
         // 避免再走 setBgType/setBgColor/setGradient 否则会再次触发 set 回 background → 递归无限循环
         // 直接 set 全局字段即可（已经同步了 elements）
@@ -1161,6 +1219,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       gradientStart: s.gradientStart,
       gradientEnd: s.gradientEnd,
       imageUrl: s.images[0]?.url || '', // blur 模式下用的模糊图 URL
+      textureUrl: s.bgTexture || '',
+      textureOpacity: s.textureOpacity ?? 0.6,
+      textureBlendMode: s.textureBlendMode ?? 'overlay',
     };
 
     set({ floatingElements: [bgEl, ...elements], selectedElementId: null });
@@ -1236,6 +1297,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         gradientStart: s.gradientStart,
         gradientEnd: s.gradientEnd,
         imageUrl: s.images[0]?.url || '',
+        textureUrl: s.bgTexture || '',
+        textureOpacity: s.textureOpacity ?? 0.6,
+        textureBlendMode: s.textureBlendMode ?? 'overlay',
       };
       set((state) => ({
         floatingElements: [bg, ...state.floatingElements],

@@ -20,6 +20,9 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
     bgColor: _globalBgColor,
     gradientStart: _globalGradientStart,
     gradientEnd: _globalGradientEnd,
+    bgTexture: _globalBgTexture,
+    textureOpacity: _globalTextureOpacity,
+    textureBlendMode: _globalTextureBlendMode,
     images,
     fontFamily,
     extractedColors,
@@ -45,6 +48,9 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
   const effBgColor = bgElement?.bgColor ?? _globalBgColor;
   const effGradientStart = bgElement?.gradientStart ?? _globalGradientStart;
   const effGradientEnd = bgElement?.gradientEnd ?? _globalGradientEnd;
+  const effTextureUrl = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : _globalBgTexture;
+  const effTextureOpacity = bgElement?.textureOpacity ?? _globalTextureOpacity ?? 0.6;
+  const effTextureBlendMode = bgElement?.textureBlendMode ?? _globalTextureBlendMode ?? 'overlay';
   // 浮动元素：过滤掉 background（背景作为容器底层已经单独渲染，不参与 PlogElement 循环）
   const floatingOnly = floatingElements.filter((e) => e.type !== 'background');
 
@@ -73,6 +79,9 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         gradientStart: state.gradientStart,
         gradientEnd: state.gradientEnd,
         imageUrl: state.images[0]?.url || '',
+        textureUrl: state.bgTexture || '',
+        textureOpacity: state.textureOpacity ?? 0.6,
+        textureBlendMode: state.textureBlendMode ?? 'overlay',
       };
       state.addFloatingElement(bgEl);
     }
@@ -168,6 +177,23 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
             />
           ));
         })()}
+
+        {/* =============================================================
+            全屏绝对定位的半透明颗粒PNG做噪点遮罩
+            通过 mix-blend-mode: overlay 叠加在页面所有内容上层，
+            不改动底层色彩，统一给全部画面叠加胶片颗粒质感。
+           ============================================================= */}
+        {effTextureUrl ? (
+          <div
+            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
+            style={{
+              backgroundImage: `url("${effTextureUrl}")`,
+              backgroundRepeat: 'repeat',
+              mixBlendMode: (effTextureBlendMode || 'overlay') as any,
+              opacity: effTextureOpacity,
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );
