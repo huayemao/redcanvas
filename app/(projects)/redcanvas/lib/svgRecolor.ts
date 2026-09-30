@@ -12,7 +12,66 @@ export function isSvgSource(url?: string | null): boolean {
 }
 
 /**
+ * 标准 CSS 颜色名称映射表（覆盖常见灰阶及基本色）
+ */
+const NAMED_COLORS: Record<string, [number, number, number]> = {
+  black: [0, 0, 0],
+  white: [255, 255, 255],
+  gray: [128, 128, 128],
+  grey: [128, 128, 128],
+  silver: [192, 192, 192],
+  darkgray: [169, 169, 169],
+  darkgrey: [169, 169, 169],
+  dimgray: [105, 105, 105],
+  dimgrey: [105, 105, 105],
+  lightgray: [211, 211, 211],
+  lightgrey: [211, 211, 211],
+  gainsboro: [220, 220, 220],
+  whitesmoke: [245, 245, 245],
+  slategray: [112, 128, 144],
+  slategrey: [112, 128, 144],
+  darkslategray: [47, 79, 79],
+  darkslategrey: [47, 79, 79],
+  lightslategray: [119, 136, 153],
+  lightslategrey: [119, 136, 153],
+  red: [255, 0, 0],
+  green: [0, 128, 0],
+  blue: [0, 0, 255],
+  yellow: [255, 255, 0],
+  purple: [128, 0, 128],
+  orange: [255, 165, 0],
+  cyan: [0, 255, 255],
+  magenta: [255, 0, 255],
+  lime: [0, 255, 0],
+  maroon: [128, 0, 0],
+  navy: [0, 0, 128],
+  olive: [128, 128, 0],
+  teal: [0, 128, 128],
+  aqua: [0, 255, 255],
+  fuchsia: [255, 0, 255],
+};
+
+function parseRgbChannel(val: string): number | null {
+  const trimmed = val.trim();
+  if (trimmed.endsWith('%')) {
+    const p = parseFloat(trimmed.slice(0, -1));
+    if (isNaN(p)) return null;
+    return Math.max(0, Math.min(255, Math.round(p * 2.55)));
+  }
+  const n = parseFloat(trimmed);
+  if (isNaN(n)) return null;
+  return Math.max(0, Math.min(255, Math.round(n)));
+}
+
+/**
  * 解析颜色字符串为 RGB 数值元组 [r, g, b] (0-255)
+ * 支持格式：
+ * - 16 进制：#rgb, #rgba, #rrggbb, #rrggbbaa
+ * - RGB(A) 逗号或空格分隔、整数、浮点数或百分比：
+ *   rgb(255, 0, 0), rgba(255, 0, 0, 0.5), rgb(100%, 0%, 0%), rgb(0%,0%,0%),
+ *   rgb(255 0 0), rgb(255 0 0 / 0.5), rgb(100% 0% 0% / 50%)
+ * - HSL(A)：hsl(120, 100%, 50%), hsla(120deg, 100%, 50%, 0.5)
+ * - 常见 CSS 颜色关键字：black, white, gray, slategray 等
  */
 export function parseRgbColor(str?: string | null): [number, number, number] | null {
   if (!str) return null;
@@ -20,10 +79,13 @@ export function parseRgbColor(str?: string | null): [number, number, number] | n
   if (s === 'none' || s === 'transparent' || s === 'inherit' || s === 'currentcolor') {
     return null;
   }
-  if (s === 'black') return [0, 0, 0];
-  if (s === 'white') return [255, 255, 255];
 
-  // Hex: #rgb, #rgba, #rrggbb, #rrggbbaa
+  // 1. 常见命名颜色
+  if (NAMED_COLORS[s]) {
+    return [...NAMED_COLORS[s]];
+  }
+
+  // 2. Hex: #rgb, #rgba, #rrggbb, #rrggbbaa
   if (s.startsWith('#')) {
     let hex = s.slice(1);
     if (hex.length === 3) {
@@ -40,14 +102,72 @@ export function parseRgbColor(str?: string | null): [number, number, number] | n
     }
   }
 
-  // rgb(r, g, b) 或 rgba(r, g, b, a)
-  const rgbMatch = s.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  // 3. rgb(...) 或 rgba(...)：支持逗号、空格、斜杠与百分比
+  const rgbMatch = s.match(/^rgba?\s*\(([^)]+)\)$/i);
   if (rgbMatch) {
-    return [
-      Math.min(255, Math.max(0, parseInt(rgbMatch[1], 10))),
-      Math.min(255, Math.max(0, parseInt(rgbMatch[2], 10))),
-      Math.min(255, Math.max(0, parseInt(rgbMatch[3], 10))),
-    ];
+    const inner = rgbMatch[1].trim();
+    let parts: string[];
+    if (inner.includes(',')) {
+      parts = inner.split(',').map((p) => p.trim());
+    } else {
+      const noSlash = inner.replace(/\s*\/\s*/, ' ');
+      parts = noSlash.split(/\s+/).filter(Boolean);
+    }
+    if (parts.length >= 3) {
+      const r = parseRgbChannel(parts[0]);
+      const g = parseRgbChannel(parts[1]);
+      const b = parseRgbChannel(parts[2]);
+      if (r !== null && g !== null && b !== null) {
+        return [r, g, b];
+      }
+    }
+  }
+
+  // 4. hsl(...) 或 hsla(...)
+  const hslMatch = s.match(/^hsla?\s*\(([^)]+)\)$/i);
+  if (hslMatch) {
+    const inner = hslMatch[1].trim();
+    let parts: string[];
+    if (inner.includes(',')) {
+      parts = inner.split(',').map((p) => p.trim());
+    } else {
+      const noSlash = inner.replace(/\s*\/\s*/, ' ');
+      parts = noSlash.split(/\s+/).filter(Boolean);
+    }
+    if (parts.length >= 3) {
+      let h = parseFloat(parts[0]);
+      if (parts[0].endsWith('deg')) h = parseFloat(parts[0].slice(0, -3));
+      else if (parts[0].endsWith('rad')) h = (parseFloat(parts[0].slice(0, -3)) * 180) / Math.PI;
+      else if (parts[0].endsWith('turn')) h = parseFloat(parts[0].slice(0, -4)) * 360;
+
+      let sVal = parseFloat(parts[1]);
+      if (parts[1].endsWith('%')) sVal /= 100;
+      let lVal = parseFloat(parts[2]);
+      if (parts[2].endsWith('%')) lVal /= 100;
+
+      if (!isNaN(h) && !isNaN(sVal) && !isNaN(lVal)) {
+        h = ((h % 360) + 360) % 360;
+        sVal = Math.max(0, Math.min(1, sVal));
+        lVal = Math.max(0, Math.min(1, lVal));
+
+        const c = (1 - Math.abs(2 * lVal - 1)) * sVal;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = lVal - c / 2;
+        let r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        return [
+          Math.round((r + m) * 255),
+          Math.round((g + m) * 255),
+          Math.round((b + m) * 255),
+        ];
+      }
+    }
   }
 
   return null;
@@ -258,14 +378,17 @@ export function recolorMonochromeSvg(
     }
   );
 
-  // 4. 确保根 <svg> 具有 color 属性，使依赖 currentColor 的子节点继承目标前景色
+  // 4. 确保根 <svg> 具有 color 与 fill 属性，使依赖 currentColor 及未显式指定 fill 的子节点（如 LaTeX/dvisvgm 生成的 <use> 字符）正确继承目标前景色
   const targetHex = rgbToHex(fgRgb[0], fgRgb[1], fgRgb[2]);
   result = result.replace(/<svg\b([^>]*)>/i, (match, attrs) => {
-    if (/\bcolor\s*=/i.test(attrs)) {
-      // 已经由上方的属性替换过
-      return match;
+    let updatedAttrs = attrs;
+    if (!/\bcolor\s*=/i.test(updatedAttrs)) {
+      updatedAttrs = ` color="${targetHex}"` + updatedAttrs;
     }
-    return `<svg ${attrs} color="${targetHex}">`;
+    if (!/\bfill\s*=/i.test(updatedAttrs)) {
+      updatedAttrs = ` fill="${targetHex}"` + updatedAttrs;
+    }
+    return `<svg${updatedAttrs}>`;
   });
 
   return result;
