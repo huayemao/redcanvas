@@ -63,9 +63,12 @@ const AppPage: React.FC = () => {
     return () => window.removeEventListener('paste', handlePaste);
   }, [addImage, autoColorEnabled, autoExtractColors]);
 
-  // 选中元素变化时，关闭移动端属性抽屉（仅选中，不自动打开抽屉）
+  // 仅在明确取消选中（selectedElementId 为 null）时关闭移动端属性抽屉；
+  // 元素间切换时保持抽屉开启并实时展示新选中元素的属性
   useEffect(() => {
-    setMobilePropDrawerOpen(false);
+    if (!selectedElementId) {
+      setMobilePropDrawerOpen(false);
+    }
   }, [selectedElementId]);
 
   // —— 取消选中：按下 ESC 键 或 点击画布/面板外的空白容器区域 ——

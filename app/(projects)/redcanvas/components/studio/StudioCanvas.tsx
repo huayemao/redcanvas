@@ -6,6 +6,7 @@ import { FONTS } from '../../constants';
 import { PlogElement as PlogElementType } from '../../types';
 import { PlogElement } from '../plog/PlogElement';
 import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
+import { SlidersHorizontal } from 'lucide-react';
 
 interface StudioCanvasProps {
   onEditElement?: () => void;
@@ -137,7 +138,40 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         // 点击画布空白区域 → 选中背景层（若存在），否则取消选中
         // PlogElement 内的 onClick 有 stopPropagation，所以点元素不会触发这里
         onClick={() => setSelectedElementId(bgElement?.id ?? null)}
+        onDoubleClick={() => {
+          if (bgElement) {
+            setSelectedElementId(bgElement.id);
+            onEditElement?.();
+          }
+        }}
       >
+        {/* 背景被选中时：画布中央下方浮动出现配置胶囊，便于移动端及触屏一键呼出属性抽屉 */}
+        {bgElement && selectedElementId === bgElement.id && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-xl border border-red-500/50 shadow-2xl shadow-black/80 pointer-events-auto select-none">
+            <div className="flex items-center gap-1.5 text-white/90">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[11px] font-black tracking-wide">画布背景</span>
+              {effTextureUrl && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-red-300 font-bold border border-white/10">
+                  {effTextureTarget === 'bg' ? '仅背景颗粒' : '全图颗粒'}
+                </span>
+              )}
+            </div>
+            <div className="h-3 w-px bg-white/20" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditElement?.();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 text-white text-[10px] font-black transition-all shadow-md"
+              title="打开背景配置抽屉 (材质/颜色/渐变)"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>配置背景</span>
+            </button>
+          </div>
+        )}
         {effBgType === 'blur' && blurImageSrc && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <img

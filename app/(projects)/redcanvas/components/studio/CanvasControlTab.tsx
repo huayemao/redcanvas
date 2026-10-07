@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
-import { Sparkles, Film } from 'lucide-react';
+import { Sparkles, Film, Palette, SlidersHorizontal, ChevronRight } from 'lucide-react';
 import { TEXTURE_PRESETS } from '../../constants';
 
 export const CanvasControlTab: React.FC = () => {
@@ -17,6 +17,8 @@ export const CanvasControlTab: React.FC = () => {
     paletteStyles,
     selectedStyleId,
     applyPaletteStyle,
+    bgType,
+    setBgType,
     bgTexture,
     textureOpacity,
     textureBlendMode,
@@ -25,6 +27,9 @@ export const CanvasControlTab: React.FC = () => {
     setTextureOpacity,
     setTextureBlendMode,
     setTextureTarget,
+    setActiveTab,
+    setSelectedElementId,
+    updateFloatingElement,
   } = useStudioStore();
 
   const handleAutoColor = () => {
@@ -39,10 +44,25 @@ export const CanvasControlTab: React.FC = () => {
   };
 
   const bgElement = floatingElements.find((e) => e.type === 'background');
+  const currentBgVariant = bgElement?.bgVariant ?? bgType ?? 'gradient';
   const currentTexture = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : bgTexture;
   const currentOpacity = bgElement?.textureOpacity ?? textureOpacity ?? 0.6;
   const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'overlay';
   const currentTarget = bgElement?.textureTarget ?? textureTarget ?? 'all';
+
+  const handleSetBgVariant = (v: 'gradient' | 'color' | 'blur') => {
+    setBgType(v);
+    if (bgElement) {
+      updateFloatingElement(bgElement.id, { bgVariant: v });
+    }
+  };
+
+  const handleGoToBgElement = () => {
+    if (bgElement) {
+      setSelectedElementId(bgElement.id);
+    }
+    setActiveTab('elements');
+  };
 
   return (
     <div className="space-y-6">
@@ -61,6 +81,41 @@ export const CanvasControlTab: React.FC = () => {
         >
           一键提色
         </button>
+      </div>
+
+      {/* 画布背景底层风格快捷切换 & 深入配置入口 */}
+      <div className="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06] space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-rose-400" />
+            <span>画布背景 · Background Style</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleGoToBgElement}
+            className="text-[10px] text-red-400 hover:text-red-300 font-bold flex items-center gap-0.5 hover:underline"
+          >
+            <span>深入精调</span>
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5">
+          {(['gradient', 'color', 'blur'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => handleSetBgVariant(t)}
+              className={`py-2 rounded-xl font-bold text-xs transition-all ${
+                currentBgVariant === t
+                  ? 'bg-red-500 text-white shadow-sm'
+                  : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white'
+              }`}
+            >
+              {t === 'gradient' ? '环境渐变' : t === 'color' ? '纯色' : '模糊底图'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 两级配色方案 · 主色候选（主变体）+ 风格（次变体） */}
