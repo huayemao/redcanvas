@@ -20,9 +20,11 @@ export const CanvasControlTab: React.FC = () => {
     bgTexture,
     textureOpacity,
     textureBlendMode,
+    textureTarget,
     setBgTexture,
     setTextureOpacity,
     setTextureBlendMode,
+    setTextureTarget,
   } = useStudioStore();
 
   const handleAutoColor = () => {
@@ -40,6 +42,7 @@ export const CanvasControlTab: React.FC = () => {
   const currentTexture = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : bgTexture;
   const currentOpacity = bgElement?.textureOpacity ?? textureOpacity ?? 0.6;
   const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'overlay';
+  const currentTarget = bgElement?.textureTarget ?? textureTarget ?? 'all';
 
   return (
     <div className="space-y-6">
@@ -255,20 +258,61 @@ export const CanvasControlTab: React.FC = () => {
         </div>
 
         {currentTexture && (
-          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2.5">
-            <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
-              <span>颗粒浓度 (Opacity)</span>
-              <span className="font-mono text-red-400">{Math.round(currentOpacity * 100)}%</span>
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3">
+            {/* 作用范围选择 */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
+                <span>作用范围</span>
+                <span className="font-mono text-[9px] text-red-400">
+                  {currentTarget === 'all' ? '整张图片 (全画幅)' : '仅限底层背景'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/20 rounded-xl border border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setTextureTarget('all')}
+                  className={`py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                    currentTarget === 'all'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'text-white/40 hover:text-white/80 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  整张图片 (全层)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTextureTarget('bg')}
+                  className={`py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                    currentTarget === 'bg'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'text-white/40 hover:text-white/80 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  仅限背景 (不遮主体)
+                </button>
+              </div>
+              <p className="text-[9px] text-white/35 leading-relaxed">
+                {currentTarget === 'all'
+                  ? '颗粒覆盖在最顶层，画面中所有卡片、插图和文字均染上统一胶片噪点。'
+                  : '颗粒仅附着在底色与背景渐变上，前景图片与卡片主体保持高清纯净。'}
+              </p>
             </div>
-            <input
-              type="range"
-              min={5}
-              max={100}
-              step={5}
-              value={Math.round(currentOpacity * 100)}
-              onChange={(e) => setTextureOpacity(Number(e.target.value) / 100)}
-              className="w-full accent-red-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
-            />
+
+            <div className="space-y-1.5 pt-1 border-t border-white/5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
+                <span>颗粒浓度 (Opacity)</span>
+                <span className="font-mono text-red-400">{Math.round(currentOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={100}
+                step={5}
+                value={Math.round(currentOpacity * 100)}
+                onChange={(e) => setTextureOpacity(Number(e.target.value) / 100)}
+                className="w-full accent-red-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
+              />
+            </div>
           </div>
         )}
       </div>

@@ -23,6 +23,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
     bgTexture: _globalBgTexture,
     textureOpacity: _globalTextureOpacity,
     textureBlendMode: _globalTextureBlendMode,
+    textureTarget: _globalTextureTarget,
     images,
     fontFamily,
     extractedColors,
@@ -51,6 +52,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
   const effTextureUrl = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : _globalBgTexture;
   const effTextureOpacity = bgElement?.textureOpacity ?? _globalTextureOpacity ?? 0.6;
   const effTextureBlendMode = bgElement?.textureBlendMode ?? _globalTextureBlendMode ?? 'overlay';
+  const effTextureTarget = bgElement?.textureTarget ?? _globalTextureTarget ?? 'all';
   // 浮动元素：过滤掉 background（背景作为容器底层已经单独渲染，不参与 PlogElement 循环）
   const floatingOnly = floatingElements.filter((e) => e.type !== 'background');
 
@@ -147,6 +149,19 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
           </div>
         )}
 
+        {/* 背景专享材质遮罩：当设置仅针对背景 (textureTarget === 'bg') 时，渲染在背景图层内部/浮动元素下方 */}
+        {effTextureUrl && effTextureTarget === 'bg' ? (
+          <div
+            className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
+            style={{
+              backgroundImage: `url("${effTextureUrl}")`,
+              backgroundRepeat: 'repeat',
+              mixBlendMode: (effTextureBlendMode || 'overlay') as any,
+              opacity: effTextureOpacity,
+            }}
+          />
+        ) : null}
+
         {/* =============================================================
             画布 = 一组可拖拽的自由元素（background 除外，已作为容器底层渲染）
            ============================================================= */}
@@ -179,11 +194,10 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         })()}
 
         {/* =============================================================
-            全屏绝对定位的半透明颗粒PNG做噪点遮罩
-            通过 mix-blend-mode: overlay 叠加在页面所有内容上层，
-            不改动底层色彩，统一给全部画面叠加胶片颗粒质感。
+            全屏绝对定位的半透明颗粒PNG做噪点遮罩（整张图片/全部元素上层）
+            当设置全画幅覆盖 (textureTarget === 'all') 时，叠加在页面所有内容上层
            ============================================================= */}
-        {effTextureUrl ? (
+        {effTextureUrl && effTextureTarget !== 'bg' ? (
           <div
             className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
             style={{

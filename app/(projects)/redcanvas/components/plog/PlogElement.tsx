@@ -405,6 +405,19 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               <span>图片占位</span>
             </div>
           )}
+
+          {/* 元素专属材质噪点遮罩 */}
+          {element.textureUrl ? (
+            <div
+              className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-200"
+              style={{
+                backgroundImage: `url("${element.textureUrl}")`,
+                backgroundRepeat: 'repeat',
+                mixBlendMode: (element.textureBlendMode || 'overlay') as any,
+                opacity: element.textureOpacity ?? 0.6,
+              }}
+            />
+          ) : null}
         </div>
       )}
 
@@ -510,6 +523,19 @@ export const PlogElement: React.FC<PlogElementProps> = ({
               插入素材
             </div>
           )}
+
+          {/* 素材专属材质噪点遮罩 */}
+          {element.textureUrl ? (
+            <div
+              className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-200"
+              style={{
+                backgroundImage: `url("${element.textureUrl}")`,
+                backgroundRepeat: 'repeat',
+                mixBlendMode: (element.textureBlendMode || 'overlay') as any,
+                opacity: element.textureOpacity ?? 0.6,
+              }}
+            />
+          ) : null}
         </div>
       )}
 

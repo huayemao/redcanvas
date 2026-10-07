@@ -116,6 +116,7 @@ export interface StudioState {
   bgTexture?: string;
   textureOpacity?: number;
   textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
+  textureTarget?: 'all' | 'bg';
   autoColorEnabled: boolean;
   extractedColors: ExtractedColors | null;
   paletteCandidates: PaletteCandidate[];
@@ -166,6 +167,7 @@ export interface StudioState {
   setBgTexture: (texture: string) => void;
   setTextureOpacity: (opacity: number) => void;
   setTextureBlendMode: (mode: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal') => void;
+  setTextureTarget: (target: 'all' | 'bg') => void;
   setAutoColorEnabled: (enabled: boolean) => void;
   autoExtractColors: (imageSrc: string) => Promise<void>;
   /** 切换主色候选（主变体）—— 从图片提取的不同 dominant */
@@ -278,7 +280,7 @@ export interface StudioConfigSnapshot {
 const PAGE_FIELDS = [
   'templateId', 'aspectRatio', 'customWidth', 'customHeight',
   'bgType', 'bgColor', 'gradientStart', 'gradientEnd',
-  'bgTexture', 'textureOpacity', 'textureBlendMode',
+  'bgTexture', 'textureOpacity', 'textureBlendMode', 'textureTarget',
   'autoColorEnabled', 'extractedColors', 'paletteCandidates',
   'selectedCandidateId', 'selectedStyleId',
   'images', 'imageAspectRatio', 'imageScale', 'showDeviceFrame', 'deviceType',
@@ -321,7 +323,7 @@ const pageFieldsShallowEqual = (a: StudioPageFields, b: StudioPageFields): boole
 
 /** 从字段集合构造背景元素（保证每页都有一层可选中的背景） */
 const makeBgElement = (
-  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images' | 'bgTexture' | 'textureOpacity' | 'textureBlendMode'>
+  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images' | 'bgTexture' | 'textureOpacity' | 'textureBlendMode' | 'textureTarget'>
 ): PlogElement => ({
   id: `el-bg-${UID()}`,
   type: 'background',
@@ -337,6 +339,7 @@ const makeBgElement = (
   textureUrl: f.bgTexture || '',
   textureOpacity: f.textureOpacity ?? 0.6,
   textureBlendMode: f.textureBlendMode ?? 'overlay',
+  textureTarget: f.textureTarget ?? 'all',
 });
 
 /** 读入一页数据时兜底：floatingElements 缺背景层则补建 */
@@ -384,6 +387,7 @@ function sanitizePageData(raw: unknown, fb: StudioPageFields): StudioPageFields 
     bgTexture: asString('bgTexture', fb.bgTexture || ''),
     textureOpacity: asNumber('textureOpacity', fb.textureOpacity ?? 0.6),
     textureBlendMode: pick<'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'>('textureBlendMode', fb.textureBlendMode ?? 'overlay'),
+    textureTarget: pick<'all' | 'bg'>('textureTarget', fb.textureTarget ?? 'all'),
     autoColorEnabled: asBool('autoColorEnabled', fb.autoColorEnabled),
     extractedColors: asNullableObj<ExtractedColors>('extractedColors'),
     paletteCandidates: asArray('paletteCandidates', fb.paletteCandidates),
@@ -417,6 +421,7 @@ const INITIAL_PAGE_FIELDS: StudioPageFields = {
   bgTexture: '',
   textureOpacity: 0.6,
   textureBlendMode: 'overlay',
+  textureTarget: 'all',
   autoColorEnabled: true,
   extractedColors: null,
   paletteCandidates: [],
@@ -538,6 +543,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({
         floatingElements: s.floatingElements.map((e) =>
           e.id === bgEl.id ? { ...e, textureBlendMode } : e
+        ),
+      });
+    }
+    get().captureCurrentPage();
+  },
+  setTextureTarget: (textureTarget) => {
+    const s = get();
+    set({ textureTarget });
+    const bgEl = s.floatingElements.find((e) => e.type === 'background');
+    if (bgEl && bgEl.textureTarget !== textureTarget) {
+      set({
+        floatingElements: s.floatingElements.map((e) =>
+          e.id === bgEl.id ? { ...e, textureTarget } : e
         ),
       });
     }
@@ -859,6 +877,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if ('textureUrl' in patch) patch2.bgTexture = patch.textureUrl;
       if ('textureOpacity' in patch) patch2.textureOpacity = patch.textureOpacity;
       if ('textureBlendMode' in patch) patch2.textureBlendMode = patch.textureBlendMode;
+      if ('textureTarget' in patch) patch2.textureTarget = patch.textureTarget;
       if (Object.keys(patch2).length > 0) {
         // 避免再走 setBgType/setBgColor/setGradient 否则会再次触发 set 回 background → 递归无限循环
         // 直接 set 全局字段即可（已经同步了 elements）
@@ -1222,6 +1241,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       textureUrl: s.bgTexture || '',
       textureOpacity: s.textureOpacity ?? 0.6,
       textureBlendMode: s.textureBlendMode ?? 'overlay',
+      textureTarget: s.textureTarget ?? 'all',
     };
 
     set({ floatingElements: [bgEl, ...elements], selectedElementId: null });
@@ -1300,6 +1320,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         textureUrl: s.bgTexture || '',
         textureOpacity: s.textureOpacity ?? 0.6,
         textureBlendMode: s.textureBlendMode ?? 'overlay',
+        textureTarget: s.textureTarget ?? 'all',
       };
       set((state) => ({
         floatingElements: [bg, ...state.floatingElements],
