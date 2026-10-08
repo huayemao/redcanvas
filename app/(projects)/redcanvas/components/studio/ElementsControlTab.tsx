@@ -620,7 +620,7 @@ export const ElementPropertyPanel: React.FC = () => {
                           update({
                             textureUrl: preset.url,
                             textureOpacity: selected.textureOpacity ?? preset.defaultOpacity,
-                            textureBlendMode: selected.textureBlendMode ?? (preset.defaultBlendMode || 'overlay'),
+                            textureBlendMode: selected.textureBlendMode ?? (preset.defaultBlendMode || 'normal'),
                           });
                         }
                       }}
@@ -759,17 +759,17 @@ export const ElementPropertyPanel: React.FC = () => {
                     <span className="text-[11px] font-bold text-white/60 block mb-1.5">混合模式 (Mix Blend Mode)</span>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { value: 'overlay', name: '叠加', en: 'Overlay', desc: '推荐 · 保持底层通透色彩' },
+                        { value: 'normal', name: '正常', en: 'Normal', desc: '推荐 · 默认标准透明叠加' },
+                        { value: 'overlay', name: '叠加', en: 'Overlay', desc: '保持底层通透色彩' },
                         { value: 'soft-light', name: '柔光', en: 'Soft Light', desc: '细腻温和' },
                         { value: 'multiply', name: '正片叠底', en: 'Multiply', desc: '浓郁复古' },
                         { value: 'screen', name: '滤色', en: 'Screen', desc: '提亮星芒' },
-                        { value: 'normal', name: '正常', en: 'Normal', desc: '标准透明' },
                       ].map((bm) => (
                         <button
                           key={bm.value}
                           onClick={() => update({ textureBlendMode: bm.value as any })}
                           className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex flex-col items-center justify-center ${
-                            (selected.textureBlendMode ?? 'overlay') === bm.value
+                            (selected.textureBlendMode ?? 'normal') === bm.value
                               ? 'bg-red-500 text-white shadow-sm'
                               : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white'
                           }`}
@@ -1009,7 +1009,7 @@ export const ElementPropertyPanel: React.FC = () => {
                           update({
                             textureUrl: preset.url,
                             textureOpacity: selected.textureOpacity ?? preset.defaultOpacity,
-                            textureBlendMode: selected.textureBlendMode ?? (preset.defaultBlendMode || 'overlay'),
+                            textureBlendMode: selected.textureBlendMode ?? (preset.defaultBlendMode || 'normal'),
                           });
                         }
                       }}
@@ -1146,17 +1146,17 @@ export const ElementPropertyPanel: React.FC = () => {
                     <span className="text-[11px] font-bold text-white/60 block mb-1.5">混合模式 (Mix Blend Mode)</span>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { value: 'overlay', name: '叠加', en: 'Overlay', desc: '推荐 · 保持底层通透色彩' },
+                        { value: 'normal', name: '正常', en: 'Normal', desc: '推荐 · 默认标准透明叠加' },
+                        { value: 'overlay', name: '叠加', en: 'Overlay', desc: '保持底层通透色彩' },
                         { value: 'soft-light', name: '柔光', en: 'Soft Light', desc: '细腻温和' },
                         { value: 'multiply', name: '正片叠底', en: 'Multiply', desc: '浓郁复古' },
                         { value: 'screen', name: '滤色', en: 'Screen', desc: '提亮星芒' },
-                        { value: 'normal', name: '正常', en: 'Normal', desc: '标准透明' },
                       ].map((bm) => (
                         <button
                           key={bm.value}
                           onClick={() => update({ textureBlendMode: bm.value as any })}
                           className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex flex-col items-center justify-center ${
-                            (selected.textureBlendMode ?? 'overlay') === bm.value
+                            (selected.textureBlendMode ?? 'normal') === bm.value
                               ? 'bg-red-500 text-white shadow-sm'
                               : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white'
                           }`}

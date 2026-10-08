@@ -340,7 +340,7 @@ const makeBgElement = (
   imageUrl: f.images[0]?.url || '',
   textureUrl: f.bgTexture || '',
   textureOpacity: f.textureOpacity ?? 0.6,
-  textureBlendMode: f.textureBlendMode ?? 'overlay',
+  textureBlendMode: f.textureBlendMode ?? 'normal',
   textureTarget: f.textureTarget ?? 'all',
   textureSize: f.textureSize ?? 320,
 });
@@ -389,7 +389,7 @@ function sanitizePageData(raw: unknown, fb: StudioPageFields): StudioPageFields 
     gradientEnd: asString('gradientEnd', fb.gradientEnd),
     bgTexture: asString('bgTexture', fb.bgTexture || ''),
     textureOpacity: asNumber('textureOpacity', fb.textureOpacity ?? 0.6),
-    textureBlendMode: pick<'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'>('textureBlendMode', fb.textureBlendMode ?? 'overlay'),
+    textureBlendMode: pick<'normal' | 'overlay' | 'soft-light' | 'multiply' | 'screen'>('textureBlendMode', fb.textureBlendMode ?? 'normal'),
     textureTarget: pick<'all' | 'bg'>('textureTarget', fb.textureTarget ?? 'all'),
     textureSize: asNumber('textureSize', fb.textureSize ?? 320),
     autoColorEnabled: asBool('autoColorEnabled', fb.autoColorEnabled),
@@ -424,7 +424,7 @@ const INITIAL_PAGE_FIELDS: StudioPageFields = {
   gradientEnd: '#94a3b8',
   bgTexture: '',
   textureOpacity: 0.6,
-  textureBlendMode: 'overlay',
+  textureBlendMode: 'normal',
   textureTarget: 'all',
   textureSize: 320,
   autoColorEnabled: true,
@@ -1258,7 +1258,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       imageUrl: s.images[0]?.url || '', // blur 模式下用的模糊图 URL
       textureUrl: s.bgTexture || '',
       textureOpacity: s.textureOpacity ?? 0.6,
-      textureBlendMode: s.textureBlendMode ?? 'overlay',
+      textureBlendMode: s.textureBlendMode ?? 'normal',
       textureTarget: s.textureTarget ?? 'all',
       textureSize: s.textureSize ?? 320,
     };
@@ -1338,7 +1338,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         imageUrl: s.images[0]?.url || '',
         textureUrl: s.bgTexture || '',
         textureOpacity: s.textureOpacity ?? 0.6,
-        textureBlendMode: s.textureBlendMode ?? 'overlay',
+        textureBlendMode: s.textureBlendMode ?? 'normal',
         textureTarget: s.textureTarget ?? 'all',
         textureSize: s.textureSize ?? 320,
       };

@@ -49,7 +49,7 @@ export const CanvasControlTab: React.FC = () => {
   const currentBgVariant = bgElement?.bgVariant ?? bgType ?? 'gradient';
   const currentTexture = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : bgTexture;
   const currentOpacity = bgElement?.textureOpacity ?? textureOpacity ?? 0.6;
-  const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'overlay';
+  const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'normal';
   const currentTarget = bgElement?.textureTarget ?? textureTarget ?? 'all';
   const currentTextureSize = bgElement?.textureSize !== undefined ? bgElement.textureSize : (textureSize ?? 320);
 

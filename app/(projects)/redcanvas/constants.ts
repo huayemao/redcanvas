@@ -79,7 +79,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '',
     description: '纯净无噪点',
     defaultOpacity: 0,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'retina-dust',
@@ -88,7 +88,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/retina-dust.png',
     description: '细致微粒，经典复古胶片感',
     defaultOpacity: 0.65,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'stardust',
@@ -97,7 +97,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/stardust.png',
     description: '细腻星芒噪点，柔和温润',
     defaultOpacity: 0.6,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'dust',
@@ -106,7 +106,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/dust.png',
     description: '斑驳颗粒与微尘胶片氛围',
     defaultOpacity: 0.5,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'subtle-surface',
@@ -115,7 +115,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/subtle-surface.png',
     description: '极轻微表面纹理，克制高级',
     defaultOpacity: 0.7,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'broken-noise',
@@ -124,7 +124,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/broken-noise.png',
     description: '颗粒分明，质感浓厚',
     defaultOpacity: 0.45,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'diagonal-noise',
@@ -133,7 +133,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/diagonal-noise.png',
     description: '动感斜向颗粒微光',
     defaultOpacity: 0.5,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'sandpaper',
@@ -142,7 +142,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/sandpaper.png',
     description: '磨砂触感与粗糙颗粒',
     defaultOpacity: 0.5,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'paper-fibers',
@@ -151,7 +151,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/paper-fibers.png',
     description: '天然纤维纹理，温润纸感',
     defaultOpacity: 0.6,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'clean-gray-paper',
@@ -160,7 +160,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/clean-gray-paper.png',
     description: '水彩画纸肌理，文艺柔和',
     defaultOpacity: 0.5,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'cardboard',
@@ -169,7 +169,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/cardboard.png',
     description: '厚重牛皮纸纹路，怀旧复古',
     defaultOpacity: 0.45,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'groovepaper',
@@ -178,7 +178,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/groovepaper.png',
     description: '压纹纸张质感，层次丰富',
     defaultOpacity: 0.55,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
   {
     id: 'black-linen',
@@ -187,7 +187,7 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '/redcanvas/textures/black-linen.png',
     description: '编织布面纹理，手工质感',
     defaultOpacity: 0.4,
-    defaultBlendMode: 'overlay',
+    defaultBlendMode: 'normal',
   },
 ];
 

@@ -135,7 +135,7 @@ export interface PlogElement {
   // ---- 噪点遮罩 / 材质颗粒 (background 专属、整图全屏遮罩或单元素遮罩) ----
   textureUrl?: string;                       // 噪点/材质纹理 PNG URL（如 '/redcanvas/textures/retina-dust.png'），空为无
   textureOpacity?: number;                   // 纹理不透明度（0-1，默认 0.6）
-  textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'; // 混合模式，默认 'overlay'
+  textureBlendMode?: 'normal' | 'overlay' | 'soft-light' | 'multiply' | 'screen'; // 混合模式，默认 'normal'
   textureTarget?: 'all' | 'bg';              // 仅 background 元素生效：'all' 作用于整画布全部图层（默认），'bg' 仅作用于背景底色层
   textureSize?: number;                      // 噪点/材质尺寸大小 px（例如 60-1000，默认 320）
 

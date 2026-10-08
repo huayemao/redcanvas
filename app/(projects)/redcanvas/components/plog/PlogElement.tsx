@@ -414,7 +414,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
                 backgroundImage: `url("${element.textureUrl}")`,
                 backgroundRepeat: 'repeat',
                 backgroundSize: `${element.textureSize || 280}px`,
-                mixBlendMode: (element.textureBlendMode || 'overlay') as any,
+                mixBlendMode: (element.textureBlendMode || 'normal') as any,
                 opacity: element.textureOpacity ?? 0.6,
               }}
             />
@@ -533,7 +533,7 @@ export const PlogElement: React.FC<PlogElementProps> = ({
                 backgroundImage: `url("${element.textureUrl}")`,
                 backgroundRepeat: 'repeat',
                 backgroundSize: `${element.textureSize || 280}px`,
-                mixBlendMode: (element.textureBlendMode || 'overlay') as any,
+                mixBlendMode: (element.textureBlendMode || 'normal') as any,
                 opacity: element.textureOpacity ?? 0.6,
               }}
             />

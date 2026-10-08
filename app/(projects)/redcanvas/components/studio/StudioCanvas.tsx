@@ -53,7 +53,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
   const effGradientEnd = bgElement?.gradientEnd ?? _globalGradientEnd;
   const effTextureUrl = bgElement?.textureUrl !== undefined ? bgElement.textureUrl : _globalBgTexture;
   const effTextureOpacity = bgElement?.textureOpacity ?? _globalTextureOpacity ?? 0.6;
-  const effTextureBlendMode = bgElement?.textureBlendMode ?? _globalTextureBlendMode ?? 'overlay';
+  const effTextureBlendMode = bgElement?.textureBlendMode ?? _globalTextureBlendMode ?? 'normal';
   const effTextureTarget = bgElement?.textureTarget ?? _globalTextureTarget ?? 'all';
   const effTextureSize = bgElement?.textureSize !== undefined ? bgElement.textureSize : (_globalTextureSize ?? 320);
   // 浮动元素：过滤掉 background（背景作为容器底层已经单独渲染，不参与 PlogElement 循环）
@@ -86,7 +86,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         imageUrl: state.images[0]?.url || '',
         textureUrl: state.bgTexture || '',
         textureOpacity: state.textureOpacity ?? 0.6,
-        textureBlendMode: state.textureBlendMode ?? 'overlay',
+        textureBlendMode: state.textureBlendMode ?? 'normal',
       };
       state.addFloatingElement(bgEl);
     }
@@ -193,7 +193,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
               backgroundImage: `url("${effTextureUrl}")`,
               backgroundRepeat: 'repeat',
               backgroundSize: `${effTextureSize}px`,
-              mixBlendMode: (effTextureBlendMode || 'overlay') as any,
+              mixBlendMode: (effTextureBlendMode || 'normal') as any,
               opacity: effTextureOpacity,
             }}
           />
@@ -241,7 +241,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
               backgroundImage: `url("${effTextureUrl}")`,
               backgroundRepeat: 'repeat',
               backgroundSize: `${effTextureSize}px`,
-              mixBlendMode: (effTextureBlendMode || 'overlay') as any,
+              mixBlendMode: (effTextureBlendMode || 'normal') as any,
               opacity: effTextureOpacity,
             }}
           />
