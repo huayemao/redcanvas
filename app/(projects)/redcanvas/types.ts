@@ -137,6 +137,7 @@ export interface PlogElement {
   textureOpacity?: number;                   // 纹理不透明度（0-1，默认 0.6）
   textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'; // 混合模式，默认 'overlay'
   textureTarget?: 'all' | 'bg';              // 仅 background 元素生效：'all' 作用于整画布全部图层（默认），'bg' 仅作用于背景底色层
+  textureSize?: number;                      // 噪点/材质尺寸大小 px（例如 60-1000，默认 320）
 
   // ---- asset 专属 ----
   assetKind?: 'bitmap' | 'vector';
@@ -204,6 +205,7 @@ export interface PlogState {
   textureOpacity?: number;
   textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
   textureTarget?: 'all' | 'bg';
+  textureSize?: number;
   autoColorEnabled: boolean;
 
   // Images

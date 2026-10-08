@@ -711,6 +711,49 @@ export const ElementPropertyPanel: React.FC = () => {
                     />
                   </div>
 
+                  {/* 噪点大小调节 (Grain Size) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-white/60">噪点大小 (Grain Size)</span>
+                      <span className="text-[11px] font-mono font-bold text-red-400">
+                        {selected.textureSize ?? 320}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={80}
+                      max={900}
+                      step={20}
+                      value={selected.textureSize ?? 320}
+                      onChange={(e) => update({ textureSize: Number(e.target.value) })}
+                      className="w-full accent-red-500 cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+                    />
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {[
+                        { label: '细腻', val: 140 },
+                        { label: '适中', val: 280 },
+                        { label: '明显', val: 450 },
+                        { label: '粗粝', val: 700 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => update({ textureSize: preset.val })}
+                          className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                            Math.abs((selected.textureSize ?? 320) - preset.val) < 35
+                              ? 'bg-red-500/20 text-red-300 border border-red-500/30 shadow-sm'
+                              : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08] hover:text-white/80'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-white/35 mt-1 leading-relaxed">
+                      调整瓦片缩放比例。数值越大颗粒越粗粝明显，复古杂志感更强；数值越小越微细均匀。
+                    </p>
+                  </div>
+
                   {/* 混合模式 */}
                   <div>
                     <span className="text-[11px] font-bold text-white/60 block mb-1.5">混合模式 (Mix Blend Mode)</span>
@@ -1053,6 +1096,49 @@ export const ElementPropertyPanel: React.FC = () => {
                       onChange={(e) => update({ textureOpacity: Number(e.target.value) / 100 })}
                       className="w-full accent-red-500 cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
                     />
+                  </div>
+
+                  {/* 噪点大小调节 (Grain Size) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-white/60">噪点大小 (Grain Size)</span>
+                      <span className="text-[11px] font-mono font-bold text-red-400">
+                        {selected.textureSize ?? 280}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={80}
+                      max={900}
+                      step={20}
+                      value={selected.textureSize ?? 280}
+                      onChange={(e) => update({ textureSize: Number(e.target.value) })}
+                      className="w-full accent-red-500 cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+                    />
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {[
+                        { label: '细腻', val: 140 },
+                        { label: '适中', val: 280 },
+                        { label: '明显', val: 450 },
+                        { label: '粗粝', val: 700 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => update({ textureSize: preset.val })}
+                          className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                            Math.abs((selected.textureSize ?? 280) - preset.val) < 35
+                              ? 'bg-red-500/20 text-red-300 border border-red-500/30 shadow-sm'
+                              : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08] hover:text-white/80'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-white/35 mt-1 leading-relaxed">
+                      调整图片颗粒缩放。数值越大噪点颗粒越粗粝明显；数值越小越细密微粒。
+                    </p>
                   </div>
 
                   {/* 混合模式 */}

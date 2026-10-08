@@ -117,6 +117,7 @@ export interface StudioState {
   textureOpacity?: number;
   textureBlendMode?: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal';
   textureTarget?: 'all' | 'bg';
+  textureSize?: number;
   autoColorEnabled: boolean;
   extractedColors: ExtractedColors | null;
   paletteCandidates: PaletteCandidate[];
@@ -168,6 +169,7 @@ export interface StudioState {
   setTextureOpacity: (opacity: number) => void;
   setTextureBlendMode: (mode: 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal') => void;
   setTextureTarget: (target: 'all' | 'bg') => void;
+  setTextureSize: (size: number) => void;
   setAutoColorEnabled: (enabled: boolean) => void;
   autoExtractColors: (imageSrc: string) => Promise<void>;
   /** 切换主色候选（主变体）—— 从图片提取的不同 dominant */
@@ -280,7 +282,7 @@ export interface StudioConfigSnapshot {
 const PAGE_FIELDS = [
   'templateId', 'aspectRatio', 'customWidth', 'customHeight',
   'bgType', 'bgColor', 'gradientStart', 'gradientEnd',
-  'bgTexture', 'textureOpacity', 'textureBlendMode', 'textureTarget',
+  'bgTexture', 'textureOpacity', 'textureBlendMode', 'textureTarget', 'textureSize',
   'autoColorEnabled', 'extractedColors', 'paletteCandidates',
   'selectedCandidateId', 'selectedStyleId',
   'images', 'imageAspectRatio', 'imageScale', 'showDeviceFrame', 'deviceType',
@@ -323,7 +325,7 @@ const pageFieldsShallowEqual = (a: StudioPageFields, b: StudioPageFields): boole
 
 /** 从字段集合构造背景元素（保证每页都有一层可选中的背景） */
 const makeBgElement = (
-  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images' | 'bgTexture' | 'textureOpacity' | 'textureBlendMode' | 'textureTarget'>
+  f: Pick<StudioPageFields, 'bgType' | 'bgColor' | 'gradientStart' | 'gradientEnd' | 'images' | 'bgTexture' | 'textureOpacity' | 'textureBlendMode' | 'textureTarget' | 'textureSize'>
 ): PlogElement => ({
   id: `el-bg-${UID()}`,
   type: 'background',
@@ -340,6 +342,7 @@ const makeBgElement = (
   textureOpacity: f.textureOpacity ?? 0.6,
   textureBlendMode: f.textureBlendMode ?? 'overlay',
   textureTarget: f.textureTarget ?? 'all',
+  textureSize: f.textureSize ?? 320,
 });
 
 /** 读入一页数据时兜底：floatingElements 缺背景层则补建 */
@@ -388,6 +391,7 @@ function sanitizePageData(raw: unknown, fb: StudioPageFields): StudioPageFields 
     textureOpacity: asNumber('textureOpacity', fb.textureOpacity ?? 0.6),
     textureBlendMode: pick<'overlay' | 'soft-light' | 'multiply' | 'screen' | 'normal'>('textureBlendMode', fb.textureBlendMode ?? 'overlay'),
     textureTarget: pick<'all' | 'bg'>('textureTarget', fb.textureTarget ?? 'all'),
+    textureSize: asNumber('textureSize', fb.textureSize ?? 320),
     autoColorEnabled: asBool('autoColorEnabled', fb.autoColorEnabled),
     extractedColors: asNullableObj<ExtractedColors>('extractedColors'),
     paletteCandidates: asArray('paletteCandidates', fb.paletteCandidates),
@@ -422,6 +426,7 @@ const INITIAL_PAGE_FIELDS: StudioPageFields = {
   textureOpacity: 0.6,
   textureBlendMode: 'overlay',
   textureTarget: 'all',
+  textureSize: 320,
   autoColorEnabled: true,
   extractedColors: null,
   paletteCandidates: [],
@@ -556,6 +561,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({
         floatingElements: s.floatingElements.map((e) =>
           e.id === bgEl.id ? { ...e, textureTarget } : e
+        ),
+      });
+    }
+    get().captureCurrentPage();
+  },
+  setTextureSize: (textureSize) => {
+    const s = get();
+    set({ textureSize });
+    const bgEl = s.floatingElements.find((e) => e.type === 'background');
+    if (bgEl && bgEl.textureSize !== textureSize) {
+      set({
+        floatingElements: s.floatingElements.map((e) =>
+          e.id === bgEl.id ? { ...e, textureSize } : e
         ),
       });
     }
@@ -1242,6 +1260,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       textureOpacity: s.textureOpacity ?? 0.6,
       textureBlendMode: s.textureBlendMode ?? 'overlay',
       textureTarget: s.textureTarget ?? 'all',
+      textureSize: s.textureSize ?? 320,
     };
 
     set({ floatingElements: [bgEl, ...elements], selectedElementId: null });
@@ -1321,6 +1340,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         textureOpacity: s.textureOpacity ?? 0.6,
         textureBlendMode: s.textureBlendMode ?? 'overlay',
         textureTarget: s.textureTarget ?? 'all',
+        textureSize: s.textureSize ?? 320,
       };
       set((state) => ({
         floatingElements: [bg, ...state.floatingElements],

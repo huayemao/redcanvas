@@ -25,6 +25,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
     textureOpacity: _globalTextureOpacity,
     textureBlendMode: _globalTextureBlendMode,
     textureTarget: _globalTextureTarget,
+    textureSize: _globalTextureSize,
     images,
     fontFamily,
     extractedColors,
@@ -54,6 +55,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
   const effTextureOpacity = bgElement?.textureOpacity ?? _globalTextureOpacity ?? 0.6;
   const effTextureBlendMode = bgElement?.textureBlendMode ?? _globalTextureBlendMode ?? 'overlay';
   const effTextureTarget = bgElement?.textureTarget ?? _globalTextureTarget ?? 'all';
+  const effTextureSize = bgElement?.textureSize !== undefined ? bgElement.textureSize : (_globalTextureSize ?? 320);
   // 浮动元素：过滤掉 background（背景作为容器底层已经单独渲染，不参与 PlogElement 循环）
   const floatingOnly = floatingElements.filter((e) => e.type !== 'background');
 
@@ -190,6 +192,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
             style={{
               backgroundImage: `url("${effTextureUrl}")`,
               backgroundRepeat: 'repeat',
+              backgroundSize: `${effTextureSize}px`,
               mixBlendMode: (effTextureBlendMode || 'overlay') as any,
               opacity: effTextureOpacity,
             }}
@@ -237,6 +240,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
             style={{
               backgroundImage: `url("${effTextureUrl}")`,
               backgroundRepeat: 'repeat',
+              backgroundSize: `${effTextureSize}px`,
               mixBlendMode: (effTextureBlendMode || 'overlay') as any,
               opacity: effTextureOpacity,
             }}

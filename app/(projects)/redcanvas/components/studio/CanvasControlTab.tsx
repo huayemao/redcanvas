@@ -23,10 +23,12 @@ export const CanvasControlTab: React.FC = () => {
     textureOpacity,
     textureBlendMode,
     textureTarget,
+    textureSize,
     setBgTexture,
     setTextureOpacity,
     setTextureBlendMode,
     setTextureTarget,
+    setTextureSize,
     setActiveTab,
     setSelectedElementId,
     updateFloatingElement,
@@ -49,6 +51,7 @@ export const CanvasControlTab: React.FC = () => {
   const currentOpacity = bgElement?.textureOpacity ?? textureOpacity ?? 0.6;
   const currentBlendMode = bgElement?.textureBlendMode ?? textureBlendMode ?? 'overlay';
   const currentTarget = bgElement?.textureTarget ?? textureTarget ?? 'all';
+  const currentTextureSize = bgElement?.textureSize !== undefined ? bgElement.textureSize : (textureSize ?? 320);
 
   const handleSetBgVariant = (v: 'gradient' | 'color' | 'blur') => {
     setBgType(v);
@@ -367,6 +370,47 @@ export const CanvasControlTab: React.FC = () => {
                 onChange={(e) => setTextureOpacity(Number(e.target.value) / 100)}
                 className="w-full accent-red-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
               />
+            </div>
+
+            {/* 噪点大小调节 (Grain Size / Scale) */}
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
+                <span>噪点大小 (Grain Size)</span>
+                <span className="font-mono text-red-400">{currentTextureSize}px</span>
+              </div>
+              <input
+                type="range"
+                min={80}
+                max={900}
+                step={20}
+                value={currentTextureSize}
+                onChange={(e) => setTextureSize(Number(e.target.value))}
+                className="w-full accent-red-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
+              />
+              <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                {[
+                  { label: '细腻', val: 140 },
+                  { label: '适中', val: 280 },
+                  { label: '明显', val: 450 },
+                  { label: '粗粝', val: 700 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setTextureSize(preset.val)}
+                    className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                      Math.abs(currentTextureSize - preset.val) < 35
+                        ? 'bg-red-500/20 text-red-300 border border-red-500/30 shadow-sm'
+                        : 'bg-white/[0.03] text-white/40 hover:bg-white/[0.06] hover:text-white/70'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-white/35 leading-relaxed">
+                数值越大颗粒越粗粝明显，复古杂志质感越强；数值越小颗粒越细微。
+              </p>
             </div>
           </div>
         )}
