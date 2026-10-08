@@ -191,3 +191,33 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
   },
 ];
 
+// —— 材质遮罩默认参数（全平台通用标准值） ——
+export const DEFAULT_TEXTURE_OPACITY = 0.6;
+export const DEFAULT_TEXTURE_BLEND_MODE = 'normal' as const;
+export const DEFAULT_TEXTURE_SIZE = 320;
+export const DEFAULT_TEXTURE_TARGET = 'all' as const;
+
+// —— 材质混合模式选项列表 ——
+export interface TextureBlendModeOption {
+  value: 'normal' | 'overlay' | 'soft-light' | 'multiply' | 'screen';
+  name: string;
+  en: string;
+  desc: string;
+}
+
+export const TEXTURE_BLEND_MODES: TextureBlendModeOption[] = [
+  { value: 'normal', name: '正常', en: 'Normal', desc: '推荐 · 默认标准透明叠加' },
+  { value: 'overlay', name: '叠加', en: 'Overlay', desc: '保持底层通透色彩' },
+  { value: 'soft-light', name: '柔光', en: 'Soft Light', desc: '细腻温和' },
+  { value: 'multiply', name: '正片叠底', en: 'Multiply', desc: '浓郁复古' },
+  { value: 'screen', name: '滤色', en: 'Screen', desc: '提亮星芒' },
+];
+
+// —— 噪点大小快捷预设档位 ——
+export const GRAIN_SIZE_PRESETS = [
+  { label: '细腻', val: 140 },
+  { label: '适中', val: 280 },
+  { label: '明显', val: 450 },
+  { label: '粗粝', val: 700 },
+] as const;
+
