@@ -2,7 +2,7 @@
 
 | 文档版本 | 状态 | 编写人 | 适用范围 | 最后更新时间 |
 | :--- | :--- | :--- | :--- | :--- |
-| **v1.2.0** | **已上线 (Implemented)** | AI 助手 / 产品团队 | RedCanvas Web & H5 端 | 2026-10-10 |
+| **v1.2.1** | **已上线 (Implemented)** | AI 助手 / 产品团队 | RedCanvas Web & H5 端 | 2026-10-10 |
 
 ---
 
@@ -16,10 +16,13 @@
 2. **移动端缺失**：移动端 H5 界面缺乏进入背景和材质遮罩的快捷操作路径；
 3. **噪点粒度不可控**：固定尺寸的噪点在手机高分辨率视网膜屏上极不明显，无法满足用户对粗粝复古胶片（如 Kodak Tri-X 400）的定制需求；
 4. **混合模式单一**：写死为 `overlay`，在某些极端亮暗场景下极易过曝或灰阶失真；
-5. **代码耦合冗余**：多处面板重复实现相同的 UI 与控制逻辑，维护成本高。
+5. **文字颗粒不明显（v1.2.0 痛点）**：
+   - **光学与数学中和**：纯白文字（#fff）与纯黑文字（#000）在 CSS `overlay` / `screen` / `multiply` 等运算下属于不动点；且大多数噪点贴图为单向白色或单向黑色微粒，在窄笔画文字上无法形成有效明暗差；
+   - **层级穿透不彻底**：顶层遮罩 z-index 与部分浮动图层存在层叠竞态；
+   - **文字专属配置缺失**：文字属性面板缺乏独立的材质微调入口。
 
 ### 1.2 目标与收益
-- **用户价值**：让用户在 1 秒内为整张设计图或局部素材赋予专业杂志级的胶片颗粒与纸张肌理，所见即所得。
+- **用户价值**：让用户在 1 秒内为整张设计图或局部素材赋予专业杂志级的胶片颗粒与纸张肌理，所见即所得。无论前景文字是纯白、墨黑还是彩色，均能清晰展现银盐颗粒与纸张咬合质感。
 - **业务价值**：丰富 RedCanvas 的高阶质感工具链，增强小红书博主出图品质，提升模板复用率与成品保存率。
 - **研发价值**：完成底层控制组件的高度封装（抽取 `TextureControlSection`），沉淀统一常量配置，降低后续扩展成本。
 
@@ -39,12 +42,13 @@
 
 ### 3.1 核心功能全景
 ```
-RedCanvas 材质遮罩系统
+RedCanvas 材质遮罩系统 (v1.2.1)
 ├── 1. 作用范围分段 (Scope)
-│   ├── 整张图片 (全画幅 / 'all') —— [顶层全局覆盖]
-│   └── 仅限底层背景 ('bg')    —— [前景主体纯净]
+│   ├── 整张图片 (全画幅 / 'all') —— [顶层双通道全景覆盖，z-index: 40]
+│   └── 仅限底层背景 ('bg')    —— [前景主体纯净，z-index: 0]
 ├── 2. 材质库分类与预设 (Presets)
 │   ├── 分类过滤: 全部 | 胶片 | 噪点 | 微粒 | 纸张 | 复古 | 几何
+│   ├── 35mm 银盐胶片 (高反差程序化矢量 SVG 噪波)
 │   ├── 内置高质量无缝纹理卡片 (含即时预览)
 │   └── 自定义外部图片 URL (PNG / SVG)
 ├── 3. 参数微调系统 (Controls)
@@ -53,8 +57,10 @@ RedCanvas 材质遮罩系统
 │   │   └── 4 档快捷预设: 细腻(140px) | 适中(280px) | 明显(450px) | 粗粝(700px)
 │   └── 混合模式 (Blend Mode, 默认 normal)
 │       └── 正常(normal) | 叠加(overlay) | 柔光(soft-light) | 正片叠底(multiply) | 滤色(screen)
-└── 4. 跨端适配
-    ├── PC 端: 画布配置 Tab + 元素配置 Tab
+└── 4. 深度渗透体系
+    ├── 全画幅双通道明暗颗粒补偿 (确保纯白标题与纯黑正文均清晰见噪点)
+    ├── 文本图层专属材质控制 (Text / LongText 专属遮罩渲染)
+    ├── PC 端: 画布配置 Tab + 元素配置 Tab (全面覆盖文本、图片与素材)
     └── 移动端: 底部快捷浮层 & 配置抽屉呼出
 ```
 
@@ -62,14 +68,17 @@ RedCanvas 材质遮罩系统
 
 ### 3.2 详细功能规格
 
-#### 需求点 1：作用范围选择（Texture Target Scope）
-- **功能描述**：允许用户决定材质遮罩的层级深度。
+#### 需求点 1：作用范围选择与双通道明暗颗粒补偿（Texture Target Scope & Dual-Tone Pipeline）
+- **功能描述**：允许用户决定材质遮罩的层级深度，并通过物理光学补偿确保前景各亮度元素均能被颗粒穿透。
 - **选项定义**：
   1. **整张图片（全画幅 - `all`）**：
-     - **行为**：纹理层挂载在画布的最顶层（`z-index: 40`，`pointer-events: none`）。
-     - **视觉表现**：画面中所有图层（背景底色、图片卡片、贴纸、文字排版、水印）均统一蒙上颗粒，营造统一的拍摄冲印质感。
+     - **行为**：纹理层挂载在画布的最顶层（`z-index: 40`，`pointer-events: none`），严密覆盖于所有可拖拽浮动图层上方。
+     - **视觉表现**：
+       - **正向颗粒层 (Primary Layer)**：以用户所选混合模式 (`normal`/`overlay`/等) 渲染，负责在深色背景、暗调照片与深色文字上浮现高光银盐微粒；
+       - **反相高光补偿层 (Inverted Multiply Layer)**：在 `normal` / `overlay` / `soft-light` 模式下自动并联启动（`filter: invert(1); mix-blend-mode: multiply`），将单向亮颗粒反相为暗调颗粒咬合进纯白大标题、浅色卡片与高光区域；
+       - **终极质感**：彻底消除“白字或黑字看不出颗粒”的缺陷，带来如同柯达 135 胶片或真实铜版纸印刷的全身浸润质感。
   2. **仅限底层背景（`bg`）**：
-     - **行为**：纹理层仅挂载在底层背景容器内，位于所有前景浮动元素下方。
+     - **行为**：纹理层挂载在底层背景容器内（`z-index: 0`），位于所有前景浮动元素下方。
      - **视觉表现**：底色呈现材质肌理，但前景的人物照片、产品图和文字保持绝对高清纯净，互不干扰。
 - **默认值**：`all`（整张图片全画幅）。
 
@@ -95,12 +104,16 @@ RedCanvas 材质遮罩系统
   | **正片叠底** | `multiply` | 压暗整体色调，适合复古暗调、老报纸、复古做旧 | 可选 |
   | **滤色** | `screen` | 过滤暗部保留高光，适合星光、灰尘闪光材质 | 可选 |
 
-#### 需求点 4：材质分类过滤与自定义接入
+#### 需求点 4：材质分类过滤、自定义接入与 35mm 银盐预设
 - **分类标签**：`全部`、`胶片`、`噪点`、`微粒`、`纸张`、`复古`、`几何`。
+- **新增 35mm 银盐胶片 (Pro Grain)**：基于程序化高反差矢量 SVG 噪波，双向银盐微粒，黑白与彩色文字均呈现极致颗粒。
 - **预设库预览**：每个预设卡片提供微缩深色背景实时渲染效果、名称与选中勾选状态。
 - **自定义 URL**：支持用户粘贴任意无缝纹理 PNG/SVG 图片链接，并提供输入框一键清除与实时更新。
 
-#### 需求点 5：移动端入口设计与适配
+#### 需求点 5：文字与图层专属材质控制
+- **功能描述**：在元素属性面板（`ElementsControlTab`）中，为文字类图层（`text` 与 `longtext`）开放专属的 `TextureControlSection` 面板，支持单文本图层定制颗粒、不透明度与混合模式。
+
+#### 需求点 6：移动端入口设计与适配
 - **背景**：移动端屏幕空间受限，原先缺乏背景/全局配置的显式入口。
 - **解决方案**：
   1. 移动端底部控制栏（`MobileConfigBar`）提供直接进入“画布/背景”配置的快捷入口；
@@ -157,19 +170,37 @@ export interface TextureConfig {
 **复用点**：
 1. **画布控制面板**（[`CanvasControlTab.tsx`](file:///c:/Users/huaye/Documents/Workspace/redcanvas/app/(projects)/redcanvas/components/studio/CanvasControlTab.tsx)）
 2. **背景元素面板**（[`ElementsControlTab.tsx`](file:///c:/Users/huaye/Documents/Workspace/redcanvas/app/(projects)/redcanvas/components/studio/ElementsControlTab.tsx)）
-3. **单张图片/素材面板**（[`ElementsControlTab.tsx`](file:///c:/Users/huaye/Documents/Workspace/redcanvas/app/(projects)/redcanvas/components/studio/ElementsControlTab.tsx)）
+3. **文本元素面板**（[`ElementsControlTab.tsx`](file:///c:/Users/huaye/Documents/Workspace/redcanvas/app/(projects)/redcanvas/components/studio/ElementsControlTab.tsx)）
+4. **单张图片/素材面板**（[`ElementsControlTab.tsx`](file:///c:/Users/huaye/Documents/Workspace/redcanvas/app/(projects)/redcanvas/components/studio/ElementsControlTab.tsx)）
 
-### 4.4 渲染管线与性能
-- **纯 CSS 平铺渲染**：
-  ```css
-  background-image: url('...');
-  background-repeat: repeat;
-  background-size: ${textureSize}px ${textureSize}px;
-  mix-blend-mode: ${textureBlendMode};
-  opacity: ${textureOpacity};
-  pointer-events: none;
+### 4.4 渲染管线与双通道明暗颗粒补偿
+- **顶层全画幅复合渲染（z-index: 40）**：
+  ```tsx
+  {/* 1. 主通道：正向颗粒层（负责暗色背景与深色文字上的高光银盐微粒） */}
+  <div
+    className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-200"
+    style={{
+      backgroundImage: `url("${textureUrl}")`,
+      backgroundRepeat: 'repeat',
+      backgroundSize: `${textureSize}px`,
+      mixBlendMode: textureBlendMode || 'normal',
+      opacity: textureOpacity,
+    }}
+  />
+  {/* 2. 补偿通道：反相高光补偿层（负责高光背景、浅色卡片与白色大字上的暗调颗粒咬合） */}
+  <div
+    className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-200"
+    style={{
+      backgroundImage: `url("${textureUrl}")`,
+      backgroundRepeat: 'repeat',
+      backgroundSize: `${textureSize}px`,
+      filter: 'invert(1)',
+      mixBlendMode: 'multiply',
+      opacity: textureOpacity * 0.55,
+    }}
+  />
   ```
-- **导出兼容性**：在通过 `html2canvas` 或 `html-to-image` 导出为高清海报时，由于使用的是纯标准 CSS 属性和无跨域 SVG/Base64/公开 CDN 图片，能保持 1:1 精确离线合成。
+- **导出兼容性**：在通过 `@zumer/snapdom` 导出高清海报时，由于使用的是纯标准 CSS 属性和无跨域 SVG/Base64/公开贴图，保持 1:1 精确离线合成。
 
 ---
 

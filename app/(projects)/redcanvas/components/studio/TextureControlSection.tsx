@@ -175,6 +175,17 @@ export const TextureControlSection: React.FC<TextureControlSectionProps> = ({
                         opacity: 0.85,
                       }}
                     />
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url("${preset.url}")`,
+                        backgroundRepeat: 'repeat',
+                        backgroundSize: '140px',
+                        filter: 'invert(1)',
+                        mixBlendMode: 'multiply',
+                        opacity: 0.45,
+                      }}
+                    />
                   </>
                 ) : (
                   <span className="text-[10px] text-white/30 font-bold">无</span>

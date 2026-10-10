@@ -71,6 +71,10 @@ export const FONTS: FontOption[] = [
   { id: 'system', name: '系统默认', className: 'font-system' },
 ];
 
+const SVG_35MM_GRAIN_URL = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.85 0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>`
+);
+
 export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
   {
     id: 'none',
@@ -79,6 +83,15 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '',
     description: '纯净无噪点',
     defaultOpacity: 0,
+    defaultBlendMode: 'normal',
+  },
+  {
+    id: 'film-grain-pro',
+    name: '35mm 银盐胶片',
+    category: 'grain',
+    url: SVG_35MM_GRAIN_URL,
+    description: '双向银盐微粒，黑白与彩色文字均极致胶片质感',
+    defaultOpacity: 0.7,
     defaultBlendMode: 'normal',
   },
   {

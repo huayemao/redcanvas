@@ -149,7 +149,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
       >
         {/* 背景被选中时：画布中央下方浮动出现配置胶囊，便于移动端及触屏一键呼出属性抽屉 */}
         {bgElement && selectedElementId === bgElement.id && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-xl border border-red-500/50 shadow-2xl shadow-black/80 pointer-events-auto select-none">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-xl border border-red-500/50 shadow-2xl shadow-black/80 pointer-events-auto select-none">
             <div className="flex items-center gap-1.5 text-white/90">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span className="text-[11px] font-black tracking-wide">画布背景</span>
@@ -187,16 +187,35 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
 
         {/* 背景专享材质遮罩：当设置仅针对背景 (textureTarget === 'bg') 时，渲染在背景图层内部/浮动元素下方 */}
         {effTextureUrl && effTextureTarget === 'bg' ? (
-          <div
-            className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
-            style={{
-              backgroundImage: `url("${effTextureUrl}")`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: `${effTextureSize}px`,
-              mixBlendMode: (effTextureBlendMode || 'normal') as any,
-              opacity: effTextureOpacity,
-            }}
-          />
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
+              style={{
+                backgroundImage: `url("${effTextureUrl}")`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: `${effTextureSize}px`,
+                mixBlendMode: (effTextureBlendMode || 'normal') as any,
+                opacity: Math.min(1, effTextureOpacity * 1.4),
+                filter: 'contrast(120%)',
+              }}
+            />
+            {/* 浅色底色高光反相补偿（确保在纯白/浅灰底色上纤维颗粒依然清晰可见） */}
+            {((effTextureBlendMode || 'normal') === 'normal' ||
+              effTextureBlendMode === 'overlay' ||
+              effTextureBlendMode === 'soft-light') && (
+              <div
+                className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
+                style={{
+                  backgroundImage: `url("${effTextureUrl}")`,
+                  backgroundRepeat: 'repeat',
+                  backgroundSize: `${effTextureSize}px`,
+                  filter: 'invert(1) contrast(160%)',
+                  mixBlendMode: 'multiply',
+                  opacity: Math.min(1, effTextureOpacity * 1.1),
+                }}
+              />
+            )}
+          </>
         ) : null}
 
         {/* =============================================================
@@ -231,20 +250,44 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         })()}
 
         {/* =============================================================
-            全屏绝对定位的半透明颗粒PNG做噪点遮罩（整张图片/全部元素上层）
-            当设置全画幅覆盖 (textureTarget === 'all') 时，叠加在页面所有内容上层
+            全画幅胶片颗粒与材质遮罩（整张图片/全部前景元素顶层覆盖）
+            挂载于画布顶层 (z-40)，位于所有前景文字、卡片、图片之上
+            采用双通道高动态范围明暗颗粒补偿体系：
+            1. 正向颗粒层：负责深色底色与深色文字上的银盐高光颗粒；
+            2. 反相暗调补偿层：负责白色标题、浅色正文与浅色卡片上的深色微粒与纸张纤维咬合；
+            内置 Alpha 增益与对比度增强，彻底消除 PNG 贴图固有半透明度过低导致字体“看不出纹理”的问题。
            ============================================================= */}
         {effTextureUrl && effTextureTarget !== 'bg' ? (
-          <div
-            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
-            style={{
-              backgroundImage: `url("${effTextureUrl}")`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: `${effTextureSize}px`,
-              mixBlendMode: (effTextureBlendMode || 'normal') as any,
-              opacity: effTextureOpacity,
-            }}
-          />
+          <>
+            {/* 通道 1：正向高反差颗粒层（负责深色底色与深色文字的高光银盐） */}
+            <div
+              className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-200"
+              style={{
+                backgroundImage: `url("${effTextureUrl}")`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: `${effTextureSize}px`,
+                mixBlendMode: (effTextureBlendMode || 'normal') as any,
+                opacity: Math.min(1, effTextureOpacity * 1.5),
+                filter: 'contrast(130%) brightness(105%)',
+              }}
+            />
+            {/* 通道 2：反相暗调咬合补偿层（负责纯白大字、浅色卡片上的暗部纸张纤维与银盐颗粒） */}
+            {((effTextureBlendMode || 'normal') === 'normal' ||
+              effTextureBlendMode === 'overlay' ||
+              effTextureBlendMode === 'soft-light') && (
+              <div
+                className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-200"
+                style={{
+                  backgroundImage: `url("${effTextureUrl}")`,
+                  backgroundRepeat: 'repeat',
+                  backgroundSize: `${effTextureSize}px`,
+                  filter: 'invert(1) contrast(180%)',
+                  mixBlendMode: 'multiply',
+                  opacity: Math.min(1, effTextureOpacity * 1.35),
+                }}
+              />
+            )}
+          </>
         ) : null}
       </div>
     </div>
