@@ -115,11 +115,10 @@ export const ElementsControlTab: React.FC = () => {
       {bgElement && (
         <div
           onClick={() => setSelectedElementId(bgElement.id)}
-          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-            selectedElementId === bgElement.id
+          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${selectedElementId === bgElement.id
               ? 'border-red-500 bg-red-500/[0.08] ring-1 ring-red-500/30'
               : 'border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
@@ -148,11 +147,10 @@ export const ElementsControlTab: React.FC = () => {
               e.stopPropagation();
               setSelectedElementId(bgElement.id);
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1.5 ${
-              selectedElementId === bgElement.id
+            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1.5 ${selectedElementId === bgElement.id
                 ? 'bg-red-500 text-white shadow-md'
                 : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.12] hover:text-white'
-            }`}
+              }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>{selectedElementId === bgElement.id ? '编辑中' : '配置'}</span>
@@ -199,9 +197,8 @@ export const ElementsControlTab: React.FC = () => {
                       onClick={onClick}
                       disabled={disabled}
                       title={title}
-                      className={`p-0.5 rounded-md transition-colors ${
-                        disabled ? 'text-white/10 cursor-not-allowed' : `text-white/30 ${hover}`
-                      }`}
+                      className={`p-0.5 rounded-md transition-colors ${disabled ? 'text-white/10 cursor-not-allowed' : `text-white/30 ${hover}`
+                        }`}
                     >
                       <Icon className="w-3 h-3" />
                     </button>
@@ -211,20 +208,18 @@ export const ElementsControlTab: React.FC = () => {
                   <div
                     key={el.id}
                     onClick={() => setSelectedElementId(el.id)}
-                    className={`p-2.5 rounded-2xl border flex items-center gap-1.5 transition-all cursor-pointer ${
-                      selectedElementId === el.id
+                    className={`p-2.5 rounded-2xl border flex items-center gap-1.5 transition-all cursor-pointer ${selectedElementId === el.id
                         ? 'border-red-500 bg-red-500/[0.08] shadow-sm'
                         : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
-                    }`}
+                      }`}
                   >
                     {/* 左：类型标记 + 名称 */}
                     <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                       <span
-                        className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase shrink-0 ${
-                          isBg
+                        className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase shrink-0 ${isBg
                             ? 'bg-rose-500/15 text-rose-300/70 border border-rose-500/20'
                             : 'bg-white/[0.04] text-white/40'
-                        }`}
+                          }`}
                       >
                         {isBg ? 'BG' : el.type.slice(0, 4)}
                       </span>
@@ -241,11 +236,10 @@ export const ElementsControlTab: React.FC = () => {
                           e.stopPropagation();
                           setSelectedElementId(el.id);
                         }}
-                        className={`p-1 rounded-md transition-colors ${
-                          selectedElementId === el.id
+                        className={`p-1 rounded-md transition-colors ${selectedElementId === el.id
                             ? 'text-red-400 bg-red-500/20 ring-1 ring-red-500/30'
                             : 'text-white/40 hover:text-white hover:bg-white/[0.08]'
-                        }`}
+                          }`}
                         title="打开此图层属性配置"
                       >
                         <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -286,11 +280,10 @@ export const ElementsControlTab: React.FC = () => {
                           if (selectedElementId === el.id) setSelectedElementId(null);
                         }}
                         disabled={isBg}
-                        className={`p-1 rounded-md transition-colors ${
-                          isBg
+                        className={`p-1 rounded-md transition-colors ${isBg
                             ? 'text-white/10 cursor-not-allowed'
                             : 'text-white/30 hover:text-red-400 hover:bg-red-500/5'
-                        }`}
+                          }`}
                         title={isBg ? '背景层不可删除' : '删除图层'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -409,7 +402,7 @@ export const ElementPropertyPanel: React.FC = () => {
                 />
               </div>
               <div className="mt-2 text-[10px] font-bold text-emerald-400/90 tracking-wide flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-emerald-400/10 border border-emerald-400/20">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5" /></svg>
                 <span>原图比例已锁定 ·</span>
                 <span className="font-mono">{formatRatio(selected.aspectRatio)}</span>
                 <span className="opacity-70">（仅允许调整缩放和宽度）</span>
@@ -435,7 +428,7 @@ export const ElementPropertyPanel: React.FC = () => {
                   className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all text-[11px] font-black flex items-center justify-center gap-1.5"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                    <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>
+                    <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4" />
                   </svg>
                   占满画布（按宽铺满）
                 </button>
@@ -458,7 +451,7 @@ export const ElementPropertyPanel: React.FC = () => {
                   className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all text-[11px] font-black flex items-center justify-center gap-1.5"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                    <path d="M9 4h6M9 20h6M4 9v6M20 9v6"/>
+                    <path d="M9 4h6M9 20h6M4 9v6M20 9v6" />
                   </svg>
                   占满画布（按高铺满）
                 </button>
@@ -493,11 +486,10 @@ export const ElementPropertyPanel: React.FC = () => {
                 <button
                   key={t}
                   onClick={() => update({ bgVariant: t })}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${
-                    (selected.bgVariant ?? 'gradient') === t
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${(selected.bgVariant ?? 'gradient') === t
                       ? 'bg-red-500 text-white shadow-sm'
                       : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white'
-                  }`}
+                    }`}
                 >
                   {t === 'gradient' ? '环境渐变' : t === 'color' ? '纯色' : '图片高斯模糊'}
                 </button>
@@ -650,11 +642,10 @@ export const ElementPropertyPanel: React.FC = () => {
                         key={p.val}
                         type="button"
                         onClick={() => update({ fgColor: p.val })}
-                        className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${
-                          isSelected
+                        className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${isSelected
                             ? 'border-white/40 bg-white/15 text-white shadow-sm'
                             : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.07]'
-                        }`}
+                          }`}
                         title={p.label}
                       >
                         {p.isOriginal ? (
@@ -751,6 +742,7 @@ export const ElementPropertyPanel: React.FC = () => {
               value={selected.content}
               onChange={(e) => update({ content: e.target.value })}
               placeholder="支持 Markdown：## 标题 / **粗体** / - 列表 / > 引用 / $$公式$$"
+              rows={12}
             />
             <CheckboxField
               label="启用 Markdown 渲染"
@@ -865,11 +857,10 @@ export const ElementPropertyPanel: React.FC = () => {
                       key={p.val}
                       type="button"
                       onClick={() => update({ fgColor: p.val })}
-                      className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${
-                        isSelected
+                      className={`h-6 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 border ${isSelected
                           ? 'border-white/40 bg-white/15 text-white shadow-sm'
                           : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.07]'
-                      }`}
+                        }`}
                       title={p.label}
                     >
                       {p.isOriginal ? (
@@ -1207,11 +1198,10 @@ function ImagePickerField({
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`relative flex items-center gap-3 w-full h-24 px-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all group ${
-          dragOver
+        className={`relative flex items-center gap-3 w-full h-24 px-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all group ${dragOver
             ? 'border-red-400 bg-red-500/10'
             : 'border-white/[0.1] bg-white/[0.02] hover:border-white/[0.25] hover:bg-white/[0.04]'
-        }`}
+          }`}
       >
         {/* 缩略图 / 占位图标 */}
         <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
@@ -1364,9 +1354,8 @@ function ColorField({ label, value, onChange }:
             type="color"
             value={hexValue}
             onChange={(e) => onChange(e.target.value)}
-            className={`absolute inset-0 h-[34px] w-[44px] rounded-xl cursor-pointer ${
-              isTransparent ? 'opacity-0' : 'bg-transparent border border-white/[0.06]'
-            }`}
+            className={`absolute inset-0 h-[34px] w-[44px] rounded-xl cursor-pointer ${isTransparent ? 'opacity-0' : 'bg-transparent border border-white/[0.06]'
+              }`}
             title={isTransparent ? '点击选择颜色（当前为透明）' : '点击选择颜色'}
           />
         </div>
@@ -1380,11 +1369,10 @@ function ColorField({ label, value, onChange }:
         <button
           type="button"
           onClick={() => onChange('transparent')}
-          className={`shrink-0 px-2.5 h-[34px] rounded-xl text-[11px] font-bold transition-colors border ${
-            isTransparent
+          className={`shrink-0 px-2.5 h-[34px] rounded-xl text-[11px] font-bold transition-colors border ${isTransparent
               ? 'bg-red-500/15 border-red-500/40 text-red-400'
               : 'bg-white/[0.04] border-white/[0.06] text-white/55 hover:text-white/80 hover:bg-white/[0.08]'
-          }`}
+            }`}
         >
           透明
         </button>
@@ -1424,9 +1412,8 @@ function SegmentField<T extends string | number>({ label, value, options, onChan
             <button
               key={String(o.value)}
               onClick={() => onChange(o.value)}
-              className={`py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center justify-center ${
-                active ? 'bg-white/15 text-white shadow-sm' : 'text-white/55 hover:text-white/80'
-              }`}
+              className={`py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center justify-center ${active ? 'bg-white/15 text-white shadow-sm' : 'text-white/55 hover:text-white/80'
+                }`}
             >
               {o.label}
             </button>
