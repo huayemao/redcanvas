@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { getEffectiveExportName } from '../lib/namingUtils';
 import { extractDominantColors, extractPaletteCandidates, buildPaletteStyled, PALETTE_STYLES, PaletteCandidate } from '../lib/colorExtractor';
+import { sanitizeSnapshotForExport } from '../lib/configPack';
 
 export type PaletteStyleDef = { styleId: string; styleName: string };
 
@@ -337,7 +338,7 @@ const makeBgElement = (
   bgColor: f.bgColor,
   gradientStart: f.gradientStart,
   gradientEnd: f.gradientEnd,
-  imageUrl: f.images[0]?.url || '',
+  imageUrl: f.bgType === 'blur' ? (f.images[0]?.url || '') : '',
   textureUrl: f.bgTexture || '',
   textureOpacity: f.textureOpacity ?? 0.6,
   textureBlendMode: f.textureBlendMode ?? 'normal',
@@ -485,7 +486,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (bgEl && bgEl.bgVariant !== bgType) {
       set({
         floatingElements: s.floatingElements.map((e) =>
-          e.id === bgEl.id ? { ...e, bgVariant: bgType } : e
+          e.id === bgEl.id
+            ? {
+                ...e,
+                bgVariant: bgType,
+                imageUrl: bgType === 'blur' ? (e.imageUrl || s.images[0]?.url || '') : '',
+              }
+            : e
         ),
       });
     }
@@ -912,9 +919,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
   removeFloatingElement: (id) => {
-    set((state) => ({
-      floatingElements: state.floatingElements.filter((el) => el.id !== id),
-    }));
+    set((state) => {
+      const target = state.floatingElements.find((el) => el.id === id);
+      const nextElements = state.floatingElements.filter((el) => el.id !== id);
+
+      let nextImages = state.images;
+      if (target && (target.type === 'image' || target.type === 'asset') && target.imageUrl) {
+        const deletedUrl = target.imageUrl;
+        const isStillUsed = nextElements.some(
+          (el) =>
+            ((el.type === 'image' || el.type === 'asset') && el.imageUrl === deletedUrl) ||
+            (el.type === 'background' && (el.bgVariant === 'blur' || state.bgType === 'blur') && el.imageUrl === deletedUrl)
+        );
+        if (!isStillUsed) {
+          nextImages = state.images.filter((img) => img.url !== deletedUrl);
+        }
+      }
+
+      return {
+        floatingElements: nextElements,
+        images: nextImages,
+      };
+    });
     get().captureCurrentPage();
   },
   reorderFloatingElementLayer: (id, direction) => {
@@ -1255,7 +1281,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       bgColor: s.bgColor,
       gradientStart: s.gradientStart,
       gradientEnd: s.gradientEnd,
-      imageUrl: s.images[0]?.url || '', // blur 模式下用的模糊图 URL
+      imageUrl: s.bgType === 'blur' ? (s.images[0]?.url || '') : '', // blur 模式下才需要模糊底图 URL
       textureUrl: s.bgTexture || '',
       textureOpacity: s.textureOpacity ?? 0.6,
       textureBlendMode: s.textureBlendMode ?? 'normal',
@@ -1335,7 +1361,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         bgColor: s.bgColor,
         gradientStart: s.gradientStart,
         gradientEnd: s.gradientEnd,
-        imageUrl: s.images[0]?.url || '',
+        imageUrl: s.bgType === 'blur' ? (s.images[0]?.url || '') : '',
         textureUrl: s.bgTexture || '',
         textureOpacity: s.textureOpacity ?? 0.6,
         textureBlendMode: s.textureBlendMode ?? 'normal',
@@ -1697,14 +1723,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     // 先把当前镜像写回当前页，保证导出包含最新编辑
     get().captureCurrentPage();
     const s = get();
-    return {
-      __type: 'redcanvas-studio-project' as const,
-      version: 2 as const,
+    const rawSnapshot: StudioProjectSnapshot = {
+      __type: 'redcanvas-studio-project',
+      version: 2,
       exportedAt: new Date().toISOString(),
       currentPageId: s.currentPageId,
       customExportName: s.customExportName,
       pages: s.pages,
     };
+    const { cleanSnapshot } = sanitizeSnapshotForExport(rawSnapshot);
+    return cleanSnapshot;
   },
 
   importConfig: (snapshot: unknown) => {

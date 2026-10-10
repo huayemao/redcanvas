@@ -155,7 +155,7 @@ export const ConfigToolbar: React.FC<ConfigToolbarProps> = ({ onExportPng, isPng
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-bold text-white/80">导出全部页面（{pageCount} 页）</div>
                       <div className="text-[9px] text-white/30 font-medium">
-                        逐页高清 PNG{autoExportConfig ? ' + 项目配置' : ''} · 打包 ZIP
+                        逐页高清 PNG{autoExportConfig ? ' + 项目配置包' : ''} · 打包 ZIP
                       </div>
                     </div>
                   </button>

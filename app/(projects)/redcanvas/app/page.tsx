@@ -202,7 +202,7 @@ const AppPage: React.FC = () => {
           : '正在打包多页 ZIP 文件...'
       );
       const snapshot = store.autoExportConfig ? store.exportConfig() : undefined;
-      const zipBlob = await packImagesAndConfigZip(blobs, snapshot);
+      const zipBlob = await packImagesAndConfigZip(blobs, snapshot, baseName);
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.download = `${baseName}.zip`;

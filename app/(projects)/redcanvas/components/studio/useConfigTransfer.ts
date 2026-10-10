@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
-import { packConfigZip, unpackConfigZip } from '../../lib/configPack';
+import { packConfigZip, unpackConfigZip, snapshotHasImageAssets } from '../../lib/configPack';
 import { PlogElement, PlogImage } from '../../types';
 
 export interface ConfigToast {
@@ -13,7 +13,7 @@ export interface ConfigToast {
 /**
  * 配置导入/导出的共享逻辑（存档/读档）。
  * 供 ConfigToolbar（侧栏/抽屉）与 MobileConfigBar（移动端顶栏）复用，避免重复实现。
- * - 导出：有图片资源 → ZIP（含 config.json + assets/，v2 多页项目格式）；无图片 → 纯 JSON
+ * - 导出：有实际引用的图片资源 → ZIP（含 config.json + assets/，v2 多页项目格式）；无图片 → 纯 JSON
  * - 导入：按文件扩展名 / MIME 分派（.zip → ZIP；.json → JSON），v1/v2 格式均兼容
  */
 export function useConfigTransfer() {
@@ -27,14 +27,10 @@ export function useConfigTransfer() {
     window.setTimeout(() => setToast(null), 2600);
   };
 
-  const checkPageAssets = (imgs: PlogImage[], els: PlogElement[]) =>
-    imgs.some((i) => i.url) ||
-    els.some((e) => typeof e.imageUrl === 'string' && e.imageUrl);
-
-  // 是否存在图片资源（当前页 + 所有页的图库与元素里 imageUrl 非空）
-  const hasImageAssets =
-    checkPageAssets(images, floatingElements) ||
-    pages.some((p) => checkPageAssets(p.data.images, p.data.floatingElements));
+  // 是否存在实际引用的图片/材质资源（当前所有页面中至少有一个页面实际引用了图片/材质）
+  const hasImageAssets = useMemo(() => {
+    return snapshotHasImageAssets(useStudioStore.getState().exportConfig());
+  }, [images, floatingElements, pages]);
 
   const stampName = () => {
     const d = new Date();

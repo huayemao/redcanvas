@@ -83,7 +83,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
         bgColor: state.bgColor,
         gradientStart: state.gradientStart,
         gradientEnd: state.gradientEnd,
-        imageUrl: state.images[0]?.url || '',
+        imageUrl: state.bgType === 'blur' ? (state.images[0]?.url || '') : '',
         textureUrl: state.bgTexture || '',
         textureOpacity: state.textureOpacity ?? 0.6,
         textureBlendMode: state.textureBlendMode ?? 'normal',

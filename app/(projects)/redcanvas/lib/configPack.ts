@@ -1,34 +1,143 @@
 import JSZip from 'jszip';
-import { StudioConfigSnapshot, StudioProjectSnapshot } from '../store/useStudioStore';
+import { StudioConfigSnapshot, StudioProjectSnapshot, StudioPageFields } from '../store/useStudioStore';
 
 // ============================================================================
 //  配置 ZIP 打包 / 解包
 //  - 导出：snapshot + 图片资源 → ZIP（含 config.json + assets/*）
 //  - 导入：ZIP → snapshot（图片资源转 blob URL 注回 imageUrl）
 //  兼容 v1 单页（redcanvas-studio-config）与 v2 多页项目（redcanvas-studio-project）：
-//  url/imageUrl 收集与改写均递归遍历，无需感知具体层级。
+//  精准收集各页实际引用的图片/材质资源，绝不打包当前任何页面都未引用的冗余文件。
 //  设计原则：远程 URL fetch 失败时保留原值，避免阻塞导出
 // ============================================================================
 
-/** 递归收集对象里所有"图片资源 URL"（仅 url / imageUrl 字段），去重后返回 */
-function collectAssetUrls(root: unknown): string[] {
-  const urls = new Set<string>();
-  const walk = (obj: unknown): void => {
-    if (!obj || typeof obj !== 'object') return;
-    if (Array.isArray(obj)) {
-      obj.forEach(walk);
-      return;
+/**
+ * 获取某个页面中所有实际被引用的图片/材质资源 URL（去重集合）。
+ * 引用来源包括：
+ * 1. 浮动元素 (image / asset) 的非空 imageUrl
+ * 2. 背景元素在 blur 模式下的非空 imageUrl (非 blur 模式不计为引用)
+ * 3. 背景元素或其它元素设置的非空 textureUrl
+ * 4. 页面级别的非空 bgTexture
+ * 5. 如果页面处于 blur 模式且背景元素缺少 imageUrl，fallback 取 images[0].url
+ */
+export function getPageReferencedAssetUrls(pageData: Partial<StudioPageFields>): Set<string> {
+  const referenced = new Set<string>();
+  if (!pageData) return referenced;
+
+  const isBlurBg = pageData.bgType === 'blur';
+  const bgElement = pageData.floatingElements?.find((e) => e.type === 'background');
+  const bgVariantIsBlur = bgElement?.bgVariant === 'blur' || isBlurBg;
+
+  // 1. 遍历 floatingElements
+  for (const el of pageData.floatingElements || []) {
+    if (!el) continue;
+    if ((el.type === 'image' || el.type === 'asset') && typeof el.imageUrl === 'string' && el.imageUrl.trim()) {
+      referenced.add(el.imageUrl.trim());
     }
-    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      if ((k === 'url' || k === 'imageUrl') && typeof v === 'string' && v) {
-        urls.add(v);
-      } else {
-        walk(v);
+    if (el.type === 'background') {
+      if (bgVariantIsBlur && typeof el.imageUrl === 'string' && el.imageUrl.trim()) {
+        referenced.add(el.imageUrl.trim());
+      }
+      if (typeof el.textureUrl === 'string' && el.textureUrl.trim()) {
+        referenced.add(el.textureUrl.trim());
+      }
+    } else if (typeof el.textureUrl === 'string' && el.textureUrl.trim()) {
+      referenced.add(el.textureUrl.trim());
+    }
+  }
+
+  // 2. 页面 bgTexture
+  if (typeof pageData.bgTexture === 'string' && pageData.bgTexture.trim()) {
+    referenced.add(pageData.bgTexture.trim());
+  }
+
+  // 3. blur 模式下若背景元素未指定 imageUrl，画布会 fallback 读取 images[0]
+  if (bgVariantIsBlur && !bgElement?.imageUrl && pageData.images?.[0]?.url?.trim()) {
+    referenced.add(pageData.images[0].url.trim());
+  }
+
+  return referenced;
+}
+
+/**
+ * 清洗快照：
+ * 1. 遍历所有页面，收集各页实际引用的图片资源 URL；
+ * 2. 对每个页面：
+ *    - 如果背景不是 blur 模式，清除 background 元素的 imageUrl 历史残留（设为空字符串）；
+ *    - 过滤 pageData.images，只保留当前页面实际引用的图片项；
+ * 3. 统计整个快照中被当前任何页面引用的总资源集合；
+ * 4. 确保导出的 ZIP assets 里仅包含有实际引用的资源，绝不打包未引用的资源；
+ *    无任何图片资源引用时返回纯 JSON。
+ */
+export function sanitizeSnapshotForExport<T extends StudioProjectSnapshot | StudioConfigSnapshot>(
+  snapshot: T,
+): { cleanSnapshot: T; referencedUrls: Set<string> } {
+  // 深拷贝快照，避免直接修改运行时 store
+  const clean = JSON.parse(JSON.stringify(snapshot)) as T;
+  const allReferenced = new Set<string>();
+
+  if (clean.__type === 'redcanvas-studio-project') {
+    const proj = clean as StudioProjectSnapshot;
+    for (const page of proj.pages || []) {
+      if (!page?.data) continue;
+      const pageReferenced = getPageReferencedAssetUrls(page.data);
+      for (const u of pageReferenced) allReferenced.add(u);
+
+      const isBlur = page.data.bgType === 'blur';
+      // 清理未处于 blur 模式的背景元素上的无用 imageUrl 残留
+      if (Array.isArray(page.data.floatingElements)) {
+        page.data.floatingElements = page.data.floatingElements.map((el) => {
+          if (el.type === 'background') {
+            const elBlur = el.bgVariant === 'blur' || isBlur;
+            return {
+              ...el,
+              imageUrl: elBlur ? (el.imageUrl || '') : '',
+            };
+          }
+          return el;
+        });
+      }
+
+      // 仅保留该页面实际引用的 images 项
+      if (Array.isArray(page.data.images)) {
+        page.data.images = page.data.images.filter((img) => img?.url && pageReferenced.has(img.url.trim()));
       }
     }
-  };
-  walk(root);
-  return Array.from(urls);
+  } else if (clean.__type === 'redcanvas-studio-config') {
+    const single = clean as StudioConfigSnapshot;
+    const pageReferenced = getPageReferencedAssetUrls(single);
+    for (const u of pageReferenced) allReferenced.add(u);
+
+    const isBlur = single.bgType === 'blur';
+    if (Array.isArray(single.floatingElements)) {
+      single.floatingElements = single.floatingElements.map((el) => {
+        if (el.type === 'background') {
+          const elBlur = el.bgVariant === 'blur' || isBlur;
+          return {
+            ...el,
+            imageUrl: elBlur ? (el.imageUrl || '') : '',
+          };
+        }
+        return el;
+      });
+    }
+
+    if (Array.isArray(single.images)) {
+      single.images = single.images.filter((img) => img?.url && pageReferenced.has(img.url.trim()));
+    }
+  }
+
+  return { cleanSnapshot: clean, referencedUrls: allReferenced };
+}
+
+/** 收集快照中所有页面实际引用的图片资源 URL（去重） */
+export function collectAssetUrls(snapshot: unknown): string[] {
+  if (!snapshot || typeof snapshot !== 'object') return [];
+  const s = snapshot as StudioProjectSnapshot | StudioConfigSnapshot;
+  if (s.__type === 'redcanvas-studio-project' || s.__type === 'redcanvas-studio-config') {
+    const { referencedUrls } = sanitizeSnapshotForExport(s);
+    return Array.from(referencedUrls);
+  }
+  return [];
 }
 
 function normalizeAssetPath(p: string): string {
@@ -83,7 +192,6 @@ function extFromBlob(blob: Blob, url?: string): string {
       }
     }
   }
-  // 兜底
   return 'png';
 }
 
@@ -104,20 +212,20 @@ function mimeFromPath(path: string): string {
 /**
  * 把 snapshot 打包成 ZIP Blob。
  * - 配置写入 config.json
- * - 所有图片资源 fetch 后放入 assets/img-<n>.<ext>
+ * - 仅将当前工程中实际引用的图片资源 fetch 后放入 assets/img-<n>.<ext>
  * - snapshot 里的 url/imageUrl 改写为 assets 相对路径
  * - fetch 失败的资源保留原 URL（不阻塞导出）
  */
 export async function packConfigZip(
   snapshot: StudioProjectSnapshot | StudioConfigSnapshot,
 ): Promise<{ blob: Blob; assetsCount: number; skipped: string[] }> {
+  const { cleanSnapshot, referencedUrls } = sanitizeSnapshotForExport(snapshot);
   const zip = new JSZip();
-  const urls = collectAssetUrls(snapshot);
   const urlToZipPath = new Map<string, string>();
   const skipped: string[] = [];
 
   let idx = 0;
-  for (const url of urls) {
+  for (const url of referencedUrls) {
     try {
       // fetch 同时支持 http(s) URL、同源 /xxx 路径、data: URL
       const res = await fetch(url, { credentials: 'same-origin' });
@@ -136,8 +244,8 @@ export async function packConfigZip(
     }
   }
 
-  // 改写 snapshot 里的 url/imageUrl
-  const remapped = remapAssetFields(snapshot, urlToZipPath);
+  // 改写 cleanSnapshot 里的 url/imageUrl
+  const remapped = remapAssetFields(cleanSnapshot, urlToZipPath);
   zip.file('config.json', JSON.stringify(remapped, null, 2));
 
   const blob = await zip.generateAsync({
@@ -153,13 +261,51 @@ export async function packConfigZip(
  * - 读 config.json（v1 单页 / v2 多页项目均支持）
  * - 把 assets/* 资源转成 blob URL / data URL，回填到 snapshot 的 url/imageUrl
  * - 找不到 config.json 或 __type 不合法 → 返回 null
+ * - 兼容多页导出包结构：若顶层未找到 config.json，则自动探测内嵌的 *-config.zip 或 config.zip / *.json
  */
 export async function unpackConfigZip(
   blob: Blob | ArrayBuffer,
 ): Promise<StudioProjectSnapshot | StudioConfigSnapshot | null> {
   const data = typeof (blob as Blob)?.arrayBuffer === 'function' ? await (blob as Blob).arrayBuffer() : blob;
   const zip = await JSZip.loadAsync(data);
-  const configFile = zip.file('config.json');
+  let targetZip = zip;
+  let configFile = zip.file('config.json');
+
+  if (!configFile) {
+    // 兼容外层多页导出包结构：压缩包内包含一个独立的 *-config.zip 或 config.zip
+    const innerZipEntry = Object.entries(zip.files).find(
+      ([path, f]) => !f.dir && path.toLowerCase().endsWith('.zip')
+    );
+    if (innerZipEntry) {
+      try {
+        const innerData = await innerZipEntry[1].async('arraybuffer');
+        targetZip = await JSZip.loadAsync(innerData);
+        configFile = targetZip.file('config.json');
+      } catch {
+        // 内层 zip 读取失败继续向下
+      }
+    } else {
+      // 检查是否有内嵌的 *-config.json 或 config.json
+      const innerJsonEntry = Object.entries(zip.files).find(
+        ([path, f]) => !f.dir && (path.toLowerCase().endsWith('-config.json') || path.toLowerCase() === 'config.json' || path.toLowerCase().endsWith('.json'))
+      );
+      if (innerJsonEntry) {
+        try {
+          const jsonText = await innerJsonEntry[1].async('string');
+          const parsed = JSON.parse(jsonText);
+          if (
+            parsed &&
+            (parsed.__type === 'redcanvas-studio-config' || parsed.__type === 'redcanvas-studio-project')
+          ) {
+            return parsed;
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
   if (!configFile) return null;
   const text = await configFile.async('string');
   let snapshot: StudioProjectSnapshot | StudioConfigSnapshot;
@@ -175,9 +321,9 @@ export async function unpackConfigZip(
     return null;
   }
 
-  // 收集所有 assets/* 文件，建立 zipPath → blobUrl / dataUrl
+  // 收集 targetZip 中所有 assets/* 文件，建立 zipPath → blobUrl / dataUrl
   const zipPathToBlobUrl = new Map<string, string>();
-  const assetEntries = Object.entries(zip.files).filter(
+  const assetEntries = Object.entries(targetZip.files).filter(
     ([path, f]) => !f.dir && path.replace(/\\/g, '/').startsWith('assets/'),
   );
   for (const [rawPath, f] of assetEntries) {
@@ -185,9 +331,6 @@ export async function unpackConfigZip(
     try {
       if (path.toLowerCase().endsWith('.svg')) {
         // SVG 特殊处理：转为标准 data:image/svg+xml Data URL
-        // 1. 规避 JSZip 默认 blob.type 为空导致浏览器 <img> 拒绝渲染 SVG（XML 需显式 MIME）
-        // 2. data:image/svg 前缀使 isSvgSource / isSvgUrl 能准确识别为 SVG，保留前景色染色与侧边栏控制项
-        // 3. 与用户手动上传 SVG 时的行为（ElementsControlTab 中转存为 data URL）保持完全一致
         const base64 = await f.async('base64');
         const dataUrl = `data:image/svg+xml;base64,${base64}`;
         zipPathToBlobUrl.set(rawPath, dataUrl);
@@ -228,11 +371,16 @@ export async function packImageBlobsZip(
 }
 
 /**
- * 判断快照中是否包含需要离线保存的图片资源
+ * 判断快照中是否包含当前任何页面实际引用的图片资源
  */
 export function snapshotHasImageAssets(snapshot: unknown): boolean {
-  const urls = collectAssetUrls(snapshot);
-  return urls.length > 0;
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  const s = snapshot as StudioProjectSnapshot | StudioConfigSnapshot;
+  if (s.__type === 'redcanvas-studio-project' || s.__type === 'redcanvas-studio-config') {
+    const { referencedUrls } = sanitizeSnapshotForExport(s);
+    return referencedUrls.size > 0;
+  }
+  return false;
 }
 
 /** 生成时间戳后缀：YYYYMMDD-HHmm */
@@ -244,24 +392,25 @@ export function formatTimestampName(): string {
 
 /**
  * 将 snapshot 生成独立导出的文件 Blob（含文件名与类型）。
- * - 若含图片资源，打包为 ZIP（含 config.json + assets/）
+ * - 若含实际引用的图片资源，打包为 ZIP（含 config.json + assets/）
  * - 若无图片资源，输出纯 JSON
  */
 export async function generateConfigExportFile(
   snapshot: StudioProjectSnapshot | StudioConfigSnapshot,
   baseName: string = 'redcanvas'
 ): Promise<{ blob: Blob; filename: string; isZip: boolean }> {
-  const hasAssets = snapshotHasImageAssets(snapshot);
+  const { cleanSnapshot, referencedUrls } = sanitizeSnapshotForExport(snapshot);
+  const hasAssets = referencedUrls.size > 0;
   const stamp = formatTimestampName();
   if (hasAssets) {
-    const { blob } = await packConfigZip(snapshot);
+    const { blob } = await packConfigZip(cleanSnapshot);
     return {
       blob,
       filename: `${baseName}-config-${stamp}.zip`,
       isZip: true,
     };
   } else {
-    const json = JSON.stringify(snapshot, null, 2);
+    const json = JSON.stringify(cleanSnapshot, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     return {
       blob,
@@ -272,46 +421,36 @@ export async function generateConfigExportFile(
 }
 
 /**
- * 把多页导出的 PNG Blob 与项目配置（snapshot）打包进同一个 ZIP。
- * 既包含用户可直接查阅/发布的各页高清 PNG，
- * 也包含 config.json（及相关 assets），支持直接导入回 RedCanvas。
+ * 把多页导出的 PNG Blob 与项目配置打包进同一个 ZIP。
+ * 1. 包含用户可直接查阅/发布的各页高清 PNG（直接位于压缩包根目录下）；
+ * 2. 包含一个独立的项目配置压缩包（如 <baseName>-config.zip，或纯 JSON <baseName>-config.json），
+ *    而不是把 config.json 和 assets 文件夹散落混在根目录下。
  */
 export async function packImagesAndConfigZip(
   items: { name: string; blob: Blob }[],
   snapshot?: StudioProjectSnapshot | StudioConfigSnapshot,
+  baseName: string = 'redcanvas',
 ): Promise<Blob> {
   const zip = new JSZip();
 
-  // 1. 放入各页图片
+  // 1. 放入各页图片（位于压缩包根目录，方便用户直接查阅或发帖）
   for (const item of items) {
     const data = typeof item.blob?.arrayBuffer === 'function' ? await item.blob.arrayBuffer() : item.blob;
     zip.file(item.name, data);
   }
 
-  // 2. 若传入 snapshot，一并打包工程配置
+  // 2. 若传入 snapshot，一并打包工程配置为独立的压缩包或 JSON 文件
+  //    注意：不要把 config.json 和 assets 文件夹散落混在根目录下，而是直接作为一个内嵌的配置包
   if (snapshot) {
-    const urls = collectAssetUrls(snapshot);
-    const urlToZipPath = new Map<string, string>();
-
-    let idx = 0;
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, { credentials: 'same-origin' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        if (blob.size === 0) throw new Error('empty blob');
-        const ext = extFromBlob(blob, url);
-        const zipPath = `assets/img-${idx}.${ext}`;
-        zip.file(zipPath, blob);
-        urlToZipPath.set(url, zipPath);
-        idx++;
-      } catch {
-        // 单个失败保留原 URL
-      }
+    const { cleanSnapshot, referencedUrls } = sanitizeSnapshotForExport(snapshot);
+    if (referencedUrls.size > 0) {
+      const { blob } = await packConfigZip(cleanSnapshot);
+      const configData = typeof blob?.arrayBuffer === 'function' ? await blob.arrayBuffer() : blob;
+      zip.file(`${baseName}-config.zip`, configData);
+    } else {
+      const json = JSON.stringify(cleanSnapshot, null, 2);
+      zip.file(`${baseName}-config.json`, json);
     }
-
-    const remapped = remapAssetFields(snapshot, urlToZipPath);
-    zip.file('config.json', JSON.stringify(remapped, null, 2));
   }
 
   return zip.generateAsync({
@@ -320,4 +459,3 @@ export async function packImagesAndConfigZip(
     compressionOptions: { level: 4 },
   });
 }
-
