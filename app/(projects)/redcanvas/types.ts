@@ -81,8 +81,10 @@ export type PlogElementType =
   | 'asset'          // 图形素材（位图/矢量，来源可为 SVG/PNG 贴纸）
   // 装饰类（保留）
   | 'badge' | 'sticker' | 'annotation' | 'tag'
-  // 时间戳：显示 年·月·日 + 星期，content 存日期串(YYYY-MM-DD，空=今天)
-  | 'timestamp';
+  // 控件类（不可分割复合控件，拖拽时作为一个整体移动，具备独立字段组）
+  | 'timestamp'
+  | 'headline'
+  | 'memo';
 
 export interface PlogElement {
   id: string;
@@ -145,6 +147,24 @@ export interface PlogElement {
   // ---- annotation 专属 ----
   /** 气泡尾巴方向（指向被注释内容），默认 'bottom-left' */
   tailDirection?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+
+  // ---- 控件专属字段组 (Widget Field Group) ----
+  // 1. 时间戳控件专属
+  timestampStyle?: 'magazine' | 'checkin' | 'polaroid' | 'minimal' | 'stamp';
+  showWeekday?: boolean;
+  showYear?: boolean;
+  subText?: string;          // 辅助标语/编号/胶片签 (如 "REC · DAILY", "PHOTO LOG")
+  accentColor?: string;      // 控件内重点强调色/徽章高亮色
+
+  // 2. 主副标题控件专属
+  subtitle?: string;         // 副标题文案
+  showLine?: boolean;        // 是否显示装饰线条
+  titleColor?: string;       // 主标题文字颜色
+  subtitleColor?: string;    // 副标题文字颜色
+
+  // 3. 备忘便签控件专属
+  badgeText?: string;        // 便签顶部徽章内容 (如 "NOTE", "01 步骤")
+  badgeBg?: string;          // 徽章背景色
 }
 
 /** 预设阴影等级 → CSS box-shadow（与"默认好看"对齐） */

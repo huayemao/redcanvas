@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { StudioTab, useStudioStore } from '../../store/useStudioStore';
-import { LayoutGrid, Palette, Type, Layers } from 'lucide-react';
+import { Component, Palette, Type, Layers } from 'lucide-react';
 
 export const SidebarHeader: React.FC = () => {
   const { activeTab, setActiveTab } = useStudioStore();
 
   const tabs: { id: StudioTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'templates', label: '模板', icon: LayoutGrid },
+    { id: 'templates', label: '控件', icon: Component },
     { id: 'canvas', label: '配色', icon: Palette },
     { id: 'text', label: '文案', icon: Type },
     { id: 'elements', label: '元素', icon: Layers },

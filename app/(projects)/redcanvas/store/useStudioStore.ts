@@ -70,6 +70,64 @@ function estimateBgLuminance(state: {
   return (la + lb) / 2;
 }
 
+export interface StudioThemeColors {
+  textPrimary: string;
+  textSecondary: string;
+  accent: string;
+  primary: string;
+  dominant: string;
+  badgeBg: string;
+  badgeText: string;
+  cardBg: string;
+  cardBorder: string;
+  isDark: boolean;
+}
+
+export function resolveStudioThemeColors(s: {
+  extractedColors: ExtractedColors | null;
+  bgType: 'gradient' | 'color' | 'blur';
+  bgColor: string;
+  gradientStart: string;
+  gradientEnd: string;
+}): StudioThemeColors {
+  const palette = s.extractedColors;
+  const bgLum = estimateBgLuminance({
+    bgType: s.bgType,
+    bgColor: s.bgColor,
+    gradientStart: s.gradientStart,
+    gradientEnd: s.gradientEnd,
+  });
+  const isDark = bgLum < 0.35;
+
+  if (palette) {
+    return {
+      textPrimary: palette.textPrimary,
+      textSecondary: palette.textSecondary,
+      accent: palette.accent,
+      primary: palette.primary,
+      dominant: palette.dominant,
+      badgeBg: palette.badgeBg,
+      badgeText: palette.badgeText,
+      cardBg: palette.cardBg,
+      cardBorder: palette.cardBorder,
+      isDark,
+    };
+  }
+
+  return {
+    textPrimary: isDark ? '#F7F3EC' : '#111827',
+    textSecondary: isDark ? '#C8C0AE' : '#44403C',
+    accent: isDark ? '#ff8787' : '#ff2442',
+    primary: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
+    dominant: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
+    badgeBg: '#1C1917',
+    badgeText: '#F5F1E8',
+    cardBg: isDark ? 'rgba(255,255,255,0.10)' : '#FFFFFF',
+    cardBorder: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
+    isDark,
+  };
+}
+
 export type StudioTab = 'templates' | 'canvas' | 'text' | 'elements';
 
 export type StudioTemplateId = 'showcase' | 'aesthetic-gallery';
@@ -201,6 +259,7 @@ export interface StudioState {
   removeHighlight: (id: string) => void;
 
   addFloatingElement: (element: PlogElement) => void;
+  addFloatingElements: (elements: PlogElement[]) => void;
   updateFloatingElement: (id: string, partial: Partial<PlogElement>) => void;
   removeFloatingElement: (id: string) => void;
   /** 调整图层顺序：direction = 'up'上移一层 / 'down'下移一层 / 'top'置顶 / 'bottom'置底。背景层不允许重排。 */
@@ -848,6 +907,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       requestAnimationFrame(() => get().ensureImageAspectRatio(element.id));
     }
   },
+  addFloatingElements: (elements) => {
+    if (!elements || elements.length === 0) return;
+    set((state) => ({
+      floatingElements: [...state.floatingElements, ...elements],
+      selectedElementId: elements[elements.length - 1].id,
+    }));
+    get().captureCurrentPage();
+    requestAnimationFrame(() => {
+      for (const el of elements) {
+        if ((el.type === 'image' || el.type === 'asset') && el.imageUrl) {
+          get().ensureImageAspectRatio(el.id);
+        }
+      }
+    });
+  },
   updateFloatingElement: (id, partial) => {
     const s = get();
     const el = s.floatingElements.find((e) => e.id === id);
@@ -1302,46 +1376,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   addElementByType: (type) => {
     const s = get();
     const nextZ = s.floatingElements.reduce((m, e) => Math.max(m, e.zIndex), 0) + 1;
-    const palette = s.extractedColors;
-    // 新建元素的默认文字颜色：优先提取色 → 否则根据"当前背景真实亮度"自适应，确保能看清
-    let textPrimary: string;
-    let textSecondary: string;
-    let accent: string;
-    let primary: string;
-    let dominant: string;
-    let badgeBg: string;
-    let badgeText: string;
-    let cardBg: string;
-    let cardBorder: string;
-    if (palette) {
-      textPrimary = palette.textPrimary;
-      textSecondary = palette.textSecondary;
-      accent = palette.accent;
-      primary = palette.primary;
-      dominant = palette.dominant;
-      badgeBg = palette.badgeBg;
-      badgeText = palette.badgeText;
-      cardBg = palette.cardBg;
-      cardBorder = palette.cardBorder;
-    } else {
-      const bgLum = estimateBgLuminance({
-        bgType: s.bgType,
-        bgColor: s.bgColor,
-        gradientStart: s.gradientStart,
-        gradientEnd: s.gradientEnd,
-      });
-      const isDark = bgLum < 0.35;
-      textPrimary = isDark ? '#F7F3EC' : '#111827';
-      textSecondary = isDark ? '#C8C0AE' : '#44403C';
-      accent = isDark ? '#ff8787' : '#ff2442';
-      primary = isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917');
-      dominant = isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917');
-      badgeBg = '#1C1917'; // 永远深色
-      badgeText = '#F5F1E8'; // 永远浅色
-      // 卡片底色：深底用半透明白、浅底用纯白，均能与背景拉开层次且不刺眼
-      cardBg = isDark ? 'rgba(255,255,255,0.10)' : '#FFFFFF';
-      cardBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)';
-    }
+    const {
+      textPrimary,
+      textSecondary,
+      accent,
+      primary,
+      dominant,
+      badgeBg,
+      badgeText,
+      cardBg,
+      cardBorder,
+    } = resolveStudioThemeColors(s);
 
     // —— background：若已存在则直接选中；不存在才创建（保证画布始终只有一张背景层） ——
     if (type === 'background') {

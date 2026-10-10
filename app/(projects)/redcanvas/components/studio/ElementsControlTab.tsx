@@ -27,6 +27,7 @@ import {
   Lock,
   SlidersHorizontal,
   X,
+  Component,
 } from 'lucide-react';
 import { PlogElement } from '../../types';
 import { FONTS, PRESET_COLORS } from '../../constants';
@@ -67,6 +68,7 @@ export const ElementsControlTab: React.FC = () => {
     addElementByType,
     reorderFloatingElementLayer,
     fontFamily: _globalFont,
+    setActiveTab,
   } = useStudioStore();
 
   const selected = floatingElements.find((e) => e.id === selectedElementId) || null;
@@ -81,7 +83,6 @@ export const ElementsControlTab: React.FC = () => {
     { handler: () => addElementByType('annotation'), icon: MessageSquare, label: '说明提示框', tint: 'text-amber-400' },
     { handler: () => addElementByType('sticker'), icon: Sparkles, label: '高亮贴纸', tint: 'text-purple-400' },
     { handler: () => addElementByType('tag'), icon: Tag, label: '标签#', tint: 'text-neutral-300' },
-    { handler: () => addElementByType('timestamp'), icon: Calendar, label: '时间戳', tint: 'text-cyan-400' },
   ];
 
   const bgElement = floatingElements.find((e) => e.type === 'background');
@@ -221,10 +222,10 @@ export const ElementsControlTab: React.FC = () => {
                             : 'bg-white/[0.04] text-white/40'
                           }`}
                       >
-                        {isBg ? 'BG' : el.type.slice(0, 4)}
+                        {isBg ? 'BG' : (el.type === 'timestamp' ? '时间戳' : el.type === 'headline' ? '标题组' : el.type === 'memo' ? '便签' : el.type.slice(0, 4))}
                       </span>
                       <span className="text-xs font-bold text-white/80 truncate">
-                        {el.content || el.imageUrl || `[${el.type}]`}
+                        {el.type === 'timestamp' ? (el.content || '时间戳控件') : el.content || el.imageUrl || `[${el.type}]`}
                       </span>
                     </div>
 
@@ -344,6 +345,7 @@ export const ElementPropertyPanel: React.FC = () => {
     fontFamily: _globalFont,
     autoColorEnabled,
     autoExtractColors,
+    setActiveTab,
   } = useStudioStore();
 
   const [textureCategory, setTextureCategory] = useState<'all' | 'grain' | 'noise' | 'paper' | 'fabric'>('all');
@@ -973,33 +975,38 @@ export const ElementPropertyPanel: React.FC = () => {
         </>
       )}
 
-      {/* 装饰类：badge / sticker / annotation / tag / timestamp */}
-      {(selected.type === 'badge' || selected.type === 'sticker' || selected.type === 'annotation' || selected.type === 'tag' || selected.type === 'timestamp') && (
+      {/* 复合控件提示（时间戳 / 主副标题 / 便签） */}
+      {(selected.type === 'timestamp' || selected.type === 'headline' || selected.type === 'memo') && (
+        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-center space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
+            <Component className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-white">当前选中为复合控件</p>
+            <p className="text-[11px] text-white/40 mt-1">
+              控件不可拆分且整体拖拽，请前往「控件」面板配置其字段组
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('templates')}
+            className="px-4 py-2 rounded-xl bg-white text-black font-black text-xs hover:bg-white/90 transition-all shadow-md inline-flex items-center gap-1.5"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>进入控件字段组配置</span>
+          </button>
+        </div>
+      )}
+
+      {/* 装饰类原子元素：badge / sticker / annotation / tag */}
+      {(selected.type === 'badge' || selected.type === 'sticker' || selected.type === 'annotation' || selected.type === 'tag') && (
         <>
           <Section title="内容">
-            {selected.type === 'timestamp' ? (
-              <>
-                <FieldLabel>日期（留空 = 今天）</FieldLabel>
-                <input
-                  type="date"
-                  value={selected.content || ''}
-                  onChange={(e) => update({ content: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white/85 text-xs focus:outline-none focus:border-white/20"
-                />
-                <button
-                  onClick={() => update({ content: '' })}
-                  className="mt-2 w-full py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white border border-white/[0.06] transition-all text-[11px] font-bold"
-                >
-                  重置为今天
-                </button>
-              </>
-            ) : (
-              <TextField
-                label="内容"
-                value={selected.content}
-                onChange={(v) => update({ content: v })}
-              />
-            )}
+            <TextField
+              label="内容"
+              value={selected.content}
+              onChange={(v) => update({ content: v })}
+            />
             {selected.type === 'badge' && (
               <TextField
                 label="徽章编号"
@@ -1011,13 +1018,11 @@ export const ElementPropertyPanel: React.FC = () => {
           </Section>
           <Section title="外观">
             <ColorField label="文字色" value={selected.color || '#FFFFFF'} onChange={(v) => update({ color: v })} />
-            {selected.type !== 'timestamp' && (
-              <ColorField
-                label={selected.type === 'sticker' ? '荧光色' : '背景色'}
-                value={selected.bgColor || (selected.type === 'tag' ? 'transparent' : '#ff2442')}
-                onChange={(v) => update({ bgColor: v })}
-              />
-            )}
+            <ColorField
+              label={selected.type === 'sticker' ? '荧光色' : '背景色'}
+              value={selected.bgColor || (selected.type === 'tag' ? 'transparent' : '#ff2442')}
+              onChange={(v) => update({ bgColor: v })}
+            />
             {(selected.type === 'annotation' || selected.type === 'tag') && (
               <ColorField label="边框色" value={selected.borderColor || 'rgba(0,0,0,0.08)'} onChange={(v) => update({ borderColor: v })} />
             )}
@@ -1042,7 +1047,7 @@ export const ElementPropertyPanel: React.FC = () => {
                 onChange={(v) => update({ borderWidth: v })}
               />
             )}
-            {(selected.type === 'badge' || selected.type === 'timestamp') && (
+            {selected.type === 'badge' && (
               <SelectField
                 label="字体"
                 value={selected.fontFamily || _globalFont}

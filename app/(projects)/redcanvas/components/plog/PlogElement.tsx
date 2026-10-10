@@ -10,6 +10,8 @@ import { usePlogStore } from '../../store/usePlogStore';
 import { shadowOf, resolveFontClass, mixColorAlpha } from './elementUtils';
 import { LongTextBody } from './LongTextBody';
 import { TimestampBlock } from './TimestampBlock';
+import { HeadlineWidgetBlock } from './HeadlineWidgetBlock';
+import { MemoWidgetBlock } from './MemoWidgetBlock';
 import { ElementToolbar } from './ElementToolbar';
 import { mdRenderer, ensureMathBlockParagraph } from './mathRender';
 
@@ -671,9 +673,25 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         </div>
       )}
 
-      {/* ===== 时间戳：杂志风日期块 · 年·月·日 + 星期 ===== */}
+      {/* ===== 复合控件：时间戳 / 主副标题 / 便签备忘 ===== */}
       {element.type === 'timestamp' && (
         <TimestampBlock
+          element={element}
+          fontClassName={fontClassName}
+          textInlines={textInlines}
+        />
+      )}
+
+      {element.type === 'headline' && (
+        <HeadlineWidgetBlock
+          element={element}
+          fontClassName={fontClassName}
+          textInlines={textInlines}
+        />
+      )}
+
+      {element.type === 'memo' && (
+        <MemoWidgetBlock
           element={element}
           fontClassName={fontClassName}
           textInlines={textInlines}
