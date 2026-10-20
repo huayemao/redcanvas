@@ -222,10 +222,10 @@ export const ElementsControlTab: React.FC = () => {
                             : 'bg-white/[0.04] text-white/40'
                           }`}
                       >
-                        {isBg ? 'BG' : (el.type === 'timestamp' ? '时间戳' : el.type === 'headline' ? '标题组' : el.type === 'memo' ? '便签' : el.type.slice(0, 4))}
+                        {isBg ? 'BG' : (el.type === 'timestamp' ? '时间戳' : el.type === 'headline' ? '标题组' : el.type === 'memo' ? '便签' : el.type === 'stack' ? '叠卡' : el.type.slice(0, 4))}
                       </span>
                       <span className="text-xs font-bold text-white/80 truncate">
-                        {el.type === 'timestamp' ? (el.content || '时间戳控件') : el.content || el.imageUrl || `[${el.type}]`}
+                        {el.type === 'timestamp' ? (el.content || '时间戳控件') : el.type === 'stack' ? (el.content || '层叠相卡控件') : el.content || el.imageUrl || `[${el.type}]`}
                       </span>
                     </div>
 
@@ -364,12 +364,50 @@ export const ElementPropertyPanel: React.FC = () => {
     updateFloatingElement(selected.id, partial);
   };
 
+  const isWidgetType =
+    selected.type === 'stack' ||
+    selected.type === 'timestamp' ||
+    selected.type === 'headline' ||
+    selected.type === 'memo';
+
   return (
     <div className="space-y-4">
       <label className="text-[10px] font-black text-white/30 uppercase tracking-widest flex items-center gap-1.5">
         <Palette className="w-3.5 h-3.5 text-white/50" />
         元素属性 · {selected.type.toUpperCase()}
       </label>
+
+      {/* 复合控件醒目提示条与直达按钮 */}
+      {isWidgetType && (
+        <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-red-500/15 via-rose-500/10 to-transparent border border-red-500/25 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
+              <Component className="w-4 h-4 text-red-400" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-black text-white text-[12px] truncate">
+                {selected.type === 'stack'
+                  ? '画报层叠相卡控件'
+                  : selected.type === 'timestamp'
+                  ? '时间戳复合控件'
+                  : selected.type === 'headline'
+                  ? '主副标题控件'
+                  : '便签卡片控件'}
+              </div>
+              <div className="text-[10px] text-white/50 truncate">
+                整体拖拽 · 调节「宽 %」缩放卡片 · 前往控件面板配字段
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('templates')}
+            className="px-2.5 py-1.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-[11px] transition-all shadow-sm shrink-0 ml-2"
+          >
+            控件面板
+          </button>
+        </div>
+      )}
 
       {/* 通用：位置/尺寸（背景层锁定整画布，不允许改位置/尺寸） */}
       {selected.type === 'background' ? (
@@ -457,6 +495,30 @@ export const ElementPropertyPanel: React.FC = () => {
                   </svg>
                   占满画布（按高铺满）
                 </button>
+              </div>
+            </>
+          ) : selected.type === 'stack' ? (
+            <>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <NumberField
+                  label="宽 %"
+                  value={selected.widthPct ?? 44}
+                  min={15}
+                  max={95}
+                  step={1}
+                  onChange={(v) => update({ widthPct: v as number | undefined })}
+                />
+                <NumberField
+                  label="高 %（按比例锁定）"
+                  value={selected.heightPct}
+                  disabled
+                  placeholder={`按比例 ${selected.stackCardAspect || '3:4'}`}
+                  onChange={() => {}}
+                />
+              </div>
+              <div className="mt-2 text-[10px] font-bold text-rose-400/90 tracking-wide flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-rose-400/10 border border-rose-400/20">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>层叠相卡比例已锁定 · 调节「宽 %」或「缩放」即可整体改变卡片大小</span>
               </div>
             </>
           ) : (
@@ -975,8 +1037,8 @@ export const ElementPropertyPanel: React.FC = () => {
         </>
       )}
 
-      {/* 复合控件提示（时间戳 / 主副标题 / 便签） */}
-      {(selected.type === 'timestamp' || selected.type === 'headline' || selected.type === 'memo') && (
+      {/* 复合控件提示（时间戳 / 主副标题 / 便签 / 层叠相卡） */}
+      {(selected.type === 'timestamp' || selected.type === 'headline' || selected.type === 'memo' || selected.type === 'stack') && (
         <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-center space-y-3">
           <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
             <Component className="w-5 h-5" />

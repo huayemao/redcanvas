@@ -84,7 +84,8 @@ export type PlogElementType =
   // 控件类（不可分割复合控件，拖拽时作为一个整体移动，具备独立字段组）
   | 'timestamp'
   | 'headline'
-  | 'memo';
+  | 'memo'
+  | 'stack';
 
 export interface PlogElement {
   id: string;
@@ -165,6 +166,16 @@ export interface PlogElement {
   // 3. 备忘便签控件专属
   badgeText?: string;        // 便签顶部徽章内容 (如 "NOTE", "01 步骤")
   badgeBg?: string;          // 徽章背景色
+
+  // 4. 层叠相卡控件专属 (Card Stack)
+  stackImages?: string[];
+  stackStyle?: 'fan' | 'cascade' | 'polaroid' | 'minimal';
+  stackRotation?: number;      // 散射旋转幅度 (度数)
+  stackOffset?: number;        // 错开间距 (px)
+  stackCardRadius?: number;    // 卡片圆角 (px)
+  stackCardAspect?: '3:4' | '1:1' | '4:3' | '9:16'; // 单卡比例
+  stackCardWidth?: number;     // 单卡基准宽度 (px)
+  showCountBadge?: boolean;    // 是否显示张数角标
 }
 
 /** 预设阴影等级 → CSS box-shadow（与"默认好看"对齐） */

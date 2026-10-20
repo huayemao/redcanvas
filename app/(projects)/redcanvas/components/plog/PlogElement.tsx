@@ -12,6 +12,7 @@ import { LongTextBody } from './LongTextBody';
 import { TimestampBlock } from './TimestampBlock';
 import { HeadlineWidgetBlock } from './HeadlineWidgetBlock';
 import { MemoWidgetBlock } from './MemoWidgetBlock';
+import { StackWidgetBlock } from './StackWidgetBlock';
 import { ElementToolbar } from './ElementToolbar';
 import { mdRenderer, ensureMathBlockParagraph } from './mathRender';
 
@@ -230,16 +231,21 @@ export const PlogElement: React.FC<PlogElementProps> = ({
       isImageLike ? '80px' :
         element.type === 'longtext' ? '120px' :
           element.type === 'annotation' ? '100px' :
-            element.type === 'timestamp' ? '120px' : '48px',
+            element.type === 'timestamp' ? '120px' :
+              element.type === 'stack' ? '130px' : '48px',
     minHeight:
       isImageLike ? '60px' :
         element.type === 'longtext' ? '80px' :
           element.type === 'annotation' ? '56px' :
             element.type === 'timestamp' ? '60px' : '20px',
   };
-  if (element.widthPct !== undefined) wrapperStyle.width = `${element.widthPct}%`;
+  if (element.widthPct !== undefined) {
+    wrapperStyle.width = `${element.widthPct}%`;
+  } else if (element.type === 'stack') {
+    wrapperStyle.width = '44%';
+  }
   if (element.heightPct !== undefined) {
-    if (!hasRatio) {
+    if (!hasRatio && element.type !== 'stack') {
       wrapperStyle.height = `${element.heightPct}%`;
     }
   }
@@ -694,6 +700,13 @@ export const PlogElement: React.FC<PlogElementProps> = ({
         <MemoWidgetBlock
           element={element}
           fontClassName={fontClassName}
+          textInlines={textInlines}
+        />
+      )}
+
+      {element.type === 'stack' && (
+        <StackWidgetBlock
+          element={element}
           textInlines={textInlines}
         />
       )}

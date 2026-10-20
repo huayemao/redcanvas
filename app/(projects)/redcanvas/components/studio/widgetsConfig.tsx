@@ -4,7 +4,7 @@ import React from 'react';
 import { PlogElement } from '../../types';
 import { StudioThemeColors } from '../../store/useStudioStore';
 
-export type WidgetCategory = 'all' | 'timestamp' | 'typography' | 'card';
+export type WidgetCategory = 'all' | 'stack' | 'timestamp' | 'typography' | 'card';
 
 export interface WidgetContext {
   nextZ: number;
@@ -26,12 +26,121 @@ export interface StudioWidgetPreset {
 
 export const WIDGET_CATEGORIES: { id: WidgetCategory; label: string }[] = [
   { id: 'all', label: '全部' },
+  { id: 'stack', label: '层叠相卡' },
   { id: 'timestamp', label: '时间戳' },
   { id: 'typography', label: '主副标题' },
   { id: 'card', label: '便签卡片' },
 ];
 
 export const STUDIO_WIDGETS: StudioWidgetPreset[] = [
+  // 0. 画报层叠相卡
+  {
+    id: 'widget-card-stack',
+    name: '画报层叠相卡',
+    category: 'stack',
+    categoryLabel: '相卡叠放',
+    tag: '多图叠放',
+    description: '多图层叠卡片 · 扇形微斜 / 杂志级立体浮游阴影（整体拖拽）',
+    renderPreview: (colors) => (
+      <div className="relative h-12 w-28 flex items-center justify-center select-none">
+        <div
+          className="absolute w-12 h-14 rounded-md bg-white/20 border border-white/20 shadow-sm"
+          style={{ transform: 'translate3d(-10px, 1px, 0) rotate(-9deg)' }}
+        />
+        <div
+          className="absolute w-12 h-14 rounded-md bg-white/40 border border-white/30 shadow-md"
+          style={{ transform: 'translate3d(8px, 2px, 0) rotate(8deg)' }}
+        />
+        <div
+          className="absolute w-12 h-14 rounded-md bg-white/80 border border-white/50 shadow-xl overflow-hidden flex flex-col items-center justify-center text-[8px] font-black"
+          style={{ transform: 'translate3d(0, -1px, 0) rotate(-1deg)', color: '#111827' }}
+        >
+          <span className="text-[7px] tracking-widest text-red-500">STACK</span>
+          <span className="text-[9px]">3 PICS</span>
+        </div>
+      </div>
+    ),
+    createElements: ({ nextZ, colors, fontFamily, generateId }) => [
+      {
+        id: `widget-stack-${generateId()}`,
+        type: 'stack',
+        content: '画报层叠相卡',
+        stackImages: ['/screenshot.png', '/mockup_scene.webp', '/laptop-scene.webp'],
+        stackStyle: 'fan',
+        stackRotation: 8,
+        stackOffset: 14,
+        stackCardRadius: 14,
+        stackCardAspect: '3:4',
+        stackCardWidth: 190,
+        widthPct: 44,
+        showCountBadge: true,
+        x: 18,
+        y: 18,
+        zIndex: nextZ,
+        shadowLevel: 3,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.7)',
+      },
+    ],
+  },
+
+  // 0.1 拍立得记忆叠
+  {
+    id: 'widget-polaroid-stack',
+    name: '拍立得记忆叠',
+    category: 'stack',
+    categoryLabel: '相卡叠放',
+    tag: '白框相纸',
+    description: '经典拍立得白框相纸叠放 · 质感旅行生活日记（整体拖拽）',
+    renderPreview: (colors) => (
+      <div className="relative h-12 w-28 flex items-center justify-center select-none">
+        <div
+          className="absolute w-12 h-14 bg-white p-0.5 pb-2 shadow-sm rounded-sm"
+          style={{ transform: 'translate3d(-9px, 1px, 0) rotate(-8deg)' }}
+        >
+          <div className="w-full h-full bg-neutral-200 rounded-[1px]" />
+        </div>
+        <div
+          className="absolute w-12 h-14 bg-white p-0.5 pb-2 shadow-md rounded-sm"
+          style={{ transform: 'translate3d(7px, 2px, 0) rotate(7deg)' }}
+        >
+          <div className="w-full h-full bg-neutral-300 rounded-[1px]" />
+        </div>
+        <div
+          className="absolute w-12 h-14 bg-white p-0.5 pb-2 shadow-xl rounded-sm flex flex-col justify-between"
+          style={{ transform: 'translate3d(0, -1px, 0) rotate(-1deg)' }}
+        >
+          <div className="w-full h-full bg-rose-100 rounded-[1px] flex items-center justify-center text-[7px] font-black text-rose-500">
+            POLA
+          </div>
+          <div className="text-[5px] text-center font-mono text-neutral-400">#01</div>
+        </div>
+      </div>
+    ),
+    createElements: ({ nextZ, colors, fontFamily, generateId }) => [
+      {
+        id: `widget-stack-${generateId()}`,
+        type: 'stack',
+        content: '拍立得记忆叠',
+        stackImages: ['/mockup_scene.webp', '/laptop-scene.webp', '/screenshot.png'],
+        stackStyle: 'polaroid',
+        stackRotation: 9,
+        stackOffset: 12,
+        stackCardRadius: 6,
+        stackCardAspect: '3:4',
+        stackCardWidth: 190,
+        widthPct: 44,
+        showCountBadge: true,
+        x: 18,
+        y: 18,
+        zIndex: nextZ,
+        shadowLevel: 3,
+        borderWidth: 0,
+        borderColor: 'transparent',
+      },
+    ],
+  },
+
   // 1. 杂志经典时间戳
   {
     id: 'widget-timestamp-classic',

@@ -25,7 +25,7 @@ export const MemoWidgetBlock: React.FC<MemoWidgetBlockProps> = ({
 
   return (
     <div
-      className={`inline-flex flex-col gap-1.5 select-none ${resolveFontClass(element.fontFamily, fontClassName)}`}
+      className={`flex flex-col gap-1.5 select-none ${element.widthPct ? 'w-full' : 'w-max max-w-full'} ${resolveFontClass(element.fontFamily, fontClassName)}`}
       style={textInlines}
     >
       {/* 顶部徽章 */}
@@ -40,7 +40,7 @@ export const MemoWidgetBlock: React.FC<MemoWidgetBlockProps> = ({
 
       {/* 卡片正文 */}
       <div
-        className="px-3.5 py-2.5 rounded-2xl border leading-relaxed max-w-sm whitespace-pre-wrap"
+        className="px-3.5 py-2.5 rounded-2xl border leading-relaxed w-full whitespace-pre-wrap"
         style={{
           backgroundColor: bgColor,
           borderColor: borderColor,

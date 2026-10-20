@@ -31,7 +31,7 @@ export const HeadlineWidgetBlock: React.FC<HeadlineWidgetBlockProps> = ({
 
   return (
     <div
-      className={`inline-flex flex-col select-none max-w-full ${alignClass} ${resolveFontClass(element.fontFamily, fontClassName)}`}
+      className={`flex flex-col select-none ${element.widthPct ? 'w-full' : 'max-w-full'} ${alignClass} ${resolveFontClass(element.fontFamily, fontClassName)}`}
       style={textInlines}
     >
       {/* 主标题 */}
