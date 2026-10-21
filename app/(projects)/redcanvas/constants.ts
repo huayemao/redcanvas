@@ -60,6 +60,7 @@ export const FONTS: FontOption[] = [
   { id: 'xiaolai', name: '小赖字体', className: 'font-xiaolai' },
   { id: 'xiaowei', name: 'ZCOOL 小薇', className: 'font-xiaowei' },
   { id: 'serif', name: '优雅宋', className: 'font-serif-sc font-black' },
+  { id: 'huiwen', name: '汇文明朝体', className: 'font-huiwen' },
   { id: 'wenkai', name: '霞鹜文楷', className: 'font-wenkai' },
   { id: 'kuaile', name: '快乐体', className: 'font-kuaile' },
   { id: 'yozai', name: '悠哉体', className: 'font-yozai' },

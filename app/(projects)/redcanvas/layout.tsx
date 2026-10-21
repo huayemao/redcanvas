@@ -50,6 +50,8 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/satouriko/LxgwWenKai_Webfonts@v1.101/dist/LXGWWenKai-Bold.css" crossOrigin="anonymous" />
         {/* 小赖字体 */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/xiaolai@3.0.0/dist/Xiaolai/result.min.css" crossOrigin="anonymous" />
+        {/* 汇文明朝体 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/hwmct@3.0.0/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css" crossOrigin="anonymous" />
         {/* 悠哉体 */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/yozai@3.0.0/dist/Yozai-Regular/result.min.css" crossOrigin="anonymous" />
         {/* 龙藏 */}

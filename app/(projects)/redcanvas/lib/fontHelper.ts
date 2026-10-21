@@ -5,6 +5,7 @@ const KNOWN_FONT_FAMILIES = [
   'Xiaolai SC', 'Xiaolai',
   'ZCOOL XiaoWei',
   'Noto Serif SC',
+  'Huiwen-mincho', '汇文明朝体',
   'LXGWWenKai', 'LXGWWenKai-Bold', 'LXGWWenKai-Regular',
   'ZCOOL KuaiLe',
   'Yozai',
