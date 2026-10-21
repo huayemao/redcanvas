@@ -72,10 +72,6 @@ export const FONTS: FontOption[] = [
   { id: 'system', name: '系统默认', className: 'font-system' },
 ];
 
-const SVG_35MM_GRAIN_URL = "data:image/svg+xml;utf8," + encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.85 0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>`
-);
-
 export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
   {
     id: 'none',
@@ -84,15 +80,6 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     url: '',
     description: '纯净无噪点',
     defaultOpacity: 0,
-    defaultBlendMode: 'normal',
-  },
-  {
-    id: 'film-grain-pro',
-    name: '35mm 银盐胶片',
-    category: 'grain',
-    url: SVG_35MM_GRAIN_URL,
-    description: '双向银盐微粒，黑白与彩色文字均极致胶片质感',
-    defaultOpacity: 0.7,
     defaultBlendMode: 'normal',
   },
   {
@@ -114,15 +101,6 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     defaultBlendMode: 'normal',
   },
   {
-    id: 'dust',
-    name: '复古微尘',
-    category: 'grain',
-    url: '/redcanvas/textures/dust.png',
-    description: '斑驳颗粒与微尘胶片氛围',
-    defaultOpacity: 0.5,
-    defaultBlendMode: 'normal',
-  },
-  {
     id: 'subtle-surface',
     name: '极简暗纹',
     category: 'grain',
@@ -132,12 +110,12 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     defaultBlendMode: 'normal',
   },
   {
-    id: 'broken-noise',
-    name: '斑驳噪波',
-    category: 'noise',
-    url: '/redcanvas/textures/broken-noise.png',
-    description: '颗粒分明，质感浓厚',
-    defaultOpacity: 0.45,
+    id: 'white-texture',
+    name: '素白肌理',
+    category: 'grain',
+    url: '/redcanvas/textures/white-texture.png',
+    description: '素雅白噪微纹，透亮纯净',
+    defaultOpacity: 0.6,
     defaultBlendMode: 'normal',
   },
   {
@@ -155,6 +133,24 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     category: 'noise',
     url: '/redcanvas/textures/sandpaper.png',
     description: '磨砂触感与粗糙颗粒',
+    defaultOpacity: 0.5,
+    defaultBlendMode: 'normal',
+  },
+  {
+    id: 'handmade-paper',
+    name: '手工纸',
+    category: 'paper',
+    url: '/redcanvas/textures/handmade-paper.png',
+    description: '手作质感，自然纸质肌理',
+    defaultOpacity: 0.55,
+    defaultBlendMode: 'normal',
+  },
+  {
+    id: 'natural-paper',
+    name: '自然原纸',
+    category: 'paper',
+    url: '/redcanvas/textures/natural-paper.png',
+    description: '细腻原纸纸浆，温润沉静',
     defaultOpacity: 0.5,
     defaultBlendMode: 'normal',
   },
@@ -195,12 +191,21 @@ export const TEXTURE_PRESETS: import('./types').TexturePreset[] = [
     defaultBlendMode: 'normal',
   },
   {
-    id: 'black-linen',
-    name: '亚麻织物',
+    id: 'white-diamond',
+    name: '菱格暗纹',
     category: 'fabric',
-    url: '/redcanvas/textures/black-linen.png',
-    description: '编织布面纹理，手工质感',
-    defaultOpacity: 0.4,
+    url: '/redcanvas/textures/white-diamond.png',
+    description: '经典细密菱形几何交织纹理',
+    defaultOpacity: 0.5,
+    defaultBlendMode: 'normal',
+  },
+  {
+    id: 'xv',
+    name: 'XV斜织纹',
+    category: 'fabric',
+    url: '/redcanvas/textures/xv.png',
+    description: '斜向交叉细密肌理，立体质感',
+    defaultOpacity: 0.45,
     defaultBlendMode: 'normal',
   },
 ];
