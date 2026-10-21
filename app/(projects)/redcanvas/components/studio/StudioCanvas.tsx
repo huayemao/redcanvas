@@ -116,6 +116,8 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
     bgStyle.backgroundColor = effBgColor;
   } else if (effBgType === 'gradient') {
     bgStyle.background = `linear-gradient(135deg, ${effGradientStart} 0%, ${effGradientEnd} 100%)`;
+  } else if (effBgType === 'blur') {
+    bgStyle.backgroundColor = '#0a0a0a';
   }
   // blur 模式的底图：优先 background 元素的 imageUrl，否则取主图
   const blurImageSrc = bgElement?.imageUrl || mainImage;
@@ -175,7 +177,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
           </div>
         )}
         {effBgType === 'blur' && blurImageSrc && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#0a0a0a]">
             <img
               src={blurImageSrc}
               alt="Bg Blur"
@@ -222,7 +224,8 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
             画布 = 一组可拖拽的自由元素（background 除外，已作为容器底层渲染）
            ============================================================= */}
         {(() => {
-          const effCanvasBg = effBgType === 'color' ? effBgColor : effGradientStart;
+          const effCanvasBg =
+            effBgType === 'color' ? effBgColor : effBgType === 'gradient' ? effGradientStart : '#0a0a0a';
           const canvasTextColor =
             floatingOnly.find((e) => (e.type === 'text' || e.type === 'longtext') && e.color)?.color ||
             extractedColors?.textPrimary ||

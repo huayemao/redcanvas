@@ -52,6 +52,8 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
     bgStyle.backgroundColor = bgColor;
   } else if (bgType === 'gradient') {
     bgStyle.background = `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`;
+  } else if (bgType === 'blur') {
+    bgStyle.backgroundColor = '#0a0a0a';
   }
 
   return (
@@ -72,7 +74,7 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
       >
         {/* Background Photo Blur option */}
         {bgType === 'blur' && images[0]?.url && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#0a0a0a]">
             <img
               src={images[0].url}
               alt="Bg Blur"
