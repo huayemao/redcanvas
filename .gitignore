@@ -24,3 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 next-env.d.ts
+
+# Serwist
+public/sw*
+public/swe-worker*
