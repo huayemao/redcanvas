@@ -62,7 +62,10 @@ function estimateBgLuminance(state: {
     const rgb = parseColorToRgb(state.bgColor);
     return rgb ? relativeLuminance(rgb) : 0.5;
   }
-  // gradient / blur：取 start + end 平均
+  if (state.bgType === 'blur') {
+    return 0.02; // 模糊模式固定为深色暗调底
+  }
+  // gradient：取 start + end 平均
   const a = parseColorToRgb(state.gradientStart);
   const b = parseColorToRgb(state.gradientEnd);
   const la = a ? relativeLuminance(a) : 0.5;

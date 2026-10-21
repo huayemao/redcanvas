@@ -8,6 +8,7 @@ import { DailyTemplate } from './templates/DailyTemplate';
 import { SocialTemplate } from './templates/SocialTemplate';
 import { PlogElement } from './PlogElement';
 import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
+import { resolveCanvasBackground, CANVAS_BLUR_BASE_COLOR } from '../../lib/canvasBackground';
 
 export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
   const {
@@ -47,14 +48,7 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
   }
 
   // Background styling
-  let bgStyle: React.CSSProperties = {};
-  if (bgType === 'color') {
-    bgStyle.backgroundColor = bgColor;
-  } else if (bgType === 'gradient') {
-    bgStyle.background = `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`;
-  } else if (bgType === 'blur') {
-    bgStyle.backgroundColor = '#0a0a0a';
-  }
+  const { style: bgStyle } = resolveCanvasBackground({ bgType, bgColor, gradientStart, gradientEnd });
 
   return (
     <div
@@ -74,7 +68,10 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
       >
         {/* Background Photo Blur option */}
         {bgType === 'blur' && images[0]?.url && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#0a0a0a]">
+          <div
+            className="absolute inset-0 overflow-hidden pointer-events-none"
+            style={{ backgroundColor: CANVAS_BLUR_BASE_COLOR }}
+          >
             <img
               src={images[0].url}
               alt="Bg Blur"

@@ -60,14 +60,14 @@ export async function exportElementToBlob(
   element: HTMLElement,
   options: ExportOptions = {}
 ): Promise<Blob> {
-  const { scale = 2.5, backgroundColor = '#ffffff', onProgress } = options;
+  const { scale = 2.5, backgroundColor, onProgress } = options;
 
   await waitForCanvasReady(element, { onProgress });
 
   onProgress?.('正在生成高清图片...');
   const blob = await snapdom.toBlob(element, {
     scale,
-    backgroundColor,
+    ...(backgroundColor ? { backgroundColor } : {}),
     type: 'png',
     embedFonts: true,
   });

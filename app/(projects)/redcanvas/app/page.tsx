@@ -114,15 +114,10 @@ const AppPage: React.FC = () => {
     const prevClass = canvasEl.className;
     canvasEl.classList.add('exporting');
 
-    const isBlur =
-      store.bgType === 'blur' ||
-      store.floatingElements.some((e) => e.type === 'background' && e.bgVariant === 'blur');
-
     try {
       await exportElementToImage(canvasEl, {
         fileName,
         scale: 2.5,
-        backgroundColor: isBlur ? '#0a0a0a' : '#ffffff',
         onProgress: (msg) => setExportMessage(msg),
       });
 
@@ -189,13 +184,8 @@ const AppPage: React.FC = () => {
         const prevClass = el.className;
         el.classList.add('exporting');
         try {
-          const pageState = useStudioStore.getState();
-          const pageIsBlur =
-            pageState.bgType === 'blur' ||
-            pageState.floatingElements.some((e) => e.type === 'background' && e.bgVariant === 'blur');
           const blob = await exportElementToBlob(el, {
             scale: 2.5,
-            backgroundColor: pageIsBlur ? '#0a0a0a' : '#ffffff',
             onProgress: (msg) => setExportMessage(`正在导出第 ${i + 1} / ${pageIds.length} 页 (${msg})`),
           });
           blobs.push({ name: `${baseName}-${String(i + 1).padStart(2, '0')}.png`, blob });
