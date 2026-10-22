@@ -118,13 +118,13 @@ export function resolveStudioThemeColors(s: {
   }
 
   return {
-    textPrimary: isDark ? '#F7F3EC' : '#111827',
-    textSecondary: isDark ? '#C8C0AE' : '#44403C',
+    textPrimary: isDark ? '#F8F6F2' : '#111827',
+    textSecondary: isDark ? '#E5E0D8' : '#44403C',
     accent: isDark ? '#ff8787' : '#ff2442',
     primary: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
     dominant: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
     badgeBg: '#1C1917',
-    badgeText: '#F5F1E8',
+    badgeText: isDark ? '#F8F6F2' : '#F5F1E8',
     cardBg: isDark ? 'rgba(255,255,255,0.10)' : '#FFFFFF',
     cardBorder: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
     isDark,
@@ -1138,14 +1138,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       const isDark = bgLum < 0.35;
       if (isDark) {
-        textPrimary = '#F5F1E8';
-        textSecondary = '#C8C0AE';
-        textMuted = '#8A8276';
+        textPrimary = '#F8F6F2';
+        textSecondary = '#E5E0D8';
+        textMuted = '#A8A196';
         accent = s.accentColor || '#ff6b6b';
         primary = s.bgColor || '#3A3F4A';
         dominant = s.bgColor || '#3A3F4A';
         badgeBg = '#2A2318'; // 永远深色
-        badgeText = '#F5F1E8'; // 永远浅色
+        badgeText = '#F8F6F2'; // 永远浅色
         cardBg = '#15171C';
         cardBorder = 'rgba(255,255,255,0.08)';
       } else {

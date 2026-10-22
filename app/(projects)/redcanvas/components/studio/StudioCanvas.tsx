@@ -230,7 +230,7 @@ export const StudioCanvas = forwardRef<HTMLDivElement, StudioCanvasProps>(({ onE
             floatingOnly.find((e) => (e.type === 'text' || e.type === 'longtext') && e.color)?.color ||
             extractedColors?.textPrimary ||
             extractedColors?.textSecondary ||
-            (getColorLuminance(parseRgbColor(effCanvasBg) || [15, 23, 42]) < 0.45 ? '#F7F3EC' : '#111827');
+            (getColorLuminance(parseRgbColor(effCanvasBg) || [15, 23, 42]) < 0.45 ? '#F8F6F2' : '#111827');
 
           return floatingOnly.map((el) => (
             <PlogElement

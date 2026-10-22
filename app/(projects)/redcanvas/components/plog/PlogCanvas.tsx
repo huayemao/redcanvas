@@ -27,6 +27,7 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
     titleText,
     subtitleText,
     setSelectedElementId,
+    extractedColors,
   } = usePlogStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -117,7 +118,9 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
           const effCanvasBg = bgType === 'color' ? bgColor : gradientStart;
           const canvasTextColor =
             elements.find((e) => (e.type === 'text' || e.type === 'longtext') && e.color)?.color ||
-            (getColorLuminance(parseRgbColor(effCanvasBg) || [15, 23, 42]) < 0.45 ? '#F7F3EC' : '#111827');
+            extractedColors?.textPrimary ||
+            extractedColors?.textSecondary ||
+            (getColorLuminance(parseRgbColor(effCanvasBg) || [15, 23, 42]) < 0.45 ? '#F8F6F2' : '#111827');
 
           return elements.map((el) => (
             <PlogElement
@@ -127,6 +130,7 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
               canvasBg={effCanvasBg}
               canvasTextColor={canvasTextColor}
               fontClassName={fontConfig.className}
+              extractedColors={extractedColors}
             />
           ));
         })()}

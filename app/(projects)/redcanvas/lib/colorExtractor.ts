@@ -330,7 +330,7 @@ function buildPalette(
   }
 
   // —— 文字三级（深底/浅底非对称） ——
-  // 深底：正文=主色淡色（mix 0.5），主标题=主色强淡色（mix 0.7，更醒目但仍带色相），加粗=纯白（最极端）
+  // 深底：大幅提白正文与标题（mix 0.84 与 0.94），消除发闷暗淡感，保证充足阅读对比度（≥ 5.5:1 ~ 7:1），加粗=纯白（最极端）
   // 浅底：正文=主色深色（mix 0.5），主标题=主色强深色（mix 0.7，更醒目但仍带色相），加粗=暖炭黑（最极端）
   // 三级层次：emphasis(纯白/黑) > textPrimary(主色强淡/强深) > textSecondary(主色淡/深) > textMuted
   //          —— 全部 mix 派生自主色，不再用候选池固定值，避免所有预设主色都一样
@@ -338,13 +338,13 @@ function buildPalette(
   const darkPool = DARK_TEXT_CANDIDATES;
   const darkAnchor = '#1C1917'; // 暖黑（带红棕调，不是 #000）
 
-  // textPrimary：主标题色 — mix 比例 0.7（比 textSecondary 的 0.5 更接近极端，更醒目但仍带色相）
+  // textPrimary：主标题色 — 深底大幅提白（mix 0.94，保证醒目、高对比，保留 6% 主题暖/冷色相）
   let textPrimary: string;
   if (isDark) {
-    textPrimary = mix(primary, '#FFFFFF', 0.7);
-    // 保证主标题 AA 级 ≥ 4.5:1；不达标则向白拉到 0.85（更白、对比度更高，仍保留色相）
-    if (contrastRatio(textPrimary, bgRepresent) < 4.5) {
-      textPrimary = mix(primary, '#FFFFFF', 0.85);
+    textPrimary = mix(primary, '#FFFFFF', 0.94);
+    // 保证主标题高对比度 ≥ 7:1；不达标向纯白拉近
+    if (contrastRatio(textPrimary, bgRepresent) < 7) {
+      textPrimary = mix(primary, '#FFFFFF', 0.98);
     }
   } else {
     textPrimary = mix(primary, darkAnchor, 0.7);
@@ -356,18 +356,18 @@ function buildPalette(
   let emphasis: string;
   let textSecondary: string;
   if (isDark) {
-    // 深底：加粗 = 纯白（极端醒目）；正文 = primary 派生的浅主题色（带色相、柔和）
+    // 深底：加粗 = 纯白（极端醒目）；正文 = 大幅提白的主题浅色（mix 0.84，对比度 ≥ 5.5:1，高对比清晰舒适）
     // 用 mix(primary, 白, t) 派生正文，色相保留、只提亮，不再用 setLuminosity 丢色相
     emphasis = '#FFFFFF';
     // 若纯白与背景对比度不足（极浅深底罕见情况），用最白候选兜底
     if (contrastRatio(emphasis, bgRepresent) < 4.5) {
       emphasis = mix('#FFFFFF', '#FAF8F0', 0.2);
     }
-    // 正文：primary 与白 50/50 混合 → 主色淡色（带色相、柔和、不刺眼）
-    textSecondary = mix(primary, '#FFFFFF', 0.5);
-    // 若 primary 与背景太接近，对比度仍不够 → 增加白比例到 0.72，仍保留色相
-    if (contrastRatio(textSecondary, bgRepresent) < 3) {
-      textSecondary = mix(primary, '#FFFFFF', 0.72);
+    // 正文：大幅提白到 0.84（摆脱深色底发闷发灰的问题，舒适悦目且对比度高）
+    textSecondary = mix(primary, '#FFFFFF', 0.84);
+    // 保证正文对比度达到舒适标准（≥ 5.5:1）
+    if (contrastRatio(textSecondary, bgRepresent) < 5.5) {
+      textSecondary = mix(primary, '#FFFFFF', 0.90);
     }
   } else {
     // 浅底：加粗 = primary 派生的深主题色（高饱和、彩色醒目）；正文 = 低饱和深主题色（带色相、舒适阅读）
@@ -386,7 +386,10 @@ function buildPalette(
   }
 
   // Muted：把正文色往背景里揉，得到弱化版
-  const textMuted = mix(textSecondary, bgRepresent, isDark ? 0.58 : 0.52);
+  // 深底环境下揉入更温和（0.38），确保次级说明/小字对比度达标（≥ 3:1）
+  const textMuted = isDark
+    ? mix(textSecondary, bgRepresent, 0.38)
+    : mix(textSecondary, bgRepresent, 0.52);
 
   // 卡片 + 边
   const { cardBg, cardBorder } = buildCardBg(gradientStart, gradientEnd, isDark);
@@ -401,8 +404,11 @@ function buildPalette(
       : adjustHsl(rawSecondary, { l: -0.18, s: +0.08 });
   }
 
-  // primaryMuted：引用边框 / 分隔线 / 弱装饰 — primary 揉进背景 55%
-  const primaryMuted = mix(primary, bgRepresent, 0.55);
+  // primaryMuted：引用边框 / 分隔线 / 弱装饰
+  // 深底环境下必须克制优雅（揉入 82% 背景），绝不能是刺眼的高亮实色条
+  const primaryMuted = isDark
+    ? mix(primary, bgRepresent, 0.82)
+    : mix(primary, bgRepresent, 0.65);
 
   // 徽章：永远深色背景 + 永远浅色文字（无论画布深浅，胶囊一律深底亮字）
   // badgeBg：取 dominant 色相，压暗到 L≈0.22（深到与浅画布有强烈对比），保留一定饱和度带色调

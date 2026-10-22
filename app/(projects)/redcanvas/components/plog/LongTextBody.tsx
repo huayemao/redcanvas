@@ -8,6 +8,8 @@ import {
   isSvgSource,
   getRecoloredSvgDataUrl,
   getCachedRecoloredSvgDataUrl,
+  parseRgbColor,
+  getColorLuminance,
 } from '../../lib/svgRecolor';
 
 // ============================================================================
@@ -88,9 +90,20 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
   const emphasis =
     extractedColors?.emphasis ||
     (effColor ? mixColorAlpha(effColor, 0.9) : accent);
+  const isDarkBg = effectiveBg
+    ? (getColorLuminance(parseRgbColor(effectiveBg) || [15, 23, 42]) < 0.45)
+    : (extractedColors?.isDark ?? true);
+
   const primaryMuted =
     extractedColors?.primaryMuted ||
-    mixColorAlpha(accent, 0.35);
+    (isDarkBg ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)');
+
+  // 分隔线专用颜色：绝不刺眼、不喧宾夺主的极细微透发丝线
+  // 深底环境下：以文字色 14% 透明度（或半透明白）呈现，温润低调融入深色画布，克制不刺眼
+  // 浅底环境下：以文字色 10% 透明度（或半透明黑）呈现，轻盈雅致
+  const hrColor = isDarkBg
+    ? (effColor ? mixColorAlpha(effColor, 0.14) : 'rgba(255, 255, 255, 0.14)')
+    : (effColor ? mixColorAlpha(effColor, 0.10) : 'rgba(0, 0, 0, 0.08)');
 
   const tableBorder = effColor
     ? mixColorAlpha(effColor, 0.28)
@@ -121,7 +134,8 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '--lt-color': effColor || 'inherit',
     '--lt-accent': accent,            // 链接
     '--lt-emphasis': emphasis,        // 加粗关键词
-    '--lt-primary-muted': primaryMuted, // 引用边框 / 分隔线
+    '--lt-primary-muted': primaryMuted, // 引用边框 / 装饰线
+    '--lt-hr-color': hrColor,           // 分隔线专用色（微透发丝，克制不突兀）
     '--lt-table-border': tableBorder,   // 表格网格框线
     '--lt-table-header-bg': tableHeaderBg, // 表头背景微高亮
     '--lt-table-stripe-bg': tableStripeBg, // 偶数行轻微斑马纹
@@ -154,8 +168,8 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '[&_a]:underline [&_a]:decoration-[var(--lt-primary-muted)] [&_a]:underline-offset-2 [&_a]:text-[var(--lt-accent)] [&_a:hover]:decoration-[var(--lt-accent)]',
     // 加粗强调：用 emphasis（primary 派生的可读版，像杂志正文的高亮关键词）
     '[&_strong]:text-[var(--lt-emphasis)]',
-    // 分隔线：primaryMuted（主色弱化）
-    '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-primary-muted)]',
+    // 分隔线：高级微透发丝线（绝不刺眼、不喧宾夺主，深色底温润融入，浅色底轻盈雅致）
+    '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-hr-color)]',
     // 引用块：SVG 引号装饰 + 斜体（样式在 globals.css 中定义，em 单位随文字自适应）
     '[&_blockquote]:border-0 [&_blockquote]:italic',
     // 表格：清晰框线 + 表头区分 + 单元格边距 + 垂直居中
