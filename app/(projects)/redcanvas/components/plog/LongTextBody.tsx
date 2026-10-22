@@ -71,25 +71,50 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     if (root.querySelector('[data-mj-tex]')) {
       void typesetMathInElement(root);
     }
+
+    // 粗体色彩统一特性：扫描所有子元素，只要最终计算样式为粗体，就应用 emphasis 强调色
+    try {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        const el = node as HTMLElement;
+        if (el.tagName === 'A' || el.tagName === 'CODE' || el.tagName === 'PRE') continue;
+        const computed = window.getComputedStyle(el);
+        const weight = computed.fontWeight;
+        const isBold = weight === 'bold' || weight === 'bolder' || (parseInt(weight, 10) >= 600);
+        if (isBold) {
+          el.style.color = 'var(--lt-emphasis)';
+        }
+      }
+    } catch {
+      // 容错降级，由 CSS 规则托底
+    }
   }, [renderedMd, element.markdownEnabled]);
 
-  // —— 智能配色：若 element 没写 color，用 palette 的正文色（保证背景对比度）
-  const effColor =
-    element.color ||
-    extractedColors?.textSecondary ||
-    extractedColors?.textPrimary ||
-    (element.bgColor ? '#1f2937' : undefined); // 只有当有卡片白底时，默认深灰；否则 undefined 继承 CSS
+  // 粗体色彩统一特性：整块文本只要最终样式是粗体（fontWeight >= 700），也统一应用 emphasis
+  const isElementBold = typeof element.fontWeight === 'number' && element.fontWeight >= 700;
 
-  // —— 语义化强调色：
-  //   accent     → 链接（保留，高饱和强调）
-  //   emphasis   → 加粗关键词（primary 派生，可读版）
-  //   primaryMuted → 引用边框 / 分隔线 / 弱装饰（primary 揉进背景 55%）
+  // —— 语义化强调色（先确定加粗色，再用于粗体文字兜底）
   const accent =
     extractedColors?.accent ||
-    (effColor ? mixColorAlpha(effColor, 0.85) : '#2563eb');
+    (element.color ? mixColorAlpha(element.color, 0.85) : '#2563eb');
   const emphasis =
     extractedColors?.emphasis ||
-    (effColor ? mixColorAlpha(effColor, 0.9) : accent);
+    (element.color ? mixColorAlpha(element.color, 0.9) : accent);
+
+  const isThemeColor =
+    !element.color ||
+    element.color === extractedColors?.textSecondary ||
+    element.color === extractedColors?.textPrimary ||
+    element.color === extractedColors?.emphasis;
+
+  // —— 智能配色：若 element 没写 color，或当前为粗体样式，应用对应语义色
+  const effColor = isThemeColor
+    ? (isElementBold
+        ? (emphasis || extractedColors?.textPrimary)
+        : (extractedColors?.textSecondary || extractedColors?.textPrimary))
+    : (element.color || (element.bgColor ? '#1f2937' : undefined));
+
   const isDarkBg = effectiveBg
     ? (getColorLuminance(parseRgbColor(effectiveBg) || [15, 23, 42]) < 0.45)
     : (extractedColors?.isDark ?? true);
@@ -133,7 +158,7 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
   const cssVars = {
     '--lt-color': effColor || 'inherit',
     '--lt-accent': accent,            // 链接
-    '--lt-emphasis': emphasis,        // 加粗关键词
+    '--lt-emphasis': emphasis,        // 加粗关键词 / 所有粗体专属强调色
     '--lt-primary-muted': primaryMuted, // 引用边框 / 装饰线
     '--lt-hr-color': hrColor,           // 分隔线专用色（微透发丝，克制不突兀）
     '--lt-table-border': tableBorder,   // 表格网格框线
@@ -148,9 +173,13 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     // leading 用 CSS 变量，用户设的 element.lineHeight 才能覆盖默认 1.625
     '[&>p]:my-2 [&>p]:leading-[var(--lt-line-height,1.625)]',
     '[&_strong]:font-black [&_em]:italic',
-    '[&>h1]:text-2xl [&>h1]:font-black [&>h1]:leading-tight [&>h1]:my-3',
-    '[&>h2]:text-xl [&>h2]:font-black [&>h2]:leading-tight [&>h2]:my-3',
-    '[&>h3]:text-lg [&>h3]:font-bold [&>h3]:my-2',
+    // 标题样式：各级标题最终样式均为粗体，统一应用 emphasis 色
+    '[&>h1]:text-2xl [&>h1]:font-black [&>h1]:leading-tight [&>h1]:my-3 [&>h1]:text-[var(--lt-emphasis)]',
+    '[&>h2]:text-xl [&>h2]:font-black [&>h2]:leading-tight [&>h2]:my-3 [&>h2]:text-[var(--lt-emphasis)]',
+    '[&>h3]:text-lg [&>h3]:font-bold [&>h3]:my-2 [&>h3]:text-[var(--lt-emphasis)]',
+    '[&>h4]:text-base [&>h4]:font-bold [&>h4]:my-1.5 [&>h4]:text-[var(--lt-emphasis)]',
+    '[&>h5]:text-sm [&>h5]:font-bold [&>h5]:my-1 [&>h5]:text-[var(--lt-emphasis)]',
+    '[&>h6]:text-xs [&>h6]:font-bold [&>h6]:my-1 [&>h6]:text-[var(--lt-emphasis)]',
     // 列表基础与多级嵌套支持：解决嵌套列表项目符号被吞与层级缩进缺失问题
     '[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2',
     '[&_ul_ul]:list-[circle]',
@@ -166,8 +195,22 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     '[&_pre]:rounded-xl [&_pre]:p-3 [&_pre]:text-xs [&_pre]:bg-white/10 [&_pre]:overflow-auto',
     // 链接：accent（高饱和强调，仅留给超链接）
     '[&_a]:underline [&_a]:decoration-[var(--lt-primary-muted)] [&_a]:underline-offset-2 [&_a]:text-[var(--lt-accent)] [&_a:hover]:decoration-[var(--lt-accent)]',
-    // 加粗强调：用 emphasis（primary 派生的可读版，像杂志正文的高亮关键词）
+    // 粗体色彩统一特性：只要最终样式是粗体（strong、b、各级标题、th表头、font-bold等），就统一应用 emphasis 语义色
     '[&_strong]:text-[var(--lt-emphasis)]',
+    '[&_b]:text-[var(--lt-emphasis)]',
+    '[&_b]:font-bold',
+    '[&_.font-bold]:text-[var(--lt-emphasis)]',
+    '[&_.font-semibold]:text-[var(--lt-emphasis)]',
+    '[&_.font-black]:text-[var(--lt-emphasis)]',
+    '[&_.font-extrabold]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:bold"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:_bold"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:700"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:_700"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:800"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:_800"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:900"]]:text-[var(--lt-emphasis)]',
+    '[&_[style*="font-weight:_900"]]:text-[var(--lt-emphasis)]',
     // 分隔线：高级微透发丝线（绝不刺眼、不喧宾夺主，深色底温润融入，浅色底轻盈雅致）
     '[&_hr]:my-4 [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-[var(--lt-hr-color)]',
     // 引用块：SVG 引号装饰 + 斜体（样式在 globals.css 中定义，em 单位随文字自适应）
@@ -175,7 +218,7 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
     // 表格：清晰框线 + 表头区分 + 单元格边距 + 垂直居中
     '[&_table]:w-full [&_table]:border-collapse [&_table]:my-3',
     '[&_thead]:bg-[var(--lt-table-header-bg)]',
-    '[&_th]:border [&_th]:border-[var(--lt-table-border)] [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:align-middle',
+    '[&_th]:border [&_th]:border-[var(--lt-table-border)] [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:align-middle [&_th]:text-[var(--lt-emphasis)]',
     '[&_td]:border [&_td]:border-[var(--lt-table-border)] [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle',
     '[&_tbody_tr:nth-child(even)]:bg-[var(--lt-table-stripe-bg)]',
     // 插图：最大宽度、圆角、居中

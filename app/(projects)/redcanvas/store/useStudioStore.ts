@@ -118,9 +118,9 @@ export function resolveStudioThemeColors(s: {
   }
 
   return {
-    textPrimary: isDark ? '#F8F6F2' : '#111827',
-    textSecondary: isDark ? '#E5E0D8' : '#44403C',
-    accent: isDark ? '#ff8787' : '#ff2442',
+    textPrimary: isDark ? '#F8F6F2' : '#141210',
+    textSecondary: isDark ? '#E5E0D8' : '#2D2825',
+    accent: isDark ? '#ff8787' : '#c82436',
     primary: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
     dominant: isDark ? (s.bgColor || '#3A3F4A') : (s.bgColor || '#1C1917'),
     badgeBg: '#1C1917',
@@ -680,13 +680,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({
         floatingElements: st.floatingElements.map((el) => {
           if (el.type === 'text') {
-            // 按 fontSize 区分主/副标题：≥18 视为主标题用 textPrimary，否则副标题用 textSecondary
-            // 不再用 zIndex 判断 —— 手动添加的元素 zIndex 是动态的，无法匹配模板固定值
+            const isBold = typeof el.fontWeight === 'number' && el.fontWeight >= 700;
             const isTitle = (el.fontSize ?? 20) >= 18;
-            return { ...el, color: isTitle ? colors.textPrimary : colors.textSecondary };
+            return {
+              ...el,
+              color: isBold ? colors.emphasis : (isTitle ? colors.textPrimary : colors.textSecondary),
+            };
           }
           if (el.type === 'longtext') {
-            return { ...el, color: colors.textSecondary };
+            const isBold = typeof el.fontWeight === 'number' && el.fontWeight >= 700;
+            return {
+              ...el,
+              color: isBold ? colors.emphasis : colors.textSecondary,
+            };
           }
           // 徽章 → badgeBg（永远深色）背景 + badgeText（永远浅色）文字
           if (el.type === 'badge') {
@@ -1149,9 +1155,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         cardBg = '#15171C';
         cardBorder = 'rgba(255,255,255,0.08)';
       } else {
-        textPrimary = '#1C1917';
-        textSecondary = '#44403C';
-        textMuted = '#78716C';
+        textPrimary = '#141210';
+        textSecondary = '#2D2825';
+        textMuted = '#66605B';
         accent = s.accentColor || '#111827';
         primary = s.bgColor || '#1C1917';
         dominant = s.bgColor || '#1C1917';

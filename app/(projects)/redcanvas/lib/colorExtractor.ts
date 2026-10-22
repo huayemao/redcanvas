@@ -189,61 +189,68 @@ function refineBackground(rawHex: string): { refinedBg: string; isDark: boolean;
   const hsl = rgbToHsl(rgb);
   let refined = rawHex;
 
-  // 1) 饱和度钳制：大面积背景饱和度 ≤ 0.42（温和）
-  if (hsl.s > 0.42) {
-    refined = setSaturation(refined, hsl.s * 0.55);
+  // 1) 饱和度钳制：大面积背景饱和度温和
+  // 浅色背景饱和度允许至 0.65（在 L≈0.92~0.93 的高白度下，S 需在 0.35~0.65 才能呈现温暖清透的特种纸色相，绝不褪成千篇一律的灰白）
+  // 深色背景饱和度 ≤ 0.42
+  const isDarkInit = hsl.l < 0.5;
+  const maxSat = isDarkInit ? 0.42 : 0.65;
+  if (hsl.s > maxSat) {
+    refined = setSaturation(refined, isDarkInit ? hsl.s * 0.55 : maxSat);
   }
 
   const newHsl = rgbToHsl(hexToRgb(refined));
   const isDark = newHsl.l < 0.5;
 
-  // 2) 亮度极值救援
-  if (newHsl.l < 0.06) {
-    // 太黑，提亮 + 加一点色相
+  // 2) 亮度极值救援：
+  // 深色太黑（< 0.06）提亮；
+  // 浅色太暗（< 0.88）提亮到 0.925，保证如同高档艺术纸般白皙通透，但绝不发脏沉闷
+  if (isDark && newHsl.l < 0.06) {
     refined = adjustHsl(refined, { l: 0.06, s: 0.05, h: 215 - newHsl.h > 0 ? 215 : 0 });
-  } else if (newHsl.l > 0.94) {
-    // 太白，压暗 + 加一点暖
-    refined = adjustHsl(refined, { l: -0.05, s: 0.05, h: 45 });
+  } else if (!isDark && newHsl.l < 0.88) {
+    refined = setLuminosity(refined, 0.925);
   }
 
-  // 3) 冷暖微调（在饱和度足够时才加，避免灰里硬加色）
+  // 3) 冷暖微调（近乎完全无彩的极端灰度时补充微暖质感）
   const cur = rgbToHsl(hexToRgb(refined));
   if (isDark && cur.s < 0.08) {
-    // 近乎无彩的深灰 → 给一点蓝紫相，更高级
     refined = mix(refined, '#1A1F2E', 0.18);
-  } else if (!isDark && cur.s < 0.08) {
-    // 近乎无彩的浅灰 → 给一点暖米
-    refined = mix(refined, '#F2EBDF', 0.18);
+  } else if (!isDark && cur.s < 0.03) {
+    refined = mix(refined, '#FAF6F0', 0.20);
   }
 
   const finalHsl = rgbToHsl(hexToRgb(refined));
   return { refinedBg: refined, isDark, hsl: finalHsl };
 }
 
-/** 基于背景色生成一对优雅渐变（色相接近，亮度差 ~12%~18%，避免两端太跳） */
+/** 基于背景色生成一对优雅渐变（深色有纵深，浅色如柔和顶光微拂，始终保持该色相明朗可见） */
 function buildGradientPair(refinedBg: string, isDark: boolean, hsl: HSL): { start: string; end: string } {
-  const angle = isDark ? -10 : 10; // 深色背景：起点稍亮 → 终点稍暗；浅色相反
-  const hueShift = (hsl.s > 0.12) ? (isDark ? +6 : -4) : 0; // 有彩时才转色相，营造深度
-  const satBoost = hsl.s < 0.25 ? 0.06 : 0; // 低饱和时起点略补彩
+  if (isDark) {
+    const angle = -10;
+    const hueShift = (hsl.s > 0.12) ? +6 : 0;
+    const satBoost = hsl.s < 0.25 ? 0.06 : 0;
+    const start = adjustHsl(refinedBg, { l: +angle / 100, h: hueShift, s: satBoost });
+    const end = adjustHsl(refinedBg, { l: -angle / 100, h: -hueShift * 0.5, s: -0.02 });
+    return { start, end };
+  }
 
-  const start = adjustHsl(refinedBg, { l: +angle / 100, h: hueShift, s: satBoost });
-  const end = adjustHsl(refinedBg, { l: -angle / 100, h: -hueShift * 0.5, s: -0.02 });
+  // 浅色背景：轻盈通透的微渐变（顶部柔光微亮通透，底部展现饱满纯正的艺术纸质感，层次分明）
+  const start = adjustHsl(refinedBg, { l: +0.02, s: -0.05 });
+  const end = adjustHsl(refinedBg, { l: -0.015, s: +0.05 });
   return { start, end };
 }
 
-/** 生成卡片背景色：与渐变背景有 8%~12% 的亮度差，且颜色略深（是内嵌感） */
+/** 生成卡片背景色：深色内嵌感，浅色如纯白纸张层叠 */
 function buildCardBg(gradientStart: string, gradientEnd: string, isDark: boolean): { cardBg: string; cardBorder: string } {
   const base = mix(gradientStart, gradientEnd, 0.5);
-  const baseHsl = rgbToHsl(hexToRgb(base));
   if (isDark) {
     // 深色整体背景 → 卡片比背景再稍深 + 加一点边
     const cardBg = adjustHsl(base, { l: -0.09, s: -0.03 });
     const cardBorder = mix(cardBg, '#FFFFFF', 0.06); // 极淡描边
     return { cardBg, cardBorder };
   }
-  // 浅色整体背景 → 卡片是白底（纸），比背景再稍亮或等亮，但加一点阴影边框色
-  const cardBg = adjustHsl(base, { l: +0.06, s: -0.04 });
-  const cardBorder = mix(cardBg, '#000000', 0.06);
+  // 浅色整体背景 → 卡片为纯白底（纸），叠加 1px 细微边界，层次分明
+  const cardBg = '#FFFFFF';
+  const cardBorder = mix(base, '#000000', 0.08);
   return { cardBg, cardBorder };
 }
 
@@ -255,15 +262,16 @@ function refineAccent(rawAccent: string, gradientStart: string, gradientEnd: str
   const bgMix = mix(gradientStart, gradientEnd, 0.5);
   let candidate = rawAccent;
   const ratio = contrastRatio(candidate, bgMix);
-  if (ratio >= 3) return candidate; // 达标直接用
+  // 浅底前景色绝不能过浅（对比度必须 ≥ 4.5:1，醒目显色）
+  if (ratio >= (isDark ? 3.0 : 4.5)) return candidate;
 
-  // 不达标 → 用极端化挽救（按背景明暗决定提亮还是压暗）
+  // 不达标 → 用极端化挽救（深底提亮，浅底压深保证高对比）
   const hsl = rgbToHsl(hexToRgb(candidate));
-  const targetL = isDark ? Math.max(0.78, hsl.l + 0.25) : Math.min(0.22, hsl.l - 0.25);
+  const targetL = isDark ? Math.max(0.78, hsl.l + 0.25) : Math.min(0.26, hsl.l - 0.25);
   candidate = setLuminosity(candidate, targetL);
-  // 再补一点饱和
-  if (rgbToHsl(hexToRgb(candidate)).s < 0.35) {
-    candidate = setSaturation(candidate, 0.45);
+  // 浅底强调色提高饱和度，呈现宝石般的浓郁色泽
+  if (rgbToHsl(hexToRgb(candidate)).s < 0.45) {
+    candidate = setSaturation(candidate, 0.55);
   }
   return candidate;
 }
@@ -310,12 +318,18 @@ function buildPalette(
   // primary：dominant 派生的"实心填充色"（用于徽章/标签/贴纸背景）
   // 核心视觉原则：
   //   深底：primary 是【深色彩色块】—— 饱和度温和、亮度与背景拉开但不变成亮色，让白色文字可读
-  //   浅底：primary 是【浅色彩色块】—— 饱和度温和、与背景有对比，深色文字可读
-  // 饱和度仅微提（+0.08），避免高饱和"霓虹"感破坏杂志质感
-  let primary = adjustHsl(refinedBg, {
-    s: Math.min(0.55, rgbToHsl(hexToRgb(refinedBg)).s + 0.08),
-    l: isDark ? +0.12 : -0.12,
-  });
+  //   浅底：primary 直接继承精心调校的 rawSecondary（若对比度已充足）或由主色生成深色调版
+  let primary = isDark
+    ? adjustHsl(refinedBg, {
+        s: Math.min(0.55, rgbToHsl(hexToRgb(refinedBg)).s + 0.08),
+        l: +0.12,
+      })
+    : (contrastRatio(rawSecondary, bgRepresent) >= 3.0
+        ? rawSecondary
+        : adjustHsl(refinedBg, {
+            s: Math.min(0.65, rgbToHsl(hexToRgb(refinedBg)).s + 0.20),
+            l: -0.55,
+          }));
   // 保证 primary 与背景有 ≥2.5:1 对比（小面积色块基本可读）
   if (contrastRatio(primary, bgRepresent) < 2.5) {
     if (isDark) {
@@ -323,73 +337,80 @@ function buildPalette(
       const curL = rgbToHsl(hexToRgb(primary)).l;
       primary = setLuminosity(primary, Math.min(0.55, Math.max(0.35, curL + 0.15)));
     } else {
-      // 浅底：压暗一点但保持在中等亮度区间（0.2~0.4）
+      // 浅底：压暗至深色区间（0.2~0.38）
       const curL = rgbToHsl(hexToRgb(primary)).l;
-      primary = setLuminosity(primary, Math.max(0.2, Math.min(0.4, curL - 0.15)));
+      primary = setLuminosity(primary, Math.max(0.2, Math.min(0.38, curL - 0.20)));
     }
   }
 
   // —— 文字三级（深底/浅底非对称） ——
   // 深底：大幅提白正文与标题（mix 0.84 与 0.94），消除发闷暗淡感，保证充足阅读对比度（≥ 5.5:1 ~ 7:1），加粗=纯白（最极端）
-  // 浅底：正文=主色深色（mix 0.5），主标题=主色强深色（mix 0.7，更醒目但仍带色相），加粗=暖炭黑（最极端）
-  // 三级层次：emphasis(纯白/黑) > textPrimary(主色强淡/强深) > textSecondary(主色淡/深) > textMuted
-  //          —— 全部 mix 派生自主色，不再用候选池固定值，避免所有预设主色都一样
+  // 浅底：主标题取各色系特有的浓郁印刷墨黑（mix 0.65），正文取温润主题炭墨（mix 0.50），加粗取浓缩高饱和色，保留强烈色系个性与强对比度（≥ 10:1 ~ 14:1）
   const lightPool = LIGHT_TEXT_CANDIDATES;
   const darkPool = DARK_TEXT_CANDIDATES;
-  const darkAnchor = '#1C1917'; // 暖黑（带红棕调，不是 #000）
+  const darkAnchor = '#1C1917'; // 暖黑（带红棕调，不是死黑 #000）
 
-  // textPrimary：主标题色 — 深底大幅提白（mix 0.94，保证醒目、高对比，保留 6% 主题暖/冷色相）
+  // textPrimary：主标题色
+  // 深底：大幅提白（mix 0.94，对比度 ≥ 7:1）
+  // 浅底：专属矿物深墨（Deep Chromatic Ink），直接以 primary 为色相，对比度 ≥ 10:1 ~ 14:1，绝不发灰褪色
   let textPrimary: string;
   if (isDark) {
     textPrimary = mix(primary, '#FFFFFF', 0.94);
-    // 保证主标题高对比度 ≥ 7:1；不达标向纯白拉近
     if (contrastRatio(textPrimary, bgRepresent) < 7) {
       textPrimary = mix(primary, '#FFFFFF', 0.98);
     }
   } else {
-    textPrimary = mix(primary, darkAnchor, 0.7);
-    if (contrastRatio(textPrimary, bgRepresent) < 4.5) {
-      textPrimary = mix(primary, darkAnchor, 0.85);
+    const priHsl = rgbToHsl(hexToRgb(primary));
+    const chromaticInk = rgbToHex(hslToRgb({
+      h: priHsl.h,
+      s: Math.min(0.55, Math.max(0.35, priHsl.s)),
+      l: 0.15,
+    }));
+    textPrimary = chromaticInk;
+    if (contrastRatio(textPrimary, bgRepresent) < 7) {
+      textPrimary = mix(chromaticInk, '#141210', 0.40);
     }
   }
 
   let emphasis: string;
   let textSecondary: string;
   if (isDark) {
-    // 深底：加粗 = 纯白（极端醒目）；正文 = 大幅提白的主题浅色（mix 0.84，对比度 ≥ 5.5:1，高对比清晰舒适）
-    // 用 mix(primary, 白, t) 派生正文，色相保留、只提亮，不再用 setLuminosity 丢色相
     emphasis = '#FFFFFF';
-    // 若纯白与背景对比度不足（极浅深底罕见情况），用最白候选兜底
     if (contrastRatio(emphasis, bgRepresent) < 4.5) {
       emphasis = mix('#FFFFFF', '#FAF8F0', 0.2);
     }
-    // 正文：大幅提白到 0.84（摆脱深色底发闷发灰的问题，舒适悦目且对比度高）
     textSecondary = mix(primary, '#FFFFFF', 0.84);
-    // 保证正文对比度达到舒适标准（≥ 5.5:1）
     if (contrastRatio(textSecondary, bgRepresent) < 5.5) {
       textSecondary = mix(primary, '#FFFFFF', 0.90);
     }
   } else {
-    // 浅底：加粗 = primary 派生的深主题色（高饱和、彩色醒目）；正文 = 低饱和深主题色（带色相、舒适阅读）
-    // 设计意图（保留原精心设计）：加粗靠"鲜艳彩色"醒目，正文靠"低调灰化"阅读 —— 两者方向不同，区分清晰
-    // emphasis 用 adjustHsl 调深 + 加饱和，保留色相且比 primary 更鲜艳；fallback 用 mix 仍保留色相
-    emphasis = adjustHsl(primary, { l: -0.2, s: +0.1 });
-    if (contrastRatio(emphasis, bgRepresent) < 3) {
-      emphasis = mix(primary, darkAnchor, 0.55);
+    // 浅底：
+    // 加粗 = primary 派生的沉稳矿物墨色（温润沉稳、绝不刺眼亮艳，保留色调特征同时对比度充裕 ≥ 7.5:1 ~ 11:1）
+    const priHsl = rgbToHsl(hexToRgb(primary));
+    emphasis = rgbToHex(hslToRgb({
+      h: priHsl.h,
+      s: Math.min(0.58, Math.max(0.36, priHsl.s * 0.90)),
+      l: 0.22,
+    }));
+    if (contrastRatio(emphasis, bgRepresent) < 4.5) {
+      emphasis = setLuminosity(emphasis, 0.18);
     }
-    // 正文：primary 与暖黑 50/50 → 主色深色版（色相弱化但仍带色、可读、不刺眼）
-    textSecondary = mix(primary, darkAnchor, 0.5);
-    // 若 primary 与背景太接近，对比度仍不够 → 增加深比例到 0.72，仍保留色相
-    if (contrastRatio(textSecondary, bgRepresent) < 3) {
-      textSecondary = mix(primary, darkAnchor, 0.72);
+    // 正文 = 该色系专属中深印刷墨（L≈0.27，对比度 ≥ 6:1 ~ 9:1，清晰可读且各色调辨识度极高）
+    textSecondary = rgbToHex(hslToRgb({
+      h: priHsl.h,
+      s: Math.min(0.48, Math.max(0.28, priHsl.s * 0.8)),
+      l: 0.27,
+    }));
+    if (contrastRatio(textSecondary, bgRepresent) < 5.5) {
+      textSecondary = mix(textSecondary, '#1C1917', 0.40);
     }
   }
 
   // Muted：把正文色往背景里揉，得到弱化版
-  // 深底环境下揉入更温和（0.38），确保次级说明/小字对比度达标（≥ 3:1）
+  // 浅底环境下揉入更克制（0.40），确保次级说明/小字对比度达标（≥ 3.5:1）
   const textMuted = isDark
     ? mix(textSecondary, bgRepresent, 0.38)
-    : mix(textSecondary, bgRepresent, 0.52);
+    : mix(textSecondary, bgRepresent, 0.40);
 
   // 卡片 + 边
   const { cardBg, cardBorder } = buildCardBg(gradientStart, gradientEnd, isDark);
@@ -398,17 +419,17 @@ function buildPalette(
   const accent = refineAccent(rawAccent, gradientStart, gradientEnd, isDark);
   // Secondary：若和 bg 太接近则换次色的"微调版"
   let secondary = rawSecondary;
-  if (contrastRatio(secondary, bgRepresent) < 1.8) {
+  if (contrastRatio(secondary, bgRepresent) < (isDark ? 1.8 : 3.5)) {
     secondary = isDark
       ? adjustHsl(rawSecondary, { l: +0.18, s: +0.08 })
-      : adjustHsl(rawSecondary, { l: -0.18, s: +0.08 });
+      : adjustHsl(rawSecondary, { l: -0.28, s: +0.12 });
   }
 
   // primaryMuted：引用边框 / 分隔线 / 弱装饰
-  // 深底环境下必须克制优雅（揉入 82% 背景），绝不能是刺眼的高亮实色条
+  // 浅底环境下 28% 主色弱化，保持杂志线条清透轻盈
   const primaryMuted = isDark
     ? mix(primary, bgRepresent, 0.82)
-    : mix(primary, bgRepresent, 0.65);
+    : mix(primary, bgRepresent, 0.72);
 
   // 徽章：永远深色背景 + 永远浅色文字（无论画布深浅，胶囊一律深底亮字）
   // badgeBg：取 dominant 色相，压暗到 L≈0.22（深到与浅画布有强烈对比），保留一定饱和度带色调
@@ -648,7 +669,7 @@ function findMostColorful(pool: SampledColor[]): SampledColor | null {
 
 // 默认配色（含语义化字段）
 const DEFAULT_PALETTE: ExtractedColors = (() => {
-  const p = buildPalette('#E9E4DA', '#C9C0B0', '#B5433A');
+  const p = buildPalette('#F8ECE2', '#963E1C', '#C15415');
   return p;
 })();
 
@@ -666,35 +687,35 @@ type PresetTriad = {
 
 // 设计约束：
 //   深色：L≈0.18~0.28，饱和度不过高（避免霓虹感）
-//   浅色：L≈0.80~0.92，饱和度温和（米色/奶油感而非糖果色）
-//   accent：与 dominant 有清晰对比，保证用作小装饰/链接时醒目
+//   浅色：L≈0.915~0.935，特种纸质感，保留鲜明温润色相，绝不洗白成同一张死灰
+//   accent：与 dominant 有清晰对比（对比度 ≥ 4:1~5:1），用作小装饰/链接时醒目
 const PRESET_TRIADS: PresetTriad[] = [
   // —— 暖色系 ——
   { candidateName: '砖红缎 · 深', dominant: '#3A1E1A', secondary: '#5A2E26', accent: '#E8B4A0' },
-  { candidateName: '砖红缎 · 浅', dominant: '#F0D9D2', secondary: '#D9B8AE', accent: '#8C3B2E' },
+  { candidateName: '砖红缎 · 浅', dominant: '#F8E8E5', secondary: '#8C3B2E', accent: '#BB301B' },
 
   { candidateName: '赤陶橙 · 深', dominant: '#3B2418', secondary: '#5E3A24', accent: '#F3B182' },
-  { candidateName: '赤陶橙 · 浅', dominant: '#F4E2D0', secondary: '#E3C7A9', accent: '#B65630' },
+  { candidateName: '赤陶橙 · 浅', dominant: '#F8ECE2', secondary: '#963E1C', accent: '#C15415' },
 
   { candidateName: '琥珀金 · 深', dominant: '#3C2D14', secondary: '#614A1F', accent: '#F2CC8F' },
-  { candidateName: '琥珀金 · 浅', dominant: '#F3E7CC', secondary: '#DDC79A', accent: '#A3741C' },
+  { candidateName: '琥珀金 · 浅', dominant: '#F7F0E0', secondary: '#8A5808', accent: '#A06606' },
 
   // —— 中色系 ——
   { candidateName: '橄榄苔 · 深', dominant: '#262E1D', secondary: '#405030', accent: '#B8D08A' },
-  { candidateName: '橄榄苔 · 浅', dominant: '#E6EBDB', secondary: '#C7D0B1', accent: '#5A6B36' },
+  { candidateName: '橄榄苔 · 浅', dominant: '#EDF5E3', secondary: '#43581E', accent: '#4E7A18' },
 
   { candidateName: '松石青 · 深', dominant: '#173331', secondary: '#24524D', accent: '#8CD1CA' },
-  { candidateName: '松石青 · 浅', dominant: '#DCECEA', secondary: '#B3D2CE', accent: '#2E726A' },
+  { candidateName: '松石青 · 浅', dominant: '#E1F4F2', secondary: '#1B5E56', accent: '#10756A' },
 
   // —— 冷色系 ——
   { candidateName: '深海蓝 · 深', dominant: '#15243A', secondary: '#253E60', accent: '#9BB9D9' },
-  { candidateName: '深海蓝 · 浅', dominant: '#DCE3EC', secondary: '#B6C3D5', accent: '#2E4F7A' },
+  { candidateName: '深海蓝 · 浅', dominant: '#E3ECF8', secondary: '#1E4273', accent: '#1659B6' },
 
   { candidateName: '暮色紫 · 深', dominant: '#2A1E3A', secondary: '#473262', accent: '#C6B0DD' },
-  { candidateName: '暮色紫 · 浅', dominant: '#E6DFEE', secondary: '#C6B8DA', accent: '#5E4583' },
+  { candidateName: '暮色紫 · 浅', dominant: '#EFE6F7', secondary: '#4D2C76', accent: '#7025B1' },
 
   { candidateName: '玫褐粉 · 深', dominant: '#341C28', secondary: '#562E42', accent: '#E8B1C7' },
-  { candidateName: '玫褐粉 · 浅', dominant: '#F0DCE5', secondary: '#DCBACB', accent: '#8F3D62' },
+  { candidateName: '玫褐粉 · 浅', dominant: '#F7E4EC', secondary: '#7D2650', accent: '#B3195C' },
 ];
 
 // 把预设 triad 包装为 PaletteCandidate（供 UI 直接追加）
@@ -733,9 +754,9 @@ export async function extractPaletteCandidates(
         candidateId: 'c0',
         candidateName: '主色 · 素白（浅）',
         dominantHex: DEFAULT_PALETTE.dominant,
-        dominant: '#E9E4DA',
-        secondary: '#C9C0B0',
-        accent: '#B5433A',
+        dominant: '#F8ECE2',
+        secondary: '#963E1C',
+        accent: '#C15415',
       },
       {
         candidateId: 'c1',

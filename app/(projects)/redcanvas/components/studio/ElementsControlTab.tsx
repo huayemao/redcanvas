@@ -832,7 +832,24 @@ export const ElementPropertyPanel: React.FC = () => {
                 label="字重"
                 value={String(selected.fontWeight ?? 700)}
                 options={FONT_WEIGHTS.map((w) => ({ value: String(w.value), label: w.label }))}
-                onChange={(v) => update({ fontWeight: Number(v) as PlogElement['fontWeight'] })}
+                onChange={(v) => {
+                  const nw = Number(v) as PlogElement['fontWeight'];
+                  const isBold = (nw ?? 700) >= 700;
+                  const palette = useStudioStore.getState().extractedColors;
+                  const isThemeColor =
+                    !selected.color ||
+                    selected.color === palette?.textPrimary ||
+                    selected.color === palette?.textSecondary ||
+                    selected.color === palette?.emphasis;
+                  if (isThemeColor && palette) {
+                    update({
+                      fontWeight: nw,
+                      color: isBold ? palette.emphasis : palette.textSecondary,
+                    });
+                  } else {
+                    update({ fontWeight: nw });
+                  }
+                }}
               />
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1128,7 +1145,24 @@ export const ElementPropertyPanel: React.FC = () => {
                 label="字重"
                 value={String(selected.fontWeight ?? 700)}
                 options={FONT_WEIGHTS.map((w) => ({ value: String(w.value), label: w.label }))}
-                onChange={(v) => update({ fontWeight: Number(v) as PlogElement['fontWeight'] })}
+                onChange={(v) => {
+                  const nw = Number(v) as PlogElement['fontWeight'];
+                  const isBold = (nw ?? 700) >= 700;
+                  const palette = useStudioStore.getState().extractedColors;
+                  const isThemeColor =
+                    !selected.color ||
+                    selected.color === palette?.textPrimary ||
+                    selected.color === palette?.textSecondary ||
+                    selected.color === palette?.emphasis;
+                  if (isThemeColor && palette) {
+                    update({
+                      fontWeight: nw,
+                      color: isBold ? palette.emphasis : palette.textSecondary,
+                    });
+                  } else {
+                    update({ fontWeight: nw });
+                  }
+                }}
               />
             </div>
           </Section>
