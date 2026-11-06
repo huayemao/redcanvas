@@ -34,10 +34,10 @@ export const ElementToolbar: React.FC<ElementToolbarProps> = ({
           e.stopPropagation();
           onDragStart?.(e);
         }}
-        className="p-0.5 cursor-grab active:cursor-grabbing touch-none hover:text-blue-400 transition-colors flex items-center"
+        className="p-1 lg:p-0.5 cursor-grab active:cursor-grabbing touch-none hover:text-blue-400 transition-colors flex items-center"
         title="拖动"
       >
-        <Move className="w-3 h-3" />
+        <Move className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
       </span>
       {onEditElement && (
         <button
@@ -45,10 +45,10 @@ export const ElementToolbar: React.FC<ElementToolbarProps> = ({
             e.stopPropagation();
             onEditElement();
           }}
-          className="p-0.5 hover:text-blue-400 transition-colors lg:hidden"
+          className="p-1 lg:p-0.5 hover:text-blue-400 transition-colors lg:hidden"
           title="编辑属性"
         >
-          <Pencil className="w-3 h-3" />
+          <Pencil className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
         </button>
       )}
       <button
@@ -56,10 +56,10 @@ export const ElementToolbar: React.FC<ElementToolbarProps> = ({
           e.stopPropagation();
           onRemove();
         }}
-        className="p-0.5 hover:text-red-400 transition-colors"
+        className="p-1 lg:p-0.5 hover:text-red-400 transition-colors"
         title="删除元素"
       >
-        <X className="w-3 h-3" />
+        <X className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
       </button>
     </div>
   );

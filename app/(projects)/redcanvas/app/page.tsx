@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { StudioEditor } from '../components/studio/StudioEditor';
 import { StudioCanvas } from '../components/studio/StudioCanvas';
+import { CanvasSizeControl } from '../components/studio/CanvasSizeControl';
 import { ElementPropertyPanel } from '../components/studio/ElementsControlTab';
 import { MobileConfigBar } from '../components/studio/MobileConfigBar';
 import { PageNavigator } from '../components/studio/PageNavigator';
@@ -217,12 +218,13 @@ const AppPage: React.FC = () => {
     }
   }, [handleExport]);
 
-  const ratios: { size: ExportSize; label: string; w: string; h: string }[] = [
+  const ratios: { size: ExportSize; label: string; w: string; h: string; dashed?: boolean }[] = [
     { size: '3:4', label: '3 : 4', w: 'w-8', h: 'h-10' },
     { size: '1:1', label: '1 : 1', w: 'w-9', h: 'h-9' },
     { size: '9:16', label: '9 : 16', w: 'w-5', h: 'h-11' },
     { size: '4:3', label: '4 : 3', w: 'w-11', h: 'h-8' },
     { size: '16:9', label: '16 : 9', w: 'w-12', h: 'h-7' },
+    { size: 'custom', label: '自定义', w: 'w-9', h: 'h-9', dashed: true },
   ];
 
   return (
@@ -334,34 +336,44 @@ const AppPage: React.FC = () => {
                 </div>
 
                 {/* Ratio selector below canvas */}
-                <div className="flex items-center gap-3">
-                  {ratios.map((r) => {
-                    const isActive = aspectRatio === r.size;
-                    return (
-                      <button
-                        key={r.size}
-                        onClick={() => setAspectRatio(r.size)}
-                        className={`group flex flex-col items-center gap-1.5 transition-all ${
-                          isActive ? 'scale-110' : 'opacity-50 hover:opacity-80'
-                        }`}
-                      >
-                        <div
-                          className={`border-2 transition-all ${
-                            isActive
-                              ? 'border-red-500 bg-red-500/10'
-                              : 'border-white/30 group-hover:border-white/60'
-                          } rounded-sm ${r.w} ${r.h}`}
-                        />
-                        <span
-                          className={`text-[10px] font-black tracking-wider ${
-                            isActive ? 'text-red-400' : 'text-white/40'
+                <div className="flex flex-col items-center gap-3 w-full">
+                  <div className="flex items-center gap-3 flex-wrap justify-center">
+                    {ratios.map((r) => {
+                      const isActive = aspectRatio === r.size;
+                      return (
+                        <button
+                          key={r.size}
+                          onClick={() => setAspectRatio(r.size)}
+                          className={`group flex flex-col items-center gap-1.5 transition-all ${
+                            isActive ? 'scale-110' : 'opacity-50 hover:opacity-80'
                           }`}
                         >
-                          {r.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <div
+                            className={`border-2 transition-all ${
+                              r.dashed ? 'border-dashed ' : ''
+                            }${
+                              isActive
+                                ? 'border-red-500 bg-red-500/10'
+                                : 'border-white/30 group-hover:border-white/60'
+                            } rounded-sm ${r.w} ${r.h}`}
+                          />
+                          <span
+                            className={`text-[10px] font-black tracking-wider ${
+                              isActive ? 'text-red-400' : 'text-white/40'
+                            }`}
+                          >
+                            {r.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {aspectRatio === 'custom' && (
+                    <div className="w-full max-w-[360px]">
+                      <CanvasSizeControl customOnly compact />
+                    </div>
+                  )}
                 </div>
 
                 {/* 多页导航（PPT 式页面条） */}

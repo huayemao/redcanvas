@@ -4,6 +4,7 @@ import React from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
 import { Sparkles, Palette, ChevronRight } from 'lucide-react';
 import { TextureControlSection, TextureConfig } from './TextureControlSection';
+import { CanvasSizeControl } from './CanvasSizeControl';
 
 export const CanvasControlTab: React.FC = () => {
   const {
@@ -95,6 +96,11 @@ export const CanvasControlTab: React.FC = () => {
         >
           一键提色
         </button>
+      </div>
+
+      {/* 画布尺寸与比例（含自定义宽高） */}
+      <div className="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06]">
+        <CanvasSizeControl />
       </div>
 
       {/* 画布背景底层风格快捷切换 & 深入配置入口 */}

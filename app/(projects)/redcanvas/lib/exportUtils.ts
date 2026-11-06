@@ -62,20 +62,35 @@ export async function exportElementToBlob(
 ): Promise<Blob> {
   const { scale = 2.5, backgroundColor, onProgress } = options;
 
-  await waitForCanvasReady(element, { onProgress });
-
-  onProgress?.('正在生成高清图片...');
-  const blob = await snapdom.toBlob(element, {
-    scale,
-    ...(backgroundColor ? { backgroundColor } : {}),
-    type: 'png',
-    embedFonts: true,
-  });
-
-  if (!blob) {
-    throw new Error('图片生成失败，未返回有效的 Data Blob');
+  // 移动端画布外层套有 CSS scale 缩放（data-canvas-scaler），
+  // snapdom 内部通过 getBoundingClientRect 判断单行文本高度（rect.height < lineHeight * 1.6），
+  // 因此导出瞬间需临时移除外层 transform: scale，确保移动端与桌面端都在 1:1 逻辑尺寸下截图。
+  const scaler = element.closest('[data-canvas-scaler]') as HTMLElement | null;
+  const prevTransform = scaler?.style.transform;
+  if (scaler) {
+    scaler.style.transform = 'none';
   }
-  return blob;
+
+  try {
+    await waitForCanvasReady(element, { onProgress });
+
+    onProgress?.('正在生成高清图片...');
+    const blob = await snapdom.toBlob(element, {
+      scale,
+      ...(backgroundColor ? { backgroundColor } : {}),
+      type: 'png',
+      embedFonts: true,
+    });
+
+    if (!blob) {
+      throw new Error('图片生成失败，未返回有效的 Data Blob');
+    }
+    return blob;
+  } finally {
+    if (scaler) {
+      scaler.style.transform = prevTransform ?? '';
+    }
+  }
 }
 
 export async function exportElementToImage(

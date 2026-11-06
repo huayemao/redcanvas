@@ -31,6 +31,7 @@ import {
   StudioWidgetPreset,
   WidgetCategory,
 } from './widgetsConfig';
+import { CanvasSizeControl } from './CanvasSizeControl';
 
 export const TemplateGallery: React.FC = () => {
   const {
@@ -986,46 +987,7 @@ export const TemplateGallery: React.FC = () => {
           画布比例选择（始终保留在底部，便于快速调整整体尺寸）
          ============================================================ */}
       <div className="pt-3 border-t border-white/[0.06]">
-        <label className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-2 flex items-center justify-between">
-          <span>画布比例 · Ratio</span>
-          <Ratio className="w-3.5 h-3.5 text-white/30" />
-        </label>
-
-        <div className="grid grid-cols-3 gap-2">
-          {(['3:4', '1:1', '9:16', '4:3', '16:9', 'custom'] as ExportSize[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => setAspectRatio(r)}
-              className={`py-2.5 rounded-xl font-black text-xs transition-all ${
-                aspectRatio === r
-                  ? 'bg-white text-black shadow-md'
-                  : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white'
-              }`}
-            >
-              {r === 'custom' ? '自定义' : r}
-            </button>
-          ))}
-        </div>
-
-        {aspectRatio === 'custom' && (
-          <div className="flex items-center gap-2 mt-3 bg-white/[0.02] p-3 rounded-xl border border-white/[0.06]">
-            <input
-              type="number"
-              value={customWidth}
-              onChange={(e) => setCustomSize(Number(e.target.value), customHeight)}
-              placeholder="宽"
-              className="w-full p-2 bg-white/[0.04] rounded-lg text-xs font-mono font-bold text-center text-white border border-white/[0.06] focus:outline-none focus:border-red-500/50"
-            />
-            <span className="text-white/30 font-bold">:</span>
-            <input
-              type="number"
-              value={customHeight}
-              onChange={(e) => setCustomSize(customWidth, Number(e.target.value))}
-              placeholder="高"
-              className="w-full p-2 bg-white/[0.04] rounded-lg text-xs font-mono font-bold text-center text-white border border-white/[0.06] focus:outline-none focus:border-red-500/50"
-            />
-          </div>
-        )}
+        <CanvasSizeControl />
       </div>
     </div>
   );

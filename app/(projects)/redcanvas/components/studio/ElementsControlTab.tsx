@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore } from '../../store/useStudioStore';
+import { CanvasSizeControl } from './CanvasSizeControl';
 import {
   Plus,
   Trash2,
@@ -409,12 +410,17 @@ export const ElementPropertyPanel: React.FC = () => {
         </div>
       )}
 
-      {/* 通用：位置/尺寸（背景层锁定整画布，不允许改位置/尺寸） */}
+      {/* 通用：位置/尺寸（背景层锁定整画布，可在此直接调节画布比例与自定义宽高） */}
       {selected.type === 'background' ? (
-        <div className="text-[10px] font-bold tracking-wide px-3 py-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300/90 flex items-center gap-2">
-          <Palette className="w-3.5 h-3.5" />
-          <span>背景层已锁定整画布铺满 · 下方可调整背景风格与配色</span>
-        </div>
+        <>
+          <div className="text-[10px] font-bold tracking-wide px-3 py-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300/90 flex items-center gap-2">
+            <Palette className="w-3.5 h-3.5" />
+            <span>背景层已锁定整画布铺满 · 下方可调整画布尺寸、背景风格与配色</span>
+          </div>
+          <Section title="画布尺寸 & 比例">
+            <CanvasSizeControl compact />
+          </Section>
+        </>
       ) : (
         <Section title="位置 & 尺寸">
           <div className="grid grid-cols-2 gap-2">

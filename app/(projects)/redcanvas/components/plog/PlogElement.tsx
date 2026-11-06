@@ -198,14 +198,17 @@ export const PlogElement: React.FC<PlogElementProps> = ({
 
   const handleDragEnd = (_: any, info: any) => {
     const rect = containerRef.current?.getBoundingClientRect() ?? dragStartRectRef.current;
-    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    // MotionConfig transformPagePoint 已将屏幕位移还原为桌面端逻辑像素，因此分母优先使用画布未缩放的 offsetWidth/offsetHeight
+    const baseW = containerRef.current?.offsetWidth || rect?.width || 0;
+    const baseH = containerRef.current?.offsetHeight || rect?.height || 0;
+    if (baseW <= 0 || baseH <= 0) return;
 
-    // info.offset 包含从拖拽开始到结束累积的像素位移 (x, y)，由 Framer Motion 官方精确提供
+    // info.offset 包含从拖拽开始到结束累积的逻辑像素位移 (x, y)
     const offsetX = info?.offset?.x ?? dragX.get();
     const offsetY = info?.offset?.y ?? dragY.get();
 
-    const deltaXPercent = (offsetX / rect.width) * 100;
-    const deltaYPercent = (offsetY / rect.height) * 100;
+    const deltaXPercent = (offsetX / baseW) * 100;
+    const deltaYPercent = (offsetY / baseH) * 100;
 
     // 只有真的位移了才更新（避免无意义 set 触发重渲染/持久化）
     if (Math.abs(deltaXPercent) >= 0.01 || Math.abs(deltaYPercent) >= 0.01) {

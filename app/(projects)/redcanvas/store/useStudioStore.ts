@@ -537,8 +537,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   setTemplateCategory: (templateCategory) => set({ templateCategory }),
 
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setCustomSize: (customWidth, customHeight) => set({ customWidth, customHeight }),
+  setAspectRatio: (aspectRatio) => {
+    set({ aspectRatio });
+    get().captureCurrentPage();
+  },
+  setCustomSize: (customWidth, customHeight) => {
+    const cur = get();
+    const safeW =
+      typeof customWidth === 'number' && Number.isFinite(customWidth) && customWidth > 0
+        ? Math.min(10000, Math.max(1, Math.round(customWidth)))
+        : cur.customWidth || 1080;
+    const safeH =
+      typeof customHeight === 'number' && Number.isFinite(customHeight) && customHeight > 0
+        ? Math.min(10000, Math.max(1, Math.round(customHeight)))
+        : cur.customHeight || 1440;
+    set({ customWidth: safeW, customHeight: safeH });
+    get().captureCurrentPage();
+  },
 
   setBgType: (bgType) => {
     const s = get();

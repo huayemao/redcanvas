@@ -1,6 +1,7 @@
 'use client';
 
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { usePlogStore } from '../../store/usePlogStore';
 import { FONTS } from '../../constants';
 import { ProductTemplate } from './templates/ProductTemplate';
@@ -9,6 +10,7 @@ import { SocialTemplate } from './templates/SocialTemplate';
 import { PlogElement } from './PlogElement';
 import { parseRgbColor, getColorLuminance } from '../../lib/svgRecolor';
 import { resolveCanvasBackground, CANVAS_BLUR_BASE_COLOR } from '../../lib/canvasBackground';
+import { resolveCanvasLogicalSize } from '../../lib/canvasSize';
 
 export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
   const {
@@ -31,42 +33,87 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
   } = usePlogStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [availWidth, setAvailWidth] = useState<number>(0);
 
   const fontConfig = FONTS.find((f) => f.id === fontFamily) || FONTS[0];
 
-  // Aspect ratio styling
-  let containerStyle: React.CSSProperties = {};
-  let aspectClass = 'aspect-[3/4] max-w-[480px]';
+  const { width: logicalWidth, height: logicalHeight } = resolveCanvasLogicalSize(
+    aspectRatio,
+    customWidth,
+    customHeight
+  );
 
-  if (aspectRatio === '1:1') aspectClass = 'aspect-[1/1] max-w-[500px]';
-  if (aspectRatio === '9:16') aspectClass = 'aspect-[9/16] max-w-[420px]';
-  if (aspectRatio === '4:3') aspectClass = 'aspect-[4/3] max-w-[580px]';
-  if (aspectRatio === '16:9') aspectClass = 'aspect-[16/9] max-w-[620px]';
-  if (aspectRatio === '3:2') aspectClass = 'aspect-[3/2] max-w-[580px]';
-  if (aspectRatio === 'custom') {
-    aspectClass = 'max-w-[600px]';
-    containerStyle.aspectRatio = `${customWidth} / ${customHeight}`;
-  }
+  useLayoutEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+    const updateWidth = () => {
+      const w = el.clientWidth;
+      if (w > 0) setAvailWidth(w);
+    };
+    updateWidth();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(updateWidth);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  const displayScale =
+    availWidth > 0 && availWidth < logicalWidth ? availWidth / logicalWidth : 1;
+  const scaledWidth = Math.round(logicalWidth * displayScale * 100) / 100;
+  const scaledHeight = Math.round(logicalHeight * displayScale * 100) / 100;
+
+  const transformPoint = useCallback(
+    (p: { x: number; y: number }) =>
+      displayScale !== 1 && displayScale > 0
+        ? { x: p.x / displayScale, y: p.y / displayScale }
+        : p,
+    [displayScale]
+  );
 
   // Background styling
   const { style: bgStyle } = resolveCanvasBackground({ bgType, bgColor, gradientStart, gradientEnd });
 
   return (
     <div
-      className={`relative w-full ${aspectClass} overflow-hidden preview-shadow select-none mx-auto rounded-[32px]`}
-      style={containerStyle}
+      ref={measureRef}
+      className="w-full flex justify-center select-none"
       onClick={() => setSelectedElementId(null)}
     >
       <div
-        ref={(node) => {
-          // Sync internal ref and forwarded export ref
-          containerRef.current = node;
-          if (typeof ref === 'function') ref(node);
-          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        className="relative overflow-hidden preview-shadow rounded-[32px]"
+        style={{
+          width: `${scaledWidth}px`,
+          height: `${scaledHeight}px`,
         }}
-        className="w-full h-full relative overflow-hidden transition-all duration-300"
-        style={bgStyle}
       >
+        <div
+          data-canvas-scaler="true"
+          style={{
+            width: `${logicalWidth}px`,
+            height: `${logicalHeight}px`,
+            transform: displayScale !== 1 ? `scale(${displayScale})` : undefined,
+            transformOrigin: 'top left',
+          }}
+        >
+          <MotionConfig transformPagePoint={transformPoint}>
+            <div
+              ref={(node) => {
+                // Sync internal ref and forwarded export ref
+                containerRef.current = node;
+                if (typeof ref === 'function') ref(node);
+                else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+              }}
+              className="w-full h-full relative overflow-hidden transition-colors duration-300"
+              style={{
+                ...bgStyle,
+                width: `${logicalWidth}px`,
+                height: `${logicalHeight}px`,
+              }}
+            >
         {/* Background Photo Blur option */}
         {bgType === 'blur' && images[0]?.url && (
           <div
@@ -134,6 +181,9 @@ export const PlogCanvas = forwardRef<HTMLDivElement>((_, ref) => {
             />
           ));
         })()}
+            </div>
+          </MotionConfig>
+        </div>
       </div>
     </div>
   );

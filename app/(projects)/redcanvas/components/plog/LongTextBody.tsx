@@ -291,7 +291,7 @@ export const LongTextBody: React.FC<LongTextBodyProps> = ({
 
   return (
     <div
-      className={`max-w-full prose-sm md:prose-base ${shellPad} ${shellRadius} ${resolveFontClass(element.fontFamily, fontClassName)}`}
+      className={`max-w-full prose-base ${shellPad} ${shellRadius} ${resolveFontClass(element.fontFamily, fontClassName)}`}
       style={{
         ...shellStyle,
         color: effColor || 'inherit',
